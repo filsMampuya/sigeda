@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 
-import { serviceService } from "../services/registry";
+import { organizationService } from "../services/registry";
 
 export const serviceController = {
   async list(_request: Request, response: Response) {
-    response.json(await serviceService.list());
+    response.json(await organizationService.listByType("Service"));
   },
   async create(request: Request, response: Response) {
-    response.status(201).json(await serviceService.create(request.body));
+    response.status(201).json(await organizationService.createService(request.body));
   }
 };

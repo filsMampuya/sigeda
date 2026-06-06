@@ -1,23 +1,63 @@
-import type { DocumentEntity } from "@sigeda/shared/types";
-import type { AuthenticatedUser } from "@sigeda/shared/types";
+import type { AuthenticatedUser, Departement, DocumentEntity, User } from "@sigeda/shared/types";
+import { randomUUID } from "node:crypto";
 
-import { BaseCrudService } from "./base-crud-service";
 import { AuthorizationService } from "./authorization-service";
 import { DocumentStorageService } from "./document-storage-service";
 import { OcrService } from "./ocr-service";
 
-export class DocumentService extends BaseCrudService<DocumentEntity> {
+type DocumentRepositoryLike = {
+  list: () => Promise<DocumentEntity[]>;
+  getById: (id: string) => Promise<DocumentEntity | null>;
+  upsert: (entity: DocumentEntity) => Promise<DocumentEntity>;
+};
+
+type DepartementRepositoryLike = {
+  getById: (id: string) => Promise<Departement | null>;
+};
+
+type UserRepositoryLike = {
+  getById: (id: string) => Promise<User | null>;
+};
+
+export class DocumentService {
   constructor(
-    repository: {
-      list: () => Promise<DocumentEntity[]>;
-      getById: (id: string) => Promise<DocumentEntity | null>;
-      upsert: (entity: DocumentEntity) => Promise<DocumentEntity>;
-    },
+    private readonly repository: DocumentRepositoryLike,
+    private readonly departementRepository: DepartementRepositoryLike,
+    private readonly userRepository: UserRepositoryLike,
     private readonly authorizationService: AuthorizationService,
     private readonly storageService: DocumentStorageService,
     private readonly ocrService: OcrService
-  ) {
-    super(repository);
+  ) {}
+
+  list() {
+    return this.repository.list();
+  }
+
+  getById(id: string) {
+    return this.repository.getById(id);
+  }
+
+  async create(input: Record<string, unknown>, user?: AuthenticatedUser) {
+    const entity = await this.normalizeDocumentInput(input, user);
+    return this.repository.upsert(entity);
+  }
+
+  async update(id: string, patch: Partial<DocumentEntity>) {
+    const existing = await this.repository.getById(id);
+
+    if (!existing) {
+      throw new Error("Document not found.");
+    }
+
+    const nextEntity: DocumentEntity = {
+      ...existing,
+      ...patch,
+      id,
+      dateDerniereModication: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    return this.repository.upsert(nextEntity);
   }
 
   async listForUser(user?: AuthenticatedUser) {
@@ -41,10 +81,7 @@ export class DocumentService extends BaseCrudService<DocumentEntity> {
     return this.authorizationService.canAccessDocument(user, document) ? document : null;
   }
 
-  async search(
-    query: Record<string, unknown>,
-    user?: AuthenticatedUser
-  ) {
+  async search(query: Record<string, unknown>, user?: AuthenticatedUser) {
     const documents = await this.listForUser(user);
     const searchTerm = typeof query.q === "string" ? query.q.toLowerCase() : "";
     const directionId = typeof query.directionId === "string" ? query.directionId : undefined;
@@ -53,10 +90,11 @@ export class DocumentService extends BaseCrudService<DocumentEntity> {
     const status = typeof query.status === "string" ? query.status : undefined;
 
     return documents.filter((document) => {
+      const title = document.title ?? document.fileName ?? "";
       const matchesText =
         !searchTerm ||
-        document.reference.toLowerCase().includes(searchTerm) ||
-        document.title.toLowerCase().includes(searchTerm) ||
+        document.numeroReference.toLowerCase().includes(searchTerm) ||
+        title.toLowerCase().includes(searchTerm) ||
         document.keywords.some((keyword) => keyword.toLowerCase().includes(searchTerm));
 
       return (
@@ -80,11 +118,11 @@ export class DocumentService extends BaseCrudService<DocumentEntity> {
     const ocrResult = await this.ocrService.extract(file, storedFile.fileKind);
 
     return this.update(id, {
-      fileUrl: storedFile.fileUrl,
-      filePath: storedFile.filePath,
+      urlFileName: storedFile.fileUrl,
+      fileName: storedFile.originalFileName,
+      originalFileName: storedFile.originalFileName,
       mimeType: storedFile.mimeType,
       fileSizeBytes: storedFile.fileSizeBytes,
-      originalFileName: storedFile.originalFileName,
       storageProvider: storedFile.storageProvider,
       fileKind: storedFile.fileKind,
       digitizationStatus:
@@ -102,22 +140,117 @@ export class DocumentService extends BaseCrudService<DocumentEntity> {
   async archive(id: string) {
     return this.update(id, {
       status: "ARCHIVE",
-      archivedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      archivedAt: new Date().toISOString()
     });
   }
 
   async validate(id: string) {
     return this.update(id, {
-      status: "VALIDE",
-      updatedAt: new Date().toISOString()
+      status: "VALIDE"
     });
   }
 
   async reject(id: string) {
     return this.update(id, {
-      status: "REJETE",
-      updatedAt: new Date().toISOString()
+      status: "REJETE"
     });
   }
+
+  private async normalizeDocumentInput(input: Record<string, unknown>, authenticatedUser?: AuthenticatedUser) {
+    const directionId = getString(input.directionId) || getString((input.direction as Record<string, unknown> | undefined)?.id);
+    const serviceId = getString(input.serviceId);
+    const bureauId = getString(input.bureauId);
+
+    const directionDepartement = directionId ? await this.departementRepository.getById(directionId) : null;
+    const userProfile = await this.resolveUserProfile(getString(input.authorId), authenticatedUser);
+    const timestamp = new Date().toISOString();
+
+    return {
+      id: randomUUID(),
+      numeroReference: getString(input.numeroReference) || getString(input.reference),
+      dateCreation: timestamp,
+      user: {
+        id: userProfile?.id ?? authenticatedUser?.id,
+        nom:
+          (userProfile?.personne.nom ?? getString((input.user as Record<string, unknown> | undefined)?.nom)) ||
+          deriveNom(authenticatedUser?.displayName),
+        prenom:
+          (userProfile?.personne.prenom ??
+            getString((input.user as Record<string, unknown> | undefined)?.prenom)) ||
+          derivePrenom(authenticatedUser?.displayName),
+        matricule:
+          (userProfile?.matricule ??
+            getString((input.user as Record<string, unknown> | undefined)?.matricule)) ||
+          getString(input.authorId) ||
+          authenticatedUser?.id ||
+          "INCONNU",
+        email: userProfile?.email ?? authenticatedUser?.email
+      },
+      type: getString(input.type) || getString(input.documentType),
+      direction: {
+        id: (directionDepartement?.id ?? directionId) || undefined,
+        code:
+          directionDepartement?.code ??
+          getString((input.direction as Record<string, unknown> | undefined)?.code) ??
+          directionId,
+        designation:
+          directionDepartement?.designation ??
+          getString((input.direction as Record<string, unknown> | undefined)?.designation) ??
+          directionId
+      },
+      dateDerniereModication: timestamp,
+      fileName: getString(input.fileName) || getString(input.title) || undefined,
+      urlFileName: getString(input.urlFileName) || undefined,
+      title: getString(input.title) || undefined,
+      description: getString(input.description) || undefined,
+      directionId: directionDepartement?.type === "Direction" ? directionDepartement.id : directionId || undefined,
+      serviceId: serviceId || undefined,
+      bureauId: bureauId || undefined,
+      authorId: getString(input.authorId) || authenticatedUser?.id,
+      confidentialityLevel: getString(input.confidentialityLevel) as DocumentEntity["confidentialityLevel"],
+      status: (getString(input.status) || "BROUILLON") as DocumentEntity["status"],
+      keywords: Array.isArray(input.keywords) ? (input.keywords as string[]) : [],
+      version: getNumber(input.version) ?? 1,
+      createdAt: timestamp,
+      updatedAt: timestamp
+    } satisfies DocumentEntity;
+  }
+
+  private async resolveUserProfile(authorId?: string, authenticatedUser?: AuthenticatedUser) {
+    const userId = authorId || authenticatedUser?.id;
+
+    if (!userId) {
+      return null;
+    }
+
+    return this.userRepository.getById(userId);
+  }
+}
+
+function getString(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function getNumber(value: unknown) {
+  return typeof value === "number" ? value : null;
+}
+
+function deriveNom(displayName?: string) {
+  if (!displayName) {
+    return "Utilisateur";
+  }
+
+  return displayName.split(" ").filter(Boolean)[0] ?? "Utilisateur";
+}
+
+function derivePrenom(displayName?: string) {
+  if (!displayName) {
+    return "";
+  }
+
+  return displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(1)
+    .join(" ");
 }

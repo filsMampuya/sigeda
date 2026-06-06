@@ -42,8 +42,8 @@ export class DocumentStorageService {
     const safeName = `${documentId}-${randomUUID()}${extension}`;
     const relativePath = path.join("uploads", "documents", documentId, sanitizeFileName(safeName));
 
-    if (storage && env.FIREBASE_STORAGE_BUCKET) {
-      const bucket = storage.bucket(env.FIREBASE_STORAGE_BUCKET);
+    if (storage) {
+      const bucket = env.FIREBASE_STORAGE_BUCKET ? storage.bucket(env.FIREBASE_STORAGE_BUCKET) : storage.bucket();
       const normalizedPath = relativePath.replace(/\\/g, "/");
       const bucketFile = bucket.file(normalizedPath);
 

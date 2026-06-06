@@ -5,10 +5,10 @@ import { getPublicApiBaseUrl } from "@/lib/env";
 
 export function DocumentDetailsPanel({ document }: { document: DocumentEntity | null }) {
   const publicApiBaseUrl = getPublicApiBaseUrl();
-  const fileHref = document?.fileUrl
-    ? document.fileUrl.startsWith("http")
-      ? document.fileUrl
-      : `${publicApiBaseUrl}${document.fileUrl}`
+  const fileHref = document?.urlFileName
+    ? document.urlFileName.startsWith("http")
+      ? document.urlFileName
+      : `${publicApiBaseUrl}${document.urlFileName}`
     : null;
 
   if (!document) {
@@ -25,8 +25,10 @@ export function DocumentDetailsPanel({ document }: { document: DocumentEntity | 
   return (
     <div className="space-y-6">
       <Card>
-        <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{document.reference}</p>
-        <h3 className="mt-2 text-2xl font-semibold text-brand-navy">{document.title}</h3>
+        <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{document.numeroReference}</p>
+        <h3 className="mt-2 text-2xl font-semibold text-brand-navy">
+          {document.title ?? document.fileName ?? "Document"}
+        </h3>
         <p className="mt-3 text-sm text-slate-600">{document.description ?? "Aucune description fournie."}</p>
       </Card>
 
@@ -36,15 +38,15 @@ export function DocumentDetailsPanel({ document }: { document: DocumentEntity | 
           <dl className="mt-4 grid gap-4 md:grid-cols-2 text-sm text-slate-600">
             <div>
               <dt className="font-medium text-slate-900">Type</dt>
-              <dd>{document.documentType}</dd>
+              <dd>{document.type}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Confidentialite</dt>
-              <dd>{document.confidentialityLevel}</dd>
+              <dd>{document.confidentialityLevel ?? "-"}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Statut</dt>
-              <dd>{document.status}</dd>
+              <dd>{document.status ?? "-"}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Version</dt>
@@ -52,15 +54,15 @@ export function DocumentDetailsPanel({ document }: { document: DocumentEntity | 
             </div>
             <div>
               <dt className="font-medium text-slate-900">Direction</dt>
-              <dd>{document.directionId}</dd>
+              <dd>{document.direction.designation}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Service</dt>
-              <dd>{document.serviceId}</dd>
+              <dd>{document.serviceId ?? "-"}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Bureau</dt>
-              <dd>{document.bureauId}</dd>
+              <dd>{document.bureauId ?? "-"}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Mots-cles</dt>
@@ -78,7 +80,7 @@ export function DocumentDetailsPanel({ document }: { document: DocumentEntity | 
             </div>
             <div>
               <dt className="font-medium text-slate-900">Nom original</dt>
-              <dd>{document.originalFileName ?? "-"}</dd>
+              <dd>{document.fileName ?? document.originalFileName ?? "-"}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Stockage</dt>

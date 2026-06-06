@@ -1,8 +1,4 @@
-import { createRequire } from "node:module";
 import Tesseract from "tesseract.js";
-
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse") as (buffer: Buffer) => Promise<{ text?: string }>;
 
 type OcrExtractionResult = {
   ocrExtractedAt?: string;
@@ -44,6 +40,10 @@ export class OcrService {
 
   private async extractFromPdf(file: Express.Multer.File): Promise<OcrExtractionResult> {
     try {
+      const pdfParseModule = (await import("pdf-parse")) as {
+        default?: (buffer: Buffer) => Promise<{ text?: string }>;
+      };
+      const pdfParse = pdfParseModule.default ?? (pdfParseModule as (buffer: Buffer) => Promise<{ text?: string }>);
       const result = await pdfParse(file.buffer);
       const text = result.text?.trim() ?? "";
 

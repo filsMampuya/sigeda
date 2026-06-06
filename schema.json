@@ -1,0 +1,42 @@
+{
+  "Document": {
+    "numeroReference": "",
+    "dateCreation": "",
+    "user": {
+      "nom": "",
+      "prenom": "",
+      "matricule": ""
+    },
+    "type": "",
+    "direction": {
+      "code": "",
+      "designation": ""
+    },
+    "dateDerniereModication": "",
+    "fileName": "",
+    "urlFileName": ""
+  },
+  "Departement": {
+    "type": "Direction || Direction Generale || Service || Bureau",
+    "code": "",
+    "designation": "",
+    "parent": {
+      "code": "",
+      "designation": ""
+    },
+    "dateCreation": "",
+    "parents": []
+  },
+  "User": {
+    "personne": {
+      "nom": "",
+      "prenom": ""
+    },
+    "matricule": "",
+    "bureau": {
+      "code": "",
+      "designation": ""
+    },
+    "dateCreation": ""
+  }
+}

@@ -16,9 +16,10 @@ function getString(formData: FormData, key: string) {
 
 export async function createDirectionAction(formData: FormData) {
   const payload = createDirectionSchema.parse({
+    type: getString(formData, "type"),
     code: getString(formData, "code"),
-    name: getString(formData, "name"),
-    description: getString(formData, "description")
+    designation: getString(formData, "designation"),
+    parentId: getString(formData, "parentId") || undefined
   });
   await createDirection(payload);
 
@@ -29,10 +30,9 @@ export async function createDirectionAction(formData: FormData) {
 
 export async function createServiceAction(formData: FormData) {
   const payload = createServiceSchema.parse({
-    directionId: getString(formData, "directionId"),
+    parentId: getString(formData, "parentId"),
     code: getString(formData, "code"),
-    name: getString(formData, "name"),
-    description: getString(formData, "description")
+    designation: getString(formData, "designation")
   });
   await createService(payload);
 
@@ -42,11 +42,9 @@ export async function createServiceAction(formData: FormData) {
 
 export async function createBureauAction(formData: FormData) {
   const payload = createBureauSchema.parse({
-    directionId: getString(formData, "directionId"),
-    serviceId: getString(formData, "serviceId"),
+    parentId: getString(formData, "parentId"),
     code: getString(formData, "code"),
-    name: getString(formData, "name"),
-    description: getString(formData, "description")
+    designation: getString(formData, "designation")
   });
   await createBureau(payload);
 

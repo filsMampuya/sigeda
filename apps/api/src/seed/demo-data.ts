@@ -1,41 +1,206 @@
-import type { AuditLog, Bureau, Direction, DocumentEntity, Service } from "@sigeda/shared/types";
+import type { AuditLog, Departement, DocumentEntity, User } from "@sigeda/shared/types";
 
 const now = "2026-06-05T09:00:00.000Z";
 
-export const seedDirections: Direction[] = [
-  { id: "dir-dg", code: "DG", name: "Direction Generale", description: "Pilotage strategique", createdAt: now, updatedAt: now },
-  { id: "dir-prod", code: "DPR", name: "Direction de la Production", description: "Production et fabrication", createdAt: now, updatedAt: now },
-  { id: "dir-sec", code: "DSI", name: "Direction de la Securite", description: "Surete et controle", createdAt: now, updatedAt: now }
+const directionGenerale = {
+  id: "dir-gen-01",
+  type: "DirectionGenerale",
+  code: "DG",
+  designation: "Direction Generale",
+  parents: [],
+  dateCreation: now,
+  description: "Pilotage strategique",
+  updatedAt: now
+} satisfies Departement;
+
+const directionProduction = {
+  id: "dir-prod",
+  type: "Direction",
+  code: "DPR",
+  designation: "Direction de la Production",
+  parents: [directionGenerale.id],
+  dateCreation: now,
+  description: "Production et fabrication",
+  updatedAt: now
+} satisfies Departement;
+
+const directionSecurite = {
+  id: "dir-sec",
+  type: "Direction",
+  code: "DSI",
+  designation: "Direction de la Securite",
+  parents: [directionGenerale.id],
+  dateCreation: now,
+  description: "Surete et controle",
+  updatedAt: now
+} satisfies Departement;
+
+const servicePlanification = {
+  id: "srv-prod-plan",
+  type: "Service",
+  code: "PLAN",
+  designation: "Service Planification",
+  parents: [directionProduction.id],
+  dateCreation: now,
+  description: "Planification documentaire",
+  updatedAt: now
+} satisfies Departement;
+
+const serviceQualite = {
+  id: "srv-prod-qual",
+  type: "Service",
+  code: "QUAL",
+  designation: "Service Qualite",
+  parents: [directionProduction.id],
+  dateCreation: now,
+  description: "Controle qualite",
+  updatedAt: now
+} satisfies Departement;
+
+const serviceArchivesSensibles = {
+  id: "srv-sec-arch",
+  type: "Service",
+  code: "ARCH",
+  designation: "Service Archives Sensibles",
+  parents: [directionSecurite.id],
+  dateCreation: now,
+  description: "Protection documentaire",
+  updatedAt: now
+} satisfies Departement;
+
+const bureauPlanification = {
+  id: "bur-plan-01",
+  type: "Bureau",
+  code: "BPLAN",
+  designation: "Bureau Planification",
+  parents: [servicePlanification.id],
+  dateCreation: now,
+  description: "Suivi des references",
+  updatedAt: now
+} satisfies Departement;
+
+const bureauQualite = {
+  id: "bur-qual-01",
+  type: "Bureau",
+  code: "BQUAL",
+  designation: "Bureau Qualite",
+  parents: [serviceQualite.id],
+  dateCreation: now,
+  description: "Validation et controle",
+  updatedAt: now
+} satisfies Departement;
+
+const bureauArchivesSensibles = {
+  id: "bur-arch-01",
+  type: "Bureau",
+  code: "BARCH",
+  designation: "Bureau Archives Sensibles",
+  parents: [serviceArchivesSensibles.id],
+  dateCreation: now,
+  description: "Archives securisees",
+  updatedAt: now
+} satisfies Departement;
+
+export const seedDepartements: Departement[] = [
+  directionGenerale,
+  directionProduction,
+  directionSecurite,
+  servicePlanification,
+  serviceQualite,
+  serviceArchivesSensibles,
+  bureauPlanification,
+  bureauQualite,
+  bureauArchivesSensibles
 ];
 
-export const seedServices: Service[] = [
-  { id: "srv-prod-plan", directionId: "dir-prod", code: "PLAN", name: "Service Planification", description: "Planification documentaire", createdAt: now, updatedAt: now },
-  { id: "srv-prod-qual", directionId: "dir-prod", code: "QUAL", name: "Service Qualite", description: "Controle qualite", createdAt: now, updatedAt: now },
-  { id: "srv-sec-arch", directionId: "dir-sec", code: "ARCH", name: "Service Archives Sensibles", description: "Protection documentaire", createdAt: now, updatedAt: now }
-];
-
-export const seedBureaux: Bureau[] = [
-  { id: "bur-plan-01", directionId: "dir-prod", serviceId: "srv-prod-plan", code: "BPLAN", name: "Bureau Planification", description: "Suivi des references", createdAt: now, updatedAt: now },
-  { id: "bur-qual-01", directionId: "dir-prod", serviceId: "srv-prod-qual", code: "BQUAL", name: "Bureau Qualite", description: "Validation et controle", createdAt: now, updatedAt: now },
-  { id: "bur-arch-01", directionId: "dir-sec", serviceId: "srv-sec-arch", code: "BARCH", name: "Bureau Archives Sensibles", description: "Archives securisees", createdAt: now, updatedAt: now }
+export const seedUsers: User[] = [
+  {
+    id: "usr-admin",
+    email: "admin@sigeda.local",
+    role: "ADMIN",
+    isActive: true,
+    updatedAt: now,
+    personne: { nom: "Admin", prenom: "SIGEDA" },
+    matricule: "ADM-001",
+    bureau: null,
+    dateCreation: now,
+    directionId: null,
+    serviceId: null,
+    bureauId: null,
+    displayName: "Admin SIGEDA"
+  },
+  {
+    id: "usr-archiviste",
+    email: "archiviste@sigeda.local",
+    role: "ARCHIVISTE",
+    isActive: true,
+    updatedAt: now,
+    personne: { nom: "Archiviste", prenom: "Principal" },
+    matricule: "ARCH-001",
+    bureau: {
+      id: bureauArchivesSensibles.id,
+      type: "Bureau",
+      code: bureauArchivesSensibles.code,
+      designation: bureauArchivesSensibles.designation
+    },
+    dateCreation: now,
+    directionId: directionSecurite.id,
+    serviceId: serviceArchivesSensibles.id,
+    bureauId: bureauArchivesSensibles.id,
+    displayName: "Archiviste Principal"
+  },
+  {
+    id: "usr-chef-service",
+    email: "chef.service@sigeda.local",
+    role: "CHEF_SERVICE",
+    isActive: true,
+    updatedAt: now,
+    personne: { nom: "Chef", prenom: "Qualite" },
+    matricule: "QUAL-001",
+    bureau: {
+      id: bureauQualite.id,
+      type: "Bureau",
+      code: bureauQualite.code,
+      designation: bureauQualite.designation
+    },
+    dateCreation: now,
+    directionId: directionProduction.id,
+    serviceId: serviceQualite.id,
+    bureauId: bureauQualite.id,
+    displayName: "Chef Service Qualite"
+  }
 ];
 
 export const seedDocuments: DocumentEntity[] = [
   {
     id: "doc-001",
-    reference: "DOC-2026-001",
+    numeroReference: "DOC-2026-001",
+    dateCreation: now,
+    user: {
+      id: "usr-admin",
+      nom: "Admin",
+      prenom: "SIGEDA",
+      matricule: "ADM-001",
+      email: "admin@sigeda.local"
+    },
+    type: "RAPPORT",
+    direction: {
+      id: directionProduction.id,
+      code: directionProduction.code,
+      designation: directionProduction.designation
+    },
+    dateDerniereModication: now,
+    fileName: "rapport-production.pdf",
+    urlFileName: "https://example.com/documents/doc-001.pdf",
     title: "Rapport de production trimestriel",
     description: "Synthese de production et anomalies observees.",
-    documentType: "RAPPORT",
-    directionId: "dir-prod",
-    serviceId: "srv-prod-plan",
-    bureauId: "bur-plan-01",
+    directionId: directionProduction.id,
+    serviceId: servicePlanification.id,
+    bureauId: bureauPlanification.id,
     authorId: "usr-admin",
     confidentialityLevel: "INTERNE",
     status: "VALIDE",
     keywords: ["production", "trimestre", "atelier"],
-    fileUrl: "https://example.com/documents/doc-001.pdf",
-    filePath: "documents/doc-001.pdf",
     originalFileName: "rapport-production.pdf",
     mimeType: "application/pdf",
     fileSizeBytes: 204800,
@@ -51,19 +216,33 @@ export const seedDocuments: DocumentEntity[] = [
   },
   {
     id: "doc-002",
-    reference: "DOC-2026-002",
+    numeroReference: "DOC-2026-002",
+    dateCreation: now,
+    user: {
+      id: "usr-archiviste",
+      nom: "Archiviste",
+      prenom: "Principal",
+      matricule: "ARCH-001",
+      email: "archiviste@sigeda.local"
+    },
+    type: "NOTE",
+    direction: {
+      id: directionSecurite.id,
+      code: directionSecurite.code,
+      designation: directionSecurite.designation
+    },
+    dateDerniereModication: now,
+    fileName: "note-securite-scan.jpg",
+    urlFileName: "https://example.com/documents/doc-002.pdf",
     title: "Note de securite atelier",
     description: "Instructions operationnelles pour zone sensible.",
-    documentType: "NOTE",
-    directionId: "dir-sec",
-    serviceId: "srv-sec-arch",
-    bureauId: "bur-arch-01",
+    directionId: directionSecurite.id,
+    serviceId: serviceArchivesSensibles.id,
+    bureauId: bureauArchivesSensibles.id,
     authorId: "usr-archiviste",
     confidentialityLevel: "SECRET",
     status: "EN_VALIDATION",
     keywords: ["securite", "atelier", "procedure"],
-    fileUrl: "https://example.com/documents/doc-002.pdf",
-    filePath: "documents/doc-002.pdf",
     originalFileName: "note-securite-scan.jpg",
     mimeType: "image/jpeg",
     fileSizeBytes: 184320,
@@ -79,19 +258,33 @@ export const seedDocuments: DocumentEntity[] = [
   },
   {
     id: "doc-003",
-    reference: "DOC-2026-003",
+    numeroReference: "DOC-2026-003",
+    dateCreation: now,
+    user: {
+      id: "usr-chef-service",
+      nom: "Chef",
+      prenom: "Qualite",
+      matricule: "QUAL-001",
+      email: "chef.service@sigeda.local"
+    },
+    type: "PV_REUNION",
+    direction: {
+      id: directionProduction.id,
+      code: directionProduction.code,
+      designation: directionProduction.designation
+    },
+    dateDerniereModication: now,
+    fileName: "pv-qualite.pdf",
+    urlFileName: "https://example.com/documents/doc-003.pdf",
     title: "Proces-verbal de reunion qualite",
     description: "Compte rendu des actions correctives.",
-    documentType: "PV_REUNION",
-    directionId: "dir-prod",
-    serviceId: "srv-prod-qual",
-    bureauId: "bur-qual-01",
+    directionId: directionProduction.id,
+    serviceId: serviceQualite.id,
+    bureauId: bureauQualite.id,
     authorId: "usr-chef-service",
     confidentialityLevel: "CONFIDENTIEL",
     status: "ARCHIVE",
     keywords: ["qualite", "pv", "actions"],
-    fileUrl: "https://example.com/documents/doc-003.pdf",
-    filePath: "documents/doc-003.pdf",
     originalFileName: "pv-qualite.pdf",
     mimeType: "application/pdf",
     fileSizeBytes: 154002,

@@ -7,13 +7,55 @@ runConfig:
 
 env:
   - variable: SIGEDA_API_URL
-    value: https://your-api-url.example.com
+    value: https://us-central1-sigeda-c80ea.cloudfunctions.net/server
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_SIGEDA_API_URL
-    value: https://your-api-url.example.com
+    value: https://us-central1-sigeda-c80ea.cloudfunctions.net/server
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyB9i9YvjZsRlbV3RLbSV5Xlbu6KIDna4Gk
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: sigeda-c80ea.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: sigeda-c80ea
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: sigeda-c80ea.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "896328872731"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:896328872731:web:bcf2f975ad63d5638259be
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
+    value: G-WZTRFPBKQT
     availability:
       - BUILD
       - RUNTIME

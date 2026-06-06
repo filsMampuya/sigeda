@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@sigeda/shared": "*",
+    "busboy": "^1.6.0",
     "@types/multer": "^2.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -24,6 +25,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/busboy": "^1.5.4",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.1",

@@ -14,7 +14,7 @@ export const documentController = {
     response.json(await documentService.getByIdForUser(getParam(request.params.id), request.user));
   },
   async create(request: Request, response: Response) {
-    response.status(201).json(await documentService.create(request.body));
+    response.status(201).json(await documentService.create(request.body, request.user));
   },
   async upload(request: Request, response: Response) {
     if (!request.file) {

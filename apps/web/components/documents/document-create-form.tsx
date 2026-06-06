@@ -1,17 +1,19 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import type { Bureau, Direction, Service } from "@sigeda/shared/types";
+import { FirebaseError } from "firebase/app";
+import type { DepartementListItem } from "@sigeda/shared/types";
 import { confidentialityLevels, documentStatuses, documentTypes } from "@sigeda/shared/constants";
 
 import { DocumentUploadStatus } from "@/components/documents/document-upload-status";
 import { Card } from "@/components/ui/card";
 import { getPublicApiBaseUrl } from "@/lib/env";
+import { getFirebaseAuth } from "@/lib/firebase-client";
 
 type DocumentCreateFormProps = {
-  directions: Direction[];
-  services: Service[];
-  bureaux: Bureau[];
+  directions: DepartementListItem[];
+  services: DepartementListItem[];
+  bureaux: DepartementListItem[];
 };
 
 export function DocumentCreateForm({
@@ -22,7 +24,10 @@ export function DocumentCreateForm({
   const apiBaseUrl = getPublicApiBaseUrl();
   const [directionId, setDirectionId] = useState(directions[0]?.id ?? "");
   const filteredServices = useMemo(
-    () => services.filter((service) => !directionId || service.directionId === directionId),
+    () =>
+      services.filter(
+        (service) => !directionId || service.parentId === directionId || service.parents.includes(directionId)
+      ),
     [directionId, services]
   );
   const [serviceId, setServiceId] = useState(filteredServices[0]?.id ?? "");
@@ -30,21 +35,34 @@ export function DocumentCreateForm({
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const filteredBureaux = useMemo(
-    () => bureaux.filter((bureau) => (!directionId || bureau.directionId === directionId) && (!serviceId || bureau.serviceId === serviceId)),
+    () =>
+      bureaux.filter(
+        (bureau) =>
+          (!directionId || bureau.parents.includes(directionId)) &&
+          (!serviceId || bureau.parentId === serviceId || bureau.parents.includes(serviceId))
+      ),
     [bureaux, directionId, serviceId]
   );
 
   async function handleSubmit(formData: FormData) {
+    const auth = getFirebaseAuth();
+    const currentUser = auth?.currentUser;
+
+    if (!currentUser) {
+      throw new Error("Votre session a expire. Reconnectez-vous.");
+    }
+
+    const idToken = await currentUser.getIdToken();
     const keywords = String(formData.get("keywords") ?? "")
       .split(",")
       .map((keyword) => keyword.trim())
       .filter(Boolean);
 
     const payload = {
-      reference: String(formData.get("reference") ?? ""),
+      numeroReference: String(formData.get("numeroReference") ?? ""),
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? "") || undefined,
-      documentType: String(formData.get("documentType") ?? ""),
+      type: String(formData.get("type") ?? ""),
       directionId: String(formData.get("directionId") ?? ""),
       serviceId: String(formData.get("serviceId") ?? ""),
       bureauId: String(formData.get("bureauId") ?? ""),
@@ -58,7 +76,8 @@ export function DocumentCreateForm({
     const createResponse = await fetch(`${apiBaseUrl}/api/documents`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`
       },
       body: JSON.stringify(payload)
     });
@@ -76,6 +95,9 @@ export function DocumentCreateForm({
 
       const uploadResponse = await fetch(`${apiBaseUrl}/api/documents/${document.id}/upload`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${idToken}`
+        },
         body: uploadData
       });
 
@@ -104,7 +126,8 @@ export function DocumentCreateForm({
           try {
             await handleSubmit(formData);
           } catch (error) {
-            setFeedback(error instanceof Error ? error.message : "Operation echouee.");
+            const fallbackMessage = error instanceof FirebaseError ? error.message : "Operation echouee.";
+            setFeedback(error instanceof Error ? error.message : fallbackMessage);
           }
         })
       }
@@ -133,7 +156,7 @@ export function DocumentCreateForm({
       <Card className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <input
-            name="reference"
+            name="numeroReference"
             className="rounded-xl border border-slate-200 px-4 py-3"
             placeholder="Reference documentaire"
             required
@@ -168,7 +191,9 @@ export function DocumentCreateForm({
             onChange={(event) => {
               const nextDirectionId = event.target.value;
               setDirectionId(nextDirectionId);
-              const nextServices = services.filter((service) => service.directionId === nextDirectionId);
+              const nextServices = services.filter(
+                (service) => service.parentId === nextDirectionId || service.parents.includes(nextDirectionId)
+              );
               setServiceId(nextServices[0]?.id ?? "");
             }}
             className="rounded-xl border border-slate-200 px-4 py-3"
@@ -179,7 +204,7 @@ export function DocumentCreateForm({
             </option>
             {directions.map((direction) => (
               <option key={direction.id} value={direction.id}>
-                {direction.name}
+                {direction.designation}
               </option>
             ))}
           </select>
@@ -196,7 +221,7 @@ export function DocumentCreateForm({
             </option>
             {filteredServices.map((service) => (
               <option key={service.id} value={service.id}>
-                {service.name}
+                {service.designation}
               </option>
             ))}
           </select>
@@ -213,14 +238,14 @@ export function DocumentCreateForm({
             </option>
             {filteredBureaux.map((bureau) => (
               <option key={bureau.id} value={bureau.id}>
-                {bureau.name}
+                {bureau.designation}
               </option>
             ))}
           </select>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <select name="documentType" className="rounded-xl border border-slate-200 px-4 py-3" required defaultValue="">
+          <select name="type" className="rounded-xl border border-slate-200 px-4 py-3" required defaultValue="">
             <option value="" disabled>
               Type de document
             </option>
@@ -280,7 +305,7 @@ export function DocumentCreateForm({
           </div>
           <DocumentUploadStatus
             hasFile={Boolean(selectedFileName)}
-            uploadMessage="Le backend stocke le fichier localement pour la demo, puis enrichit le document avec les metadonnees de numerisation et l'OCR image."
+            uploadMessage="Le backend stocke le fichier dans Firebase Storage, puis enrichit le document avec les metadonnees de numerisation et l'OCR."
           />
         </div>
 

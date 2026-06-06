@@ -3,11 +3,7 @@ import { SectionIntro } from "@/components/organization/section-intro";
 import { getBureaux, getDirections, getServices } from "@/lib/api";
 
 export default async function BureauxPage() {
-  const [directions, services, bureaux] = await Promise.all([
-    getDirections(),
-    getServices(),
-    getBureaux()
-  ]);
+  const [services, bureaux] = await Promise.all([getServices(), getBureaux()]);
 
   return (
     <div className="space-y-6">
@@ -18,7 +14,6 @@ export default async function BureauxPage() {
       />
       <BureauxPanel
         bureaux={bureaux ?? []}
-        directions={directions ?? []}
         services={services ?? []}
       />
     </div>

@@ -8,11 +8,22 @@ export class FileUrlService {
   }
 
   getFirebasePublicUrl(filePath: string) {
-    if (!env.FIREBASE_STORAGE_BUCKET) {
+    const bucketName =
+      env.FIREBASE_STORAGE_BUCKET ??
+      env.FIREBASE_PROJECT_ID ??
+      env.GCLOUD_PROJECT ??
+      env.GOOGLE_CLOUD_PROJECT ??
+      env.PROJECT_ID;
+
+    if (!bucketName) {
       return "";
     }
 
-    return `https://storage.googleapis.com/${env.FIREBASE_STORAGE_BUCKET}/${filePath}`;
+    const normalizedBucketName = bucketName.includes(".")
+      ? bucketName
+      : `${bucketName}.firebasestorage.app`;
+
+    return `https://storage.googleapis.com/${normalizedBucketName}/${filePath}`;
   }
 
   getAbsoluteLocalDirectory(documentId: string) {

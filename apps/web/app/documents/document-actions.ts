@@ -17,10 +17,10 @@ export async function createDocumentAction(formData: FormData) {
     .filter(Boolean);
 
   const payload = createDocumentSchema.parse({
-    reference: getString(formData, "reference"),
+    numeroReference: getString(formData, "numeroReference"),
     title: getString(formData, "title"),
     description: getString(formData, "description") || undefined,
-    documentType: getString(formData, "documentType"),
+    type: getString(formData, "type"),
     directionId: getString(formData, "directionId"),
     serviceId: getString(formData, "serviceId"),
     bureauId: getString(formData, "bureauId"),
@@ -28,9 +28,6 @@ export async function createDocumentAction(formData: FormData) {
     confidentialityLevel: getString(formData, "confidentialityLevel"),
     status: getString(formData, "status"),
     keywords,
-    filePath: undefined,
-    fileUrl: undefined,
-    physicalArchiveId: undefined,
     version: Number(getString(formData, "version") || "1")
   });
 

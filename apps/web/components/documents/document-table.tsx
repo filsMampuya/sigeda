@@ -29,14 +29,14 @@ export function DocumentTable({ rows }: { rows: DocumentEntity[] }) {
             <tr key={row.id}>
               <td className="px-6 py-4 font-medium text-brand-navy">
                 <Link href={`/documents/${row.id}`} className="hover:underline">
-                  {row.reference}
+                  {row.numeroReference}
                 </Link>
               </td>
-              <td className="px-6 py-4">{row.title}</td>
+              <td className="px-6 py-4">{row.title ?? row.fileName ?? "-"}</td>
               <td className="px-6 py-4">{row.fileKind ?? "-"}</td>
               <td className="px-6 py-4">{row.digitizationStatus ?? "-"}</td>
-              <td className="px-6 py-4">{row.confidentialityLevel}</td>
-              <td className="px-6 py-4">{row.status}</td>
+              <td className="px-6 py-4">{row.confidentialityLevel ?? "-"}</td>
+              <td className="px-6 py-4">{row.status ?? "-"}</td>
             </tr>
           ))}
         </tbody>

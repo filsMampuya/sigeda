@@ -22,16 +22,16 @@ export class DashboardService {
       documentsByService: aggregateBy(documents, "serviceId"),
       documentsByBureau: aggregateBy(documents, "bureauId"),
       confidentialDocuments: documents.filter((doc) =>
-        ["CONFIDENTIEL", "SECRET", "TRES_SECRET"].includes(doc.confidentialityLevel)
+        ["CONFIDENTIEL", "SECRET", "TRES_SECRET"].includes(doc.confidentialityLevel ?? "")
       ).length,
       archivedDocuments: documents.filter((doc) => doc.status === "ARCHIVE").length,
       pendingValidation: documents.filter((doc) => doc.status === "EN_VALIDATION").length,
       recentActivity: auditLogs.slice(0, 5),
-      digitizationRate: documents.filter((doc) => Boolean(doc.fileUrl)).length / Math.max(documents.length, 1),
+      digitizationRate: documents.filter((doc) => Boolean(doc.urlFileName)).length / Math.max(documents.length, 1),
       mostViewedDocuments: documents.slice(0, 5).map((document) => ({
         id: document.id,
-        reference: document.reference,
-        title: document.title
+        reference: document.numeroReference,
+        title: document.title ?? document.fileName ?? document.numeroReference
       }))
     };
   }

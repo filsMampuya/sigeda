@@ -9,10 +9,15 @@ import { getStorage } from "firebase-admin/storage";
 
 import { env } from "./env";
 
+const inferredProjectId = env.FIREBASE_PROJECT_ID ?? env.GCLOUD_PROJECT ?? env.GOOGLE_CLOUD_PROJECT ?? env.PROJECT_ID;
+const inferredStorageBucket = env.FIREBASE_STORAGE_BUCKET ?? (inferredProjectId ? `${inferredProjectId}.firebasestorage.app` : undefined);
+
 const hasExplicitCredentials =
   Boolean(env.FIREBASE_PROJECT_ID) &&
   Boolean(env.FIREBASE_CLIENT_EMAIL) &&
   Boolean(env.FIREBASE_PRIVATE_KEY);
+
+const runsInGoogleManagedRuntime = Boolean(process.env.K_SERVICE || process.env.FUNCTION_TARGET || inferredProjectId);
 
 const firebaseApp: App | null = hasExplicitCredentials
   ? getApps()[0] ??
@@ -22,9 +27,15 @@ const firebaseApp: App | null = hasExplicitCredentials
         clientEmail: env.FIREBASE_CLIENT_EMAIL!,
         privateKey: env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n")
       }),
-      storageBucket: env.FIREBASE_STORAGE_BUCKET
+      storageBucket: inferredStorageBucket
     })
-  : null;
+  : runsInGoogleManagedRuntime
+    ? getApps()[0] ??
+      initializeApp({
+        projectId: inferredProjectId,
+        storageBucket: inferredStorageBucket
+      })
+    : null;
 
 export const firebaseAuth = (firebaseApp ? getAuth(firebaseApp) : null) as Auth | null;
 export const firestore = (firebaseApp ? getFirestore(firebaseApp) : null) as Firestore | null;

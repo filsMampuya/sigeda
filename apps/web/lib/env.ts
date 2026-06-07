@@ -1,4 +1,8 @@
-const defaultApiUrl = "http://127.0.0.1:4000";
+// Lien pour basculer en remote ou en local
+
+const defaultApiUrl = "https://us-central1-sigeda-c80ea.cloudfunctions.net/server";
+// const defaultApiUrl = "http://127.0.0.1:4000";
+
 
 export function getServerApiBaseUrl() {
   return process.env.SIGEDA_API_URL ?? process.env.NEXT_PUBLIC_SIGEDA_API_URL ?? defaultApiUrl;

@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { FirebaseError } from "firebase/app";
 import type { DepartementListItem } from "@sigeda/shared/types";
-import { confidentialityLevels, documentStatuses, documentTypes } from "@sigeda/shared/constants";
+import { documentTypes } from "@sigeda/shared/constants";
 
 import { DocumentUploadStatus } from "@/components/documents/document-upload-status";
 import { Card } from "@/components/ui/card";
@@ -18,30 +18,17 @@ type DocumentCreateFormProps = {
 
 export function DocumentCreateForm({
   directions,
-  services,
-  bureaux
+  services: _services,
+  bureaux: _bureaux
 }: DocumentCreateFormProps) {
   const apiBaseUrl = getPublicApiBaseUrl();
-  const [directionId, setDirectionId] = useState(directions[0]?.id ?? "");
-  const filteredServices = useMemo(
-    () =>
-      services.filter(
-        (service) => !directionId || service.parentId === directionId || service.parents.includes(directionId)
-      ),
-    [directionId, services]
-  );
-  const [serviceId, setServiceId] = useState(filteredServices[0]?.id ?? "");
+  const [directionId, setDirectionId] = useState("");
   const [selectedFileName, setSelectedFileName] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const filteredBureaux = useMemo(
-    () =>
-      bureaux.filter(
-        (bureau) =>
-          (!directionId || bureau.parents.includes(directionId)) &&
-          (!serviceId || bureau.parentId === serviceId || bureau.parents.includes(serviceId))
-      ),
-    [bureaux, directionId, serviceId]
+  const selectableDirections = useMemo(
+    () => directions.filter((direction) => direction.type === "Direction" || direction.type === "Direction Generale"),
+    [directions]
   );
 
   async function handleSubmit(formData: FormData) {
@@ -53,69 +40,43 @@ export function DocumentCreateForm({
     }
 
     const idToken = await currentUser.getIdToken();
-    const keywords = String(formData.get("keywords") ?? "")
-      .split(",")
-      .map((keyword) => keyword.trim())
-      .filter(Boolean);
 
-    const payload = {
-      numeroReference: String(formData.get("numeroReference") ?? ""),
-      title: String(formData.get("title") ?? ""),
-      description: String(formData.get("description") ?? "") || undefined,
-      type: String(formData.get("type") ?? ""),
-      directionId: String(formData.get("directionId") ?? ""),
-      serviceId: String(formData.get("serviceId") ?? ""),
-      bureauId: String(formData.get("bureauId") ?? ""),
-      authorId: "usr-admin",
-      confidentialityLevel: String(formData.get("confidentialityLevel") ?? ""),
-      status: String(formData.get("status") ?? ""),
-      keywords,
-      version: Number(String(formData.get("version") ?? "1"))
-    };
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      throw new Error("Le fichier est obligatoire.");
+    }
+
+    const payload = new FormData();
+    payload.append("file", file);
+    payload.append("numeroReference", String(formData.get("numeroReference") ?? ""));
+    payload.append("type", String(formData.get("type") ?? ""));
+    payload.append("directionId", String(formData.get("directionId") ?? ""));
 
     const createResponse = await fetch(`${apiBaseUrl}/api/documents`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${idToken}`
       },
-      body: JSON.stringify(payload)
+      body: payload
     });
 
     if (!createResponse.ok) {
-      throw new Error("La creation du document a echoue.");
+      let message = "La creation du document a echoue.";
+
+      try {
+        const errorBody = await createResponse.json();
+        if (typeof errorBody.message === "string") {
+          message = errorBody.message;
+        }
+      } catch {
+        // noop
+      }
+
+      throw new Error(message);
     }
 
     const document = await createResponse.json();
-    const file = formData.get("file");
-
-    if (file instanceof File && file.size > 0) {
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-
-      const uploadResponse = await fetch(`${apiBaseUrl}/api/documents/${document.id}/upload`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`
-        },
-        body: uploadData
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error("Le televersement ou la numerisation du fichier a echoue.");
-      }
-
-      const uploadedDocument = await uploadResponse.json();
-      setFeedback(
-        uploadedDocument.fileKind === "IMAGE"
-          ? `Document cree. OCR ${uploadedDocument.ocrStatus === "COMPLETED" ? "termine" : uploadedDocument.ocrStatus?.toLowerCase()}.`
-          : "Document cree et PDF televerse avec succes."
-      );
-      window.location.href = "/documents";
-      return;
-    }
-
-    setFeedback("Document cree sans fichier source.");
+    setFeedback(`Document cree avec la reference ${document.numeroReference}.`);
     window.location.href = "/documents";
   }
 
@@ -138,13 +99,12 @@ export function DocumentCreateForm({
           <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Creation documentaire</p>
           <h1 className="mt-2 text-2xl font-semibold text-brand-navy">Nouveau document</h1>
           <p className="mt-3 max-w-3xl text-sm text-slate-600">
-            Enregistrement des metadonnees documentaires avec rattachement obligatoire a une direction,
-            un service et un bureau.
+            Importez un fichier, saisissez la reference, puis selectionnez le type et la direction.
+            Les metadonnees utilisateur et le stockage sont automatises.
           </p>
         </div>
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Cette version prend en charge les PDF et les images numerisees. Les fichiers images declenchent
-          une lecture OCR automatique cote API.
+          La reference est actuellement renseignee manuellement pour garder le controle metier.
         </div>
         {feedback ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
@@ -154,97 +114,29 @@ export function DocumentCreateForm({
       </Card>
 
       <Card className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2">
           <input
             name="numeroReference"
             className="rounded-xl border border-slate-200 px-4 py-3"
-            placeholder="Reference documentaire"
+            placeholder="Numero de reference"
             required
           />
-          <input
-            name="title"
-            className="rounded-xl border border-slate-200 px-4 py-3 xl:col-span-2"
-            placeholder="Titre du document"
-            required
-          />
-          <input
-            name="version"
-            type="number"
-            min="1"
-            defaultValue="1"
-            className="rounded-xl border border-slate-200 px-4 py-3"
-            placeholder="Version"
-            required
-          />
-        </div>
-
-        <textarea
-          name="description"
-          className="min-h-32 w-full rounded-xl border border-slate-200 px-4 py-3"
-          placeholder="Description ou resume du contenu"
-        />
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <select
             name="directionId"
             value={directionId}
-            onChange={(event) => {
-              const nextDirectionId = event.target.value;
-              setDirectionId(nextDirectionId);
-              const nextServices = services.filter(
-                (service) => service.parentId === nextDirectionId || service.parents.includes(nextDirectionId)
-              );
-              setServiceId(nextServices[0]?.id ?? "");
-            }}
+            onChange={(event) => setDirectionId(event.target.value)}
             className="rounded-xl border border-slate-200 px-4 py-3"
             required
           >
             <option value="" disabled>
               Selectionner une direction
             </option>
-            {directions.map((direction) => (
+            {selectableDirections.map((direction) => (
               <option key={direction.id} value={direction.id}>
                 {direction.designation}
               </option>
             ))}
           </select>
-
-          <select
-            name="serviceId"
-            value={serviceId}
-            onChange={(event) => setServiceId(event.target.value)}
-            className="rounded-xl border border-slate-200 px-4 py-3"
-            required
-          >
-            <option value="" disabled>
-              Selectionner un service
-            </option>
-            {filteredServices.map((service) => (
-              <option key={service.id} value={service.id}>
-                {service.designation}
-              </option>
-            ))}
-          </select>
-
-          <select
-            name="bureauId"
-            className="rounded-xl border border-slate-200 px-4 py-3"
-            required
-            defaultValue={filteredBureaux[0]?.id ?? ""}
-            key={`${directionId}-${serviceId}`}
-          >
-            <option value="" disabled>
-              Selectionner un bureau
-            </option>
-            {filteredBureaux.map((bureau) => (
-              <option key={bureau.id} value={bureau.id}>
-                {bureau.designation}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <select name="type" className="rounded-xl border border-slate-200 px-4 py-3" required defaultValue="">
             <option value="" disabled>
               Type de document
@@ -255,36 +147,6 @@ export function DocumentCreateForm({
               </option>
             ))}
           </select>
-
-          <select
-            name="confidentialityLevel"
-            className="rounded-xl border border-slate-200 px-4 py-3"
-            required
-            defaultValue=""
-          >
-            <option value="" disabled>
-              Niveau de confidentialite
-            </option>
-            {confidentialityLevels.map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-
-          <select name="status" className="rounded-xl border border-slate-200 px-4 py-3" required defaultValue="BROUILLON">
-            {documentStatuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-
-          <input
-            name="keywords"
-            className="rounded-xl border border-slate-200 px-4 py-3"
-            placeholder="Mots-cles separes par des virgules"
-          />
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">

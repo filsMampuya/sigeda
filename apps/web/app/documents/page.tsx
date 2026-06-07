@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { DocumentSearchFilters } from "@/components/documents/document-search-filters";
 import { DocumentTable } from "@/components/documents/document-table";
 import { getDocuments } from "@/lib/api";
@@ -24,6 +26,14 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Link
+          href="/documents/new"
+          className="rounded-xl bg-brand-navy px-5 py-3 text-sm font-medium text-white"
+        >
+          + Nouveau document
+        </Link>
+      </div>
       <DocumentSearchFilters q={searchParams?.q} status={searchParams?.status} />
       <DocumentTable rows={documents ?? []} />
     </div>

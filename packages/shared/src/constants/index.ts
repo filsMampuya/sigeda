@@ -9,7 +9,7 @@ export const roles = [
   "AUDITEUR"
 ] as const;
 
-export const departementTypes = ["DirectionGenerale", "Direction", "Service", "Bureau"] as const;
+export const departementTypes = ["Direction Generale", "Direction", "Service", "Bureau"] as const;
 
 export type Role = (typeof roles)[number];
 export function isRole(value: string): value is Role {

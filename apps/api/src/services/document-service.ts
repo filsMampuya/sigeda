@@ -1,6 +1,7 @@
-import type { AuthenticatedUser, Departement, DocumentEntity, User } from "@sigeda/shared/types";
+import type { AuditLog, AuthenticatedUser, Departement, DocumentEntity, User } from "@sigeda/shared/types";
 import { randomUUID } from "node:crypto";
 
+import { HttpError } from "../errors/http-error";
 import { AuthorizationService } from "./authorization-service";
 import { DocumentStorageService } from "./document-storage-service";
 import { OcrService } from "./ocr-service";
@@ -19,6 +20,10 @@ type UserRepositoryLike = {
   getById: (id: string) => Promise<User | null>;
 };
 
+type AuditLogServiceLike = {
+  create: (entity: Omit<AuditLog, "id">) => Promise<AuditLog>;
+};
+
 export class DocumentService {
   constructor(
     private readonly repository: DocumentRepositoryLike,
@@ -26,7 +31,8 @@ export class DocumentService {
     private readonly userRepository: UserRepositoryLike,
     private readonly authorizationService: AuthorizationService,
     private readonly storageService: DocumentStorageService,
-    private readonly ocrService: OcrService
+    private readonly ocrService: OcrService,
+    private readonly auditLogService: AuditLogServiceLike
   ) {}
 
   list() {
@@ -40,6 +46,112 @@ export class DocumentService {
   async create(input: Record<string, unknown>, user?: AuthenticatedUser) {
     const entity = await this.normalizeDocumentInput(input, user);
     return this.repository.upsert(entity);
+  }
+
+  async createFromUpload(input: Record<string, unknown>, file: Express.Multer.File, authenticatedUser?: AuthenticatedUser) {
+    if (!authenticatedUser?.id) {
+      throw new HttpError(401, "Authentification requise.");
+    }
+
+    const profile = await this.userRepository.getById(authenticatedUser.id);
+
+    if (!profile) {
+      throw new HttpError(400, "Utilisateur introuvable dans la collection users.");
+    }
+
+    if (!profile.personne.nom || !profile.personne.prenom || !profile.matricule) {
+      throw new HttpError(400, "Profil utilisateur incomplet (nom, prenom ou matricule manquant).");
+    }
+
+    const type = getString(input.type);
+    const directionId = getString(input.directionId);
+    const numeroReference = getString(input.numeroReference).trim();
+
+    if (!numeroReference) {
+      throw new HttpError(400, "Le numero de reference est obligatoire.");
+    }
+
+    if (!type) {
+      throw new HttpError(400, "Le type du document est obligatoire.");
+    }
+
+    if (!directionId) {
+      throw new HttpError(400, "La direction est obligatoire.");
+    }
+
+    const direction = await this.departementRepository.getById(directionId);
+
+    if (!direction) {
+      throw new HttpError(400, "La direction selectionnee est introuvable.");
+    }
+
+    if (direction.type !== "Direction" && direction.type !== "Direction Generale") {
+      throw new HttpError(400, "La direction doit etre de type Direction ou Direction Generale.");
+    }
+
+    const documentId = randomUUID();
+    const storedFile = await this.storageService.save(documentId, file, profile.matricule);
+
+    const extraction = await this.ocrService.extract(file, storedFile.fileKind);
+
+    const timestamp = Date.now();
+    const entity: DocumentEntity = {
+      id: documentId,
+      numeroReference,
+      dateCreation: timestamp,
+      user: {
+        id: profile.id,
+        nom: profile.personne.nom,
+        prenom: profile.personne.prenom,
+        matricule: profile.matricule,
+        email: profile.email
+      },
+      type,
+      direction: {
+        id: direction.id,
+        code: direction.code,
+        designation: direction.designation
+      },
+      dateDerniereModication: timestamp,
+      fileName: file.originalname,
+      urlFileName: storedFile.fileUrl,
+      title: file.originalname,
+      directionId: direction.id,
+      authorId: profile.id,
+      status: "BROUILLON",
+      keywords: [],
+      version: 1,
+      originalFileName: storedFile.originalFileName,
+      mimeType: storedFile.mimeType,
+      fileSizeBytes: storedFile.fileSizeBytes,
+      storageProvider: storedFile.storageProvider,
+      fileKind: storedFile.fileKind,
+      digitizationStatus:
+        storedFile.fileKind === "IMAGE" || storedFile.fileKind === "PDF"
+          ? extraction.ocrStatus === "COMPLETED"
+            ? "DIGITIZED"
+            : "FAILED"
+          : "UPLOADED",
+      ocrStatus: extraction.ocrStatus,
+      ocrText: extraction.ocrText,
+      ocrExtractedAt: extraction.ocrExtractedAt,
+      createdAt: new Date(timestamp).toISOString(),
+      updatedAt: new Date(timestamp).toISOString()
+    };
+
+    const saved = await this.repository.upsert(entity);
+
+    await this.auditLogService.create({
+      userId: profile.id,
+      userName: `${profile.personne.nom} ${profile.personne.prenom}`.trim(),
+      action: "CREATE_DOCUMENT",
+      entityType: "Document",
+      entityId: saved.id,
+      description: `Creation du document ${saved.numeroReference}`,
+      createdAt: new Date().toISOString()
+    });
+
+    return saved;
   }
 
   async update(id: string, patch: Partial<DocumentEntity>) {

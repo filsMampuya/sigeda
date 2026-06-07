@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 
+import { HttpError } from "../errors/http-error";
+
 export function errorHandler(
   error: unknown,
   _request: Request,
@@ -11,6 +13,12 @@ export function errorHandler(
     return response.status(400).json({
       message: "Validation error",
       issues: error.issues
+    });
+  }
+
+  if (error instanceof HttpError) {
+    return response.status(error.statusCode).json({
+      message: error.message
     });
   }
 

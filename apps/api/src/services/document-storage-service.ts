@@ -36,11 +36,12 @@ function sanitizeFileName(fileName: string) {
 export class DocumentStorageService {
   constructor(private readonly fileUrlService: FileUrlService) {}
 
-  async save(documentId: string, file: Express.Multer.File): Promise<StoredFileResult> {
+  async save(documentId: string, file: Express.Multer.File, ownerMatricule?: string): Promise<StoredFileResult> {
     const fileKind = resolveFileKind(file.mimetype);
     const extension = path.extname(file.originalname) || (fileKind === "PDF" ? ".pdf" : "");
-    const safeName = `${documentId}-${randomUUID()}${extension}`;
-    const relativePath = path.join("uploads", "documents", documentId, sanitizeFileName(safeName));
+    const safeName = `${documentId}-${randomUUID()}-${sanitizeFileName(file.originalname) || `source${extension}`}`;
+    const matriculeFolder = sanitizeFileName(ownerMatricule || "INCONNU");
+    const relativePath = path.join("documents", matriculeFolder, sanitizeFileName(safeName));
 
     if (storage) {
       const bucket = env.FIREBASE_STORAGE_BUCKET ? storage.bucket(env.FIREBASE_STORAGE_BUCKET) : storage.bucket();

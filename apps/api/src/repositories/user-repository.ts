@@ -3,6 +3,7 @@ import type { User } from "@sigeda/shared/types";
 
 export class UserRepository {
   private seedPromise: Promise<void> | null = null;
+  private readonly collectionName = "users";
 
   constructor(
     private readonly db: Firestore | null,
@@ -11,30 +12,47 @@ export class UserRepository {
 
   async list() {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection User.");
+      throw new Error(`Firestore is not configured for collection ${this.collectionName}.`);
     }
 
     await this.ensureSeeded();
-    const snapshot = await this.db.collection("User").get();
-    return snapshot.docs.map((doc) => normalizeUser(doc.data()));
+    const snapshot = await this.db.collection(this.collectionName).get();
+    return snapshot.docs.map((doc) => normalizeUser(doc.id, doc.data()));
   }
 
   async getById(id: string) {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection User.");
+      throw new Error(`Firestore is not configured for collection ${this.collectionName}.`);
     }
 
     await this.ensureSeeded();
-    const snapshot = await this.db.collection("User").doc(id).get();
-    return snapshot.exists ? normalizeUser(snapshot.data()) : null;
+    const byDocumentId = await this.db.collection(this.collectionName).doc(id).get();
+
+    if (byDocumentId.exists) {
+      return normalizeUser(byDocumentId.id, byDocumentId.data());
+    }
+
+    const byFirebaseId = await this.db.collection(this.collectionName).where("id", "==", id).limit(1).get();
+    return byFirebaseId.empty ? null : normalizeUser(byFirebaseId.docs[0].id, byFirebaseId.docs[0].data());
+  }
+
+  async getByMatricule(matricule: string) {
+    if (!this.db) {
+      throw new Error(`Firestore is not configured for collection ${this.collectionName}.`);
+    }
+
+    await this.ensureSeeded();
+    const snapshot = await this.db.collection(this.collectionName).where("matricule", "==", matricule).limit(1).get();
+    return snapshot.empty ? null : normalizeUser(snapshot.docs[0].id, snapshot.docs[0].data());
   }
 
   async upsert(entity: User) {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection User.");
+      throw new Error(`Firestore is not configured for collection ${this.collectionName}.`);
     }
 
-    await this.db.collection("User").doc(entity.id).set(entity, { merge: true });
+    await this.ensureSeeded();
+    await this.db.collection(this.collectionName).doc(entity.id).set(removeUndefined(entity), { merge: true });
     return entity;
   }
 
@@ -45,17 +63,15 @@ export class UserRepository {
 
     if (!this.seedPromise) {
       this.seedPromise = (async () => {
-        const collectionRef = this.db!.collection("User");
-        const existing = await collectionRef.limit(1).get();
-
-        if (!existing.empty) {
-          return;
-        }
-
+        const collectionRef = this.db!.collection(this.collectionName);
         const batch = this.db!.batch();
 
         for (const entity of this.seedData) {
-          batch.set(collectionRef.doc(entity.id), entity, { merge: true });
+          const existing = await collectionRef.where("matricule", "==", entity.matricule).limit(1).get();
+
+          if (existing.empty) {
+            batch.set(collectionRef.doc(entity.id), removeUndefined(entity), { merge: true });
+          }
         }
 
         await batch.commit();
@@ -66,17 +82,21 @@ export class UserRepository {
   }
 }
 
-function normalizeUser(record: Record<string, unknown> | undefined): User {
+function normalizeUser(id: string, record: Record<string, unknown> | undefined): User {
   if (!record) {
-    throw new Error("Invalid User record.");
+    throw new Error("Invalid user record.");
   }
 
+  const timestamp = Date.now();
+  const entityId = typeof record.id === "string" ? record.id : id;
+
   return {
-    id: String(record.id),
-    email: String(record.email ?? ""),
+    id: entityId,
+    email: typeof record.email === "string" ? record.email : undefined,
     role: record.role as User["role"],
-    isActive: Boolean(record.isActive ?? true),
-    updatedAt: String(record.updatedAt ?? record.dateCreation ?? new Date().toISOString()),
+    isActive: typeof record.isActive === "boolean" ? record.isActive : undefined,
+    updatedAt:
+      typeof record.updatedAt === "string" || typeof record.updatedAt === "number" ? record.updatedAt : undefined,
     personne:
       typeof record.personne === "object" && record.personne
         ? {
@@ -84,20 +104,49 @@ function normalizeUser(record: Record<string, unknown> | undefined): User {
             prenom: String((record.personne as Record<string, unknown>).prenom ?? "")
           }
         : { nom: "", prenom: "" },
-    matricule: String(record.matricule ?? record.id ?? "INCONNU"),
+    profile:
+      typeof record.profile === "object" && record.profile
+        ? {
+            code: String((record.profile as Record<string, unknown>).code ?? "AGENT"),
+            designation: String((record.profile as Record<string, unknown>).designation ?? "Agent")
+          }
+        : {
+            code: typeof record.role === "string" ? String(record.role) : "AGENT",
+            designation: typeof record.role === "string" ? humanizeRole(String(record.role)) : "Agent"
+          },
+    matricule: String(record.matricule ?? id),
     bureau:
       typeof record.bureau === "object" && record.bureau
         ? {
-            id: String((record.bureau as Record<string, unknown>).id ?? ""),
-            type: "Bureau",
             code: String((record.bureau as Record<string, unknown>).code ?? ""),
             designation: String((record.bureau as Record<string, unknown>).designation ?? "")
           }
         : null,
-    dateCreation: String(record.dateCreation ?? record.createdAt ?? new Date().toISOString()),
+    dateCreation: typeof record.dateCreation === "number" ? record.dateCreation : timestamp,
+    dateDerniereModification:
+      typeof record.dateDerniereModification === "number"
+        ? record.dateDerniereModification
+        : typeof record.updatedAt === "number"
+          ? record.updatedAt
+          : timestamp,
     directionId: typeof record.directionId === "string" ? record.directionId : null,
     serviceId: typeof record.serviceId === "string" ? record.serviceId : null,
     bureauId: typeof record.bureauId === "string" ? record.bureauId : null,
     displayName: typeof record.displayName === "string" ? record.displayName : undefined
   };
+}
+
+function humanizeRole(role: string) {
+  return role
+    .toLowerCase()
+    .split("_")
+    .filter(Boolean)
+    .map((segment) => `${segment[0]?.toUpperCase() ?? ""}${segment.slice(1)}`)
+    .join(" ");
+}
+
+function removeUndefined<T extends object>(record: T) {
+  return Object.fromEntries(
+    Object.entries(record).filter(([, value]) => value !== undefined)
+  ) as T;
 }

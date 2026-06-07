@@ -1,8 +1,17 @@
 import {
+  createDepartementSchema,
   createBureauSchema,
   createDirectionSchema,
   createDocumentSchema,
-  createServiceSchema
+  createServiceSchema,
+  createUserSchema
 } from "@sigeda/shared/schemas";
 
-export { createBureauSchema, createDirectionSchema, createDocumentSchema, createServiceSchema };
+export {
+  createBureauSchema,
+  createDepartementSchema,
+  createDirectionSchema,
+  createDocumentSchema,
+  createServiceSchema,
+  createUserSchema
+};

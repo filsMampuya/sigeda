@@ -1,116 +1,66 @@
 import type { AuditLog, Departement, DocumentEntity, User } from "@sigeda/shared/types";
 
 const now = "2026-06-05T09:00:00.000Z";
+const nowTimestamp = Date.parse(now);
 
 const directionGenerale = {
-  id: "dir-gen-01",
-  type: "DirectionGenerale",
+  id: "DG",
+  type: "Direction Generale",
   code: "DG",
   designation: "Direction Generale",
+  parent: null,
   parents: [],
-  dateCreation: now,
-  description: "Pilotage strategique",
-  updatedAt: now
+  dateCreation: nowTimestamp,
+  dateDerniereModification: nowTimestamp
 } satisfies Departement;
 
-const directionProduction = {
-  id: "dir-prod",
+const directionFinances = {
+  id: "DIR_FIN",
   type: "Direction",
-  code: "DPR",
-  designation: "Direction de la Production",
-  parents: [directionGenerale.id],
-  dateCreation: now,
-  description: "Production et fabrication",
-  updatedAt: now
+  code: "DIR_FIN",
+  designation: "Direction des Finances",
+  parent: {
+    code: directionGenerale.code,
+    designation: directionGenerale.designation
+  },
+  parents: [directionGenerale.code],
+  dateCreation: nowTimestamp,
+  dateDerniereModification: nowTimestamp
 } satisfies Departement;
 
-const directionSecurite = {
-  id: "dir-sec",
-  type: "Direction",
-  code: "DSI",
-  designation: "Direction de la Securite",
-  parents: [directionGenerale.id],
-  dateCreation: now,
-  description: "Surete et controle",
-  updatedAt: now
-} satisfies Departement;
-
-const servicePlanification = {
-  id: "srv-prod-plan",
+const serviceCompta = {
+  id: "SRV_COMPTA",
   type: "Service",
-  code: "PLAN",
-  designation: "Service Planification",
-  parents: [directionProduction.id],
-  dateCreation: now,
-  description: "Planification documentaire",
-  updatedAt: now
+  code: "SRV_COMPTA",
+  designation: "Service Comptabilite",
+  parent: {
+    code: directionFinances.code,
+    designation: directionFinances.designation
+  },
+  parents: [directionGenerale.code, directionFinances.code],
+  dateCreation: nowTimestamp,
+  dateDerniereModification: nowTimestamp
 } satisfies Departement;
 
-const serviceQualite = {
-  id: "srv-prod-qual",
-  type: "Service",
-  code: "QUAL",
-  designation: "Service Qualite",
-  parents: [directionProduction.id],
-  dateCreation: now,
-  description: "Controle qualite",
-  updatedAt: now
-} satisfies Departement;
-
-const serviceArchivesSensibles = {
-  id: "srv-sec-arch",
-  type: "Service",
-  code: "ARCH",
-  designation: "Service Archives Sensibles",
-  parents: [directionSecurite.id],
-  dateCreation: now,
-  description: "Protection documentaire",
-  updatedAt: now
-} satisfies Departement;
-
-const bureauPlanification = {
-  id: "bur-plan-01",
+const bureauCadre = {
+  id: "B_CADRE",
   type: "Bureau",
-  code: "BPLAN",
-  designation: "Bureau Planification",
-  parents: [servicePlanification.id],
-  dateCreation: now,
-  description: "Suivi des references",
-  updatedAt: now
-} satisfies Departement;
-
-const bureauQualite = {
-  id: "bur-qual-01",
-  type: "Bureau",
-  code: "BQUAL",
-  designation: "Bureau Qualite",
-  parents: [serviceQualite.id],
-  dateCreation: now,
-  description: "Validation et controle",
-  updatedAt: now
-} satisfies Departement;
-
-const bureauArchivesSensibles = {
-  id: "bur-arch-01",
-  type: "Bureau",
-  code: "BARCH",
-  designation: "Bureau Archives Sensibles",
-  parents: [serviceArchivesSensibles.id],
-  dateCreation: now,
-  description: "Archives securisees",
-  updatedAt: now
+  code: "B_CADRE",
+  designation: "Bureau du Cadre",
+  parent: {
+    code: serviceCompta.code,
+    designation: serviceCompta.designation
+  },
+  parents: [directionGenerale.code, directionFinances.code, serviceCompta.code],
+  dateCreation: nowTimestamp,
+  dateDerniereModification: nowTimestamp
 } satisfies Departement;
 
 export const seedDepartements: Departement[] = [
   directionGenerale,
-  directionProduction,
-  directionSecurite,
-  servicePlanification,
-  serviceQualite,
-  serviceArchivesSensibles,
-  bureauPlanification,
-  bureauQualite,
-  bureauArchivesSensibles
+  directionFinances,
+  serviceCompta,
+  bureauCadre
 ];
 
 export const seedUsers: User[] = [
@@ -121,9 +71,17 @@ export const seedUsers: User[] = [
     isActive: true,
     updatedAt: now,
     personne: { nom: "Admin", prenom: "SIGEDA" },
+    profile: {
+      code: "ADMIN",
+      designation: "Administrateur"
+    },
     matricule: "ADM-001",
-    bureau: null,
-    dateCreation: now,
+    bureau: {
+      code: bureauCadre.code,
+      designation: bureauCadre.designation
+    },
+    dateCreation: nowTimestamp,
+    dateDerniereModification: nowTimestamp,
     directionId: null,
     serviceId: null,
     bureauId: null,
@@ -136,17 +94,20 @@ export const seedUsers: User[] = [
     isActive: true,
     updatedAt: now,
     personne: { nom: "Archiviste", prenom: "Principal" },
+    profile: {
+      code: "ARCHIVISTE",
+      designation: "Archiviste"
+    },
     matricule: "ARCH-001",
     bureau: {
-      id: bureauArchivesSensibles.id,
-      type: "Bureau",
-      code: bureauArchivesSensibles.code,
-      designation: bureauArchivesSensibles.designation
+      code: bureauCadre.code,
+      designation: bureauCadre.designation
     },
-    dateCreation: now,
-    directionId: directionSecurite.id,
-    serviceId: serviceArchivesSensibles.id,
-    bureauId: bureauArchivesSensibles.id,
+    dateCreation: nowTimestamp,
+    dateDerniereModification: nowTimestamp,
+    directionId: directionFinances.id,
+    serviceId: serviceCompta.id,
+    bureauId: bureauCadre.id,
     displayName: "Archiviste Principal"
   },
   {
@@ -156,18 +117,44 @@ export const seedUsers: User[] = [
     isActive: true,
     updatedAt: now,
     personne: { nom: "Chef", prenom: "Qualite" },
+    profile: {
+      code: "CHEF_SERVICE",
+      designation: "Chef service"
+    },
     matricule: "QUAL-001",
     bureau: {
-      id: bureauQualite.id,
-      type: "Bureau",
-      code: bureauQualite.code,
-      designation: bureauQualite.designation
+      code: bureauCadre.code,
+      designation: bureauCadre.designation
     },
-    dateCreation: now,
-    directionId: directionProduction.id,
-    serviceId: serviceQualite.id,
-    bureauId: bureauQualite.id,
+    dateCreation: nowTimestamp,
+    dateDerniereModification: nowTimestamp,
+    directionId: directionFinances.id,
+    serviceId: serviceCompta.id,
+    bureauId: bureauCadre.id,
     displayName: "Chef Service Qualite"
+  },
+  {
+    id: "IK2zPG5BuhRuRuzq47XD4CIEyzJ3",
+    email: "agent.demo.20260606@sigeda.local",
+    role: "AGENT",
+    isActive: true,
+    updatedAt: now,
+    personne: { nom: "Demo", prenom: "Agent" },
+    profile: {
+      code: "AGENT",
+      designation: "Agent"
+    },
+    matricule: "AGT-2026-001",
+    bureau: {
+      code: bureauCadre.code,
+      designation: bureauCadre.designation
+    },
+    dateCreation: nowTimestamp,
+    dateDerniereModification: nowTimestamp,
+    directionId: directionFinances.id,
+    serviceId: serviceCompta.id,
+    bureauId: bureauCadre.id,
+    displayName: "Agent Demo"
   }
 ];
 
@@ -185,18 +172,18 @@ export const seedDocuments: DocumentEntity[] = [
     },
     type: "RAPPORT",
     direction: {
-      id: directionProduction.id,
-      code: directionProduction.code,
-      designation: directionProduction.designation
+      id: directionFinances.id,
+      code: directionFinances.code,
+      designation: directionFinances.designation
     },
     dateDerniereModication: now,
     fileName: "rapport-production.pdf",
     urlFileName: "https://example.com/documents/doc-001.pdf",
     title: "Rapport de production trimestriel",
     description: "Synthese de production et anomalies observees.",
-    directionId: directionProduction.id,
-    serviceId: servicePlanification.id,
-    bureauId: bureauPlanification.id,
+    directionId: directionFinances.id,
+    serviceId: serviceCompta.id,
+    bureauId: bureauCadre.id,
     authorId: "usr-admin",
     confidentialityLevel: "INTERNE",
     status: "VALIDE",
@@ -227,18 +214,18 @@ export const seedDocuments: DocumentEntity[] = [
     },
     type: "NOTE",
     direction: {
-      id: directionSecurite.id,
-      code: directionSecurite.code,
-      designation: directionSecurite.designation
+      id: directionFinances.id,
+      code: directionFinances.code,
+      designation: directionFinances.designation
     },
     dateDerniereModication: now,
     fileName: "note-securite-scan.jpg",
     urlFileName: "https://example.com/documents/doc-002.pdf",
     title: "Note de securite atelier",
     description: "Instructions operationnelles pour zone sensible.",
-    directionId: directionSecurite.id,
-    serviceId: serviceArchivesSensibles.id,
-    bureauId: bureauArchivesSensibles.id,
+    directionId: directionFinances.id,
+    serviceId: serviceCompta.id,
+    bureauId: bureauCadre.id,
     authorId: "usr-archiviste",
     confidentialityLevel: "SECRET",
     status: "EN_VALIDATION",
@@ -269,18 +256,18 @@ export const seedDocuments: DocumentEntity[] = [
     },
     type: "PV_REUNION",
     direction: {
-      id: directionProduction.id,
-      code: directionProduction.code,
-      designation: directionProduction.designation
+      id: directionFinances.id,
+      code: directionFinances.code,
+      designation: directionFinances.designation
     },
     dateDerniereModication: now,
     fileName: "pv-qualite.pdf",
     urlFileName: "https://example.com/documents/doc-003.pdf",
     title: "Proces-verbal de reunion qualite",
     description: "Compte rendu des actions correctives.",
-    directionId: directionProduction.id,
-    serviceId: serviceQualite.id,
-    bureauId: bureauQualite.id,
+    directionId: directionFinances.id,
+    serviceId: serviceCompta.id,
+    bureauId: bureauCadre.id,
     authorId: "usr-chef-service",
     confidentialityLevel: "CONFIDENTIEL",
     status: "ARCHIVE",

@@ -1,15 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import type { DepartementListItem } from "@sigeda/shared/types";
+import { useFormState } from "react-dom";
+import type { Departement } from "@sigeda/shared/types";
 
 import { createDirectionAction } from "@/app/organization-actions";
+import type { OrganizationActionState } from "@/app/organization-actions";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { Card } from "@/components/ui/card";
 
-export function DirectionsPanel({ directions }: { directions: DepartementListItem[] }) {
-  const [type, setType] = useState<"DirectionGenerale" | "Direction">("DirectionGenerale");
-  const directionGenerales = directions.filter((direction) => direction.type === "DirectionGenerale");
+const initialOrganizationActionState: OrganizationActionState = {
+  message: null,
+  status: "idle"
+};
+
+export function DirectionsPanel({ directions }: { directions: Departement[] }) {
+  const [type, setType] = useState<"Direction Generale" | "Direction">("Direction Generale");
+  const [state, formAction] = useFormState(createDirectionAction, initialOrganizationActionState);
+  const directionGenerales = directions.filter((direction) => direction.type === "Direction Generale");
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
@@ -29,7 +37,7 @@ export function DirectionsPanel({ directions }: { directions: DepartementListIte
                 <td className="px-6 py-4">{direction.designation}</td>
                 <td className="px-6 py-4 font-medium text-brand-navy">{direction.code}</td>
                 <td className="px-6 py-4">{direction.type}</td>
-                <td className="px-6 py-4 text-slate-600">{direction.parentDesignation ?? "-"}</td>
+                <td className="px-6 py-4 text-slate-600">{direction.parent?.designation ?? "-"}</td>
               </tr>
             ))}
           </tbody>
@@ -37,20 +45,20 @@ export function DirectionsPanel({ directions }: { directions: DepartementListIte
       </Card>
       <Card>
         <h2 className="text-lg font-semibold text-brand-navy">Nouvelle direction</h2>
-        <form action={createDirectionAction} className="mt-5 space-y-4">
+        <form action={formAction} className="mt-5 space-y-4">
           <select
             name="type"
             value={type}
-            onChange={(event) => setType(event.target.value as "DirectionGenerale" | "Direction")}
+            onChange={(event) => setType(event.target.value as "Direction Generale" | "Direction")}
             className="w-full rounded-xl border border-slate-200 px-4 py-3"
             required
           >
-            <option value="DirectionGenerale">Direction Generale</option>
+            <option value="Direction Generale">Direction Generale</option>
             <option value="Direction">Direction</option>
           </select>
           {type === "Direction" ? (
             <select
-              name="parentId"
+              name="parent"
               className="w-full rounded-xl border border-slate-200 px-4 py-3"
               required
               defaultValue=""
@@ -59,7 +67,13 @@ export function DirectionsPanel({ directions }: { directions: DepartementListIte
                 Selectionner une direction generale
               </option>
               {directionGenerales.map((direction) => (
-                <option key={direction.id} value={direction.id}>
+                <option
+                  key={direction.code}
+                  value={JSON.stringify({
+                    code: direction.code,
+                    designation: direction.designation
+                  })}
+                >
                   {direction.designation}
                 </option>
               ))}
@@ -77,6 +91,11 @@ export function DirectionsPanel({ directions }: { directions: DepartementListIte
             placeholder="Code"
             required
           />
+          {state.message ? (
+            <p className={`text-sm ${state.status === "error" ? "text-red-700" : "text-emerald-700"}`}>
+              {state.message}
+            </p>
+          ) : null}
           <SubmitButton label="Ajouter la direction" />
         </form>
       </Card>

@@ -1,38 +1,9 @@
 import type { Firestore } from "firebase-admin/firestore";
-import type { Departement, DepartementType } from "@sigeda/shared/types";
-
-type LegacyDirectionRecord = {
-  id: string;
-  code: string;
-  name: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-type LegacyServiceRecord = {
-  id: string;
-  directionId: string;
-  code: string;
-  name: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-};
-
-type LegacyBureauRecord = {
-  id: string;
-  directionId: string;
-  serviceId: string;
-  code: string;
-  name: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-};
+import type { Departement } from "@sigeda/shared/types";
 
 export class DepartementRepository {
   private seedPromise: Promise<void> | null = null;
+  private readonly collectionName = "departements";
 
   constructor(
     private readonly db: Firestore | null,
@@ -41,63 +12,36 @@ export class DepartementRepository {
 
   async list() {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection Departement.");
+      throw new Error(`Firestore is not configured for collection ${this.collectionName}.`);
     }
 
     await this.ensureSeeded();
-    const canonicalSnapshot = await this.db.collection("Departement").get();
-
-    if (!canonicalSnapshot.empty) {
-      return canonicalSnapshot.docs.map((doc) => normalizeDepartement(doc.data()));
-    }
-
-    return this.listLegacy();
+    const snapshot = await this.db.collection(this.collectionName).get();
+    return snapshot.docs.map((doc) => normalizeDepartement(doc.id, doc.data()));
   }
 
   async getById(id: string) {
+    return this.getByCode(id);
+  }
+
+  async getByCode(code: string) {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection Departement.");
+      throw new Error(`Firestore is not configured for collection ${this.collectionName}.`);
     }
 
     await this.ensureSeeded();
-    const canonicalSnapshot = await this.db.collection("Departement").doc(id).get();
-
-    if (canonicalSnapshot.exists) {
-      return normalizeDepartement(canonicalSnapshot.data());
-    }
-
-    const legacyItems = await this.listLegacy();
-    return legacyItems.find((item) => item.id === id) ?? null;
+    const snapshot = await this.db.collection(this.collectionName).where("code", "==", code).limit(1).get();
+    return snapshot.empty ? null : normalizeDepartement(snapshot.docs[0].id, snapshot.docs[0].data());
   }
 
   async upsert(entity: Departement) {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection Departement.");
+      throw new Error(`Firestore is not configured for collection ${this.collectionName}.`);
     }
 
-    await this.db.collection("Departement").doc(entity.id).set(entity, { merge: true });
+    await this.ensureSeeded();
+    await this.db.collection(this.collectionName).doc(entity.id).set(removeUndefined(entity), { merge: true });
     return entity;
-  }
-
-  private async listLegacy() {
-    if (!this.db) {
-      return [];
-    }
-
-    const [directions, services, bureaux] = await Promise.all([
-      this.db.collection("directions").get(),
-      this.db.collection("services").get(),
-      this.db.collection("bureaux").get()
-    ]);
-
-    const directionRecords = directions.docs.map((doc) => doc.data() as LegacyDirectionRecord);
-    const serviceRecords = services.docs.map((doc) => doc.data() as LegacyServiceRecord);
-
-    return [
-      ...directionRecords.map(mapLegacyDirection),
-      ...serviceRecords.map(mapLegacyService),
-      ...bureaux.docs.map((doc) => mapLegacyBureau(doc.data() as LegacyBureauRecord))
-    ];
   }
 
   private async ensureSeeded() {
@@ -107,27 +51,15 @@ export class DepartementRepository {
 
     if (!this.seedPromise) {
       this.seedPromise = (async () => {
-        const canonicalCollection = this.db!.collection("Departement");
-        const existingCanonical = await canonicalCollection.limit(1).get();
-
-        if (!existingCanonical.empty) {
-          return;
-        }
-
-        const [legacyDirections, legacyServices, legacyBureaux] = await Promise.all([
-          this.db!.collection("directions").limit(1).get(),
-          this.db!.collection("services").limit(1).get(),
-          this.db!.collection("bureaux").limit(1).get()
-        ]);
-
-        if (!legacyDirections.empty || !legacyServices.empty || !legacyBureaux.empty) {
-          return;
-        }
-
+        const collectionRef = this.db!.collection(this.collectionName);
         const batch = this.db!.batch();
 
         for (const entity of this.seedData) {
-          batch.set(canonicalCollection.doc(entity.id), entity, { merge: true });
+          const existing = await collectionRef.where("code", "==", entity.code).limit(1).get();
+
+          if (existing.empty) {
+            batch.set(collectionRef.doc(entity.id), removeUndefined(entity), { merge: true });
+          }
         }
 
         await batch.commit();
@@ -138,66 +70,42 @@ export class DepartementRepository {
   }
 }
 
-function mapLegacyDirection(direction: LegacyDirectionRecord): Departement {
-  return {
-    id: direction.id,
-    type: inferLegacyDirectionType(direction),
-    code: direction.code,
-    designation: direction.name,
-    parents: [],
-    dateCreation: direction.createdAt ?? direction.updatedAt ?? new Date().toISOString(),
-    description: direction.description,
-    updatedAt: direction.updatedAt ?? direction.createdAt
-  };
-}
-
-function mapLegacyService(service: LegacyServiceRecord): Departement {
-  return {
-    id: service.id,
-    type: "Service",
-    code: service.code,
-    designation: service.name,
-    parents: [service.directionId],
-    dateCreation: service.createdAt ?? service.updatedAt ?? new Date().toISOString(),
-    description: service.description,
-    updatedAt: service.updatedAt ?? service.createdAt
-  };
-}
-
-function mapLegacyBureau(bureau: LegacyBureauRecord): Departement {
-  return {
-    id: bureau.id,
-    type: "Bureau",
-    code: bureau.code,
-    designation: bureau.name,
-    parents: [bureau.serviceId],
-    dateCreation: bureau.createdAt ?? bureau.updatedAt ?? new Date().toISOString(),
-    description: bureau.description,
-    updatedAt: bureau.updatedAt ?? bureau.createdAt
-  };
-}
-
-function inferLegacyDirectionType(direction: LegacyDirectionRecord): DepartementType {
-  if (direction.code === "DG" || direction.name.toLowerCase().includes("generale")) {
-    return "DirectionGenerale";
-  }
-
-  return "Direction";
-}
-
-function normalizeDepartement(record: Record<string, unknown> | undefined): Departement {
+function normalizeDepartement(id: string, record: Record<string, unknown> | undefined): Departement {
   if (!record) {
-    throw new Error("Invalid Departement record.");
+    throw new Error("Invalid departement record.");
   }
 
+  const timestamp = Date.now();
+  const entityId = typeof record.id === "string" ? record.id : id;
+
   return {
-    id: String(record.id),
-    type: record.type as DepartementType,
-    code: String(record.code),
-    designation: String(record.designation),
-    parents: Array.isArray(record.parents) ? record.parents.map((parentId) => String(parentId)) : [],
-    dateCreation: String(record.dateCreation ?? record.createdAt ?? new Date().toISOString()),
+    id: entityId,
+    type: record.type as Departement["type"],
+    code: String(record.code ?? id),
+    designation: String(record.designation ?? ""),
+    parent:
+      typeof record.parent === "object" && record.parent
+        ? {
+            code: String((record.parent as Record<string, unknown>).code ?? ""),
+            designation: String((record.parent as Record<string, unknown>).designation ?? "")
+          }
+        : null,
+    parents: Array.isArray(record.parents) ? record.parents.map((parentCode) => String(parentCode)) : [],
+    dateCreation: typeof record.dateCreation === "number" ? record.dateCreation : timestamp,
+    dateDerniereModification:
+      typeof record.dateDerniereModification === "number"
+        ? record.dateDerniereModification
+        : typeof record.updatedAt === "number"
+          ? record.updatedAt
+          : timestamp,
     description: typeof record.description === "string" ? record.description : undefined,
-    updatedAt: typeof record.updatedAt === "string" ? record.updatedAt : undefined
+    updatedAt:
+      typeof record.updatedAt === "string" || typeof record.updatedAt === "number" ? record.updatedAt : undefined
   };
+}
+
+function removeUndefined<T extends object>(record: T) {
+  return Object.fromEntries(
+    Object.entries(record).filter(([, value]) => value !== undefined)
+  ) as T;
 }

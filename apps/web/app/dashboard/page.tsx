@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { DashboardCards } from "@/components/dashboard/dashboard-cards";
 import { RecentActivityCard } from "@/components/dashboard/recent-activity-card";
 import { DocumentTable } from "@/components/documents/document-table";
@@ -15,6 +17,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Link
+          href="/documents/new"
+          className="rounded-xl bg-brand-navy px-5 py-3 text-sm font-medium text-white"
+        >
+          Importer un document
+        </Link>
+      </div>
       <DashboardCards metrics={metrics} />
       <div className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
         <DocumentTable rows={documents ?? []} />

@@ -31,8 +31,8 @@ export interface AuthenticatedUser {
 }
 
 export interface DepartementReference {
-  id: string;
-  type: DepartementType;
+  id?: string;
+  type?: DepartementType;
   code: string;
   designation: string;
 }
@@ -42,10 +42,15 @@ export interface Departement {
   type: DepartementType;
   code: string;
   designation: string;
+  parent?: {
+    code: string;
+    designation: string;
+  } | null;
   parents: string[];
-  dateCreation: string;
+  dateCreation: number;
+  dateDerniereModification: number;
   description?: string;
-  updatedAt?: string;
+  updatedAt?: string | number;
 }
 
 export interface DepartementListItem extends Departement {
@@ -62,16 +67,23 @@ export interface UserPersonne {
   prenom: string;
 }
 
+export interface UserProfile {
+  code: string;
+  designation: string;
+}
+
 export interface User {
   id: string;
-  email: string;
-  role: Role;
-  isActive: boolean;
-  updatedAt: string;
+  email?: string;
+  role?: Role;
+  isActive?: boolean;
+  updatedAt?: string | number;
   personne: UserPersonne;
+  profile: UserProfile;
   matricule: string;
   bureau?: DepartementReference | null;
-  dateCreation: string;
+  dateCreation: number;
+  dateDerniereModification: number;
   directionId?: string | null;
   serviceId?: string | null;
   bureauId?: string | null;
@@ -110,11 +122,11 @@ export interface DocumentDirectionReference {
 export interface DocumentEntity {
   id: string;
   numeroReference: string;
-  dateCreation: string;
+  dateCreation: string | number;
   user: DocumentUserReference;
   type: DocumentType | string;
   direction: DocumentDirectionReference;
-  dateDerniereModication: string;
+  dateDerniereModication: string | number;
   fileName?: string;
   urlFileName?: string;
   title?: string;

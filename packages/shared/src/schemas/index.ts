@@ -24,20 +24,53 @@ export const departementReferenceSchema = z.object({
   designation: z.string().min(1)
 });
 
+export const createUserSchema = z.object({
+  personne: z.object({
+    nom: z.string().trim().min(1),
+    prenom: z.string().trim().min(1)
+  }),
+  profile: z.object({
+    code: z.string().trim().min(1),
+    designation: z.string().trim().min(1)
+  }),
+  email: z.string().trim().email(),
+  matricule: z.string().trim().min(1),
+  bureau: z.object({
+    code: z.string().trim().min(1),
+    designation: z.string().trim().min(1)
+  })
+}).strict();
+
 export const userSchema = z.object({
   id: z.string(),
-  email: z.string().email(),
-  role: z.enum(roles),
-  isActive: z.boolean(),
-  updatedAt: z.string(),
+  email: z.string().email().optional(),
+  role: z.enum(roles).optional(),
+  isActive: z.boolean().optional(),
+  updatedAt: z.union([z.string(), z.number()]).optional(),
   personne: userPersonneSchema,
+  profile: z.object({
+    code: z.string().min(1),
+    designation: z.string().min(1)
+  }),
   matricule: z.string().min(1),
   bureau: departementReferenceSchema.nullable().optional(),
-  dateCreation: z.string(),
+  dateCreation: z.number(),
+  dateDerniereModification: z.number(),
   directionId: z.string().nullable().optional(),
   serviceId: z.string().nullable().optional(),
   bureauId: z.string().nullable().optional(),
   displayName: z.string().optional()
+});
+
+export const createUserResultSchema = z.object({
+  user: userSchema,
+  defaultPassword: z.string().min(8),
+  mustChangePassword: z.literal(true)
+});
+
+export const parentDepartementSchema = z.object({
+  code: z.string().trim().min(1),
+  designation: z.string().trim().min(1)
 });
 
 export const departementSchema = z.object({
@@ -45,26 +78,72 @@ export const departementSchema = z.object({
   type: z.enum(departementTypes),
   code: z.string().min(1),
   designation: z.string().min(1),
+  parent: parentDepartementSchema.nullable().optional(),
   parents: z.array(z.string()),
-  dateCreation: z.string(),
+  dateCreation: z.number(),
+  dateDerniereModification: z.number(),
   description: z.string().optional(),
-  updatedAt: z.string().optional()
+  updatedAt: z.union([z.string(), z.number()]).optional()
 });
 
-export const createDirectionSchema = z.object({
-  type: z.enum(["DirectionGenerale", "Direction"]),
-  code: z.string().min(1),
-  designation: z.string().min(1),
-  parentId: z.string().optional(),
-  description: z.string().optional()
-}).superRefine((value, context) => {
-  if (value.type === "Direction" && !value.parentId) {
+const optionalNonEmptyString = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().trim().min(1).optional()
+);
+
+export const createDepartementSchema = z.object({
+  type: z.enum(departementTypes),
+  code: z.string().trim().min(1),
+  designation: z.string().trim().min(1),
+  parent: parentDepartementSchema.optional()
+}).strict().superRefine((value, context) => {
+  if (value.type === "Direction Generale" && value.parent) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "parentId is required for Direction."
+      path: ["parent"],
+      message: "parent must be omitted for Direction Generale."
+    });
+  }
+
+  if (value.type !== "Direction Generale" && !value.parent) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["parent"],
+      message: "parent is required for this departement type."
     });
   }
 });
+
+export const createDirectionSchema = z.object({
+  type: z.enum(["Direction Generale", "Direction", "DirectionGenerale"]),
+  code: z.string().trim().min(1),
+  designation: optionalNonEmptyString,
+  name: optionalNonEmptyString,
+  parentId: optionalNonEmptyString,
+  description: optionalNonEmptyString
+})
+  .superRefine((value, context) => {
+    if (!value.designation && !value.name) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["designation"],
+        message: "designation is required."
+      });
+    }
+
+    if (value.type === "Direction" && !value.parentId) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["parentId"],
+        message: "parentId is required for Direction."
+      });
+    }
+  })
+  .transform(({ name, ...value }) => ({
+    ...value,
+    type: value.type === "DirectionGenerale" ? "Direction Generale" : value.type,
+    designation: value.designation ?? name!
+  }));
 
 export const createServiceSchema = z.object({
   parentId: z.string().min(1),
@@ -117,11 +196,11 @@ export const documentDirectionReferenceSchema = z.object({
 export const documentSchema = z.object({
   id: z.string(),
   numeroReference: z.string().min(1),
-  dateCreation: z.string(),
+  dateCreation: z.union([z.string(), z.number()]),
   user: documentUserReferenceSchema,
   type: z.string().min(1),
   direction: documentDirectionReferenceSchema,
-  dateDerniereModication: z.string(),
+  dateDerniereModication: z.union([z.string(), z.number()]),
   fileName: z.string().optional(),
   urlFileName: z.string().optional(),
   title: z.string().optional(),

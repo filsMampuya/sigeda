@@ -15,7 +15,7 @@ export class UserProfileService {
       return existing;
     }
 
-    const timestamp = new Date().toISOString();
+    const timestamp = Date.now();
     const [nom, ...rest] = authenticatedUser.displayName.split(" ").filter(Boolean);
     const prenom = rest.join(" ");
 
@@ -29,13 +29,27 @@ export class UserProfileService {
         nom: nom || authenticatedUser.displayName || "Utilisateur",
         prenom: prenom || ""
       },
+      profile: {
+        code: authenticatedUser.role,
+        designation: roleDesignation(authenticatedUser.role)
+      },
       matricule: authenticatedUser.id,
       bureau: null,
       dateCreation: timestamp,
+      dateDerniereModification: timestamp,
       directionId: authenticatedUser.directionId,
       serviceId: authenticatedUser.serviceId,
       bureauId: authenticatedUser.bureauId,
       displayName: authenticatedUser.displayName
     });
   }
+}
+
+function roleDesignation(role: string) {
+  return role
+    .toLowerCase()
+    .split("_")
+    .filter(Boolean)
+    .map((segment) => `${segment[0]?.toUpperCase() ?? ""}${segment.slice(1)}`)
+    .join(" ");
 }

@@ -51,7 +51,7 @@ export function BureauxPanel({
             required
           />
           <select
-            name="parentId"
+            name="parent"
             className="w-full rounded-xl border border-slate-200 px-4 py-3"
             required
             defaultValue=""
@@ -60,7 +60,13 @@ export function BureauxPanel({
               Selectionner un service
             </option>
             {services.map((service) => (
-              <option key={service.id} value={service.id}>
+              <option
+                key={service.id}
+                value={JSON.stringify({
+                  code: service.code,
+                  designation: service.designation
+                })}
+              >
                 {service.designation}
               </option>
             ))}

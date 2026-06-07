@@ -1,6 +1,8 @@
 import type { Departement, DepartementListItem, DepartementType } from "@sigeda/shared/types";
 import { randomUUID } from "node:crypto";
 
+import { HttpError } from "../errors/http-error";
+
 type DepartementRepositoryLike = {
   list: () => Promise<Departement[]>;
   getById: (id: string) => Promise<Departement | null>;
@@ -8,7 +10,7 @@ type DepartementRepositoryLike = {
 };
 
 type CreateDirectionInput = {
-  type: "DirectionGenerale" | "Direction";
+  type: "Direction Generale" | "Direction" | "DirectionGenerale";
   code: string;
   designation: string;
   parentId?: string;
@@ -45,54 +47,61 @@ export class OrganizationService {
   }
 
   async createDirection(input: CreateDirectionInput) {
-    const timestamp = new Date().toISOString();
+    const timestamp = Date.now();
     let parents: string[] = [];
+    const type = input.type === "DirectionGenerale" ? "Direction Generale" : input.type;
 
-    if (input.type === "Direction") {
-      const parent = await this.requireDepartement(input.parentId ?? "", "DirectionGenerale");
-      parents = [parent.id];
+    if (type === "Direction") {
+      const parent = await this.requireDepartement(input.parentId ?? "", "Direction Generale");
+      parents = [parent.code];
     }
 
     return this.repository.upsert({
       id: randomUUID(),
-      type: input.type,
+      type,
       code: input.code,
       designation: input.designation,
+      parent: type === "Direction" && parents[0] ? { code: parents[0], designation: parents[0] } : null,
       parents,
       dateCreation: timestamp,
       description: input.description || undefined,
+      dateDerniereModification: timestamp,
       updatedAt: timestamp
     });
   }
 
   async createService(input: CreateChildInput) {
     const parent = await this.requireDepartement(input.parentId, "Direction");
-    const timestamp = new Date().toISOString();
+    const timestamp = Date.now();
 
     return this.repository.upsert({
       id: randomUUID(),
       type: "Service",
       code: input.code,
       designation: input.designation,
-      parents: [parent.id],
+      parent: { code: parent.code, designation: parent.designation },
+      parents: [...parent.parents, parent.code],
       dateCreation: timestamp,
       description: input.description || undefined,
+      dateDerniereModification: timestamp,
       updatedAt: timestamp
     });
   }
 
   async createBureau(input: CreateChildInput) {
     const parent = await this.requireDepartement(input.parentId, "Service");
-    const timestamp = new Date().toISOString();
+    const timestamp = Date.now();
 
     return this.repository.upsert({
       id: randomUUID(),
       type: "Bureau",
       code: input.code,
       designation: input.designation,
-      parents: [parent.id],
+      parent: { code: parent.code, designation: parent.designation },
+      parents: [...parent.parents, parent.code],
       dateCreation: timestamp,
       description: input.description || undefined,
+      dateDerniereModification: timestamp,
       updatedAt: timestamp
     });
   }
@@ -101,7 +110,7 @@ export class OrganizationService {
     const departement = await this.repository.getById(id);
 
     if (!departement || departement.type !== type) {
-      throw new Error(`${type} not found.`);
+      throw new HttpError(404, `${type} not found.`);
     }
 
     return departement;

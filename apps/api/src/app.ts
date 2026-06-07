@@ -1,13 +1,12 @@
+import "./config/load-env";
+
 import path from "node:path";
-import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 
 import { errorHandler } from "./middlewares/error-handler";
 import { notFoundHandler } from "./middlewares/not-found-handler";
 import { apiRouter } from "./routes";
-
-dotenv.config();
 
 export function createApp() {
   const app = express();

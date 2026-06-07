@@ -4,13 +4,17 @@ import { auditLogRouter } from "./audit-log-routes";
 import { authRouter } from "./auth-routes";
 import { bureauRouter } from "./bureau-routes";
 import { dashboardRouter } from "./dashboard-routes";
+import { departementRouter } from "./departement-routes";
 import { directionRouter } from "./direction-routes";
 import { documentRouter } from "./document-routes";
 import { serviceRouter } from "./service-routes";
+import { userRouter } from "./user-routes";
 
 export const apiRouter = Router();
 
 apiRouter.use("/auth", authRouter);
+apiRouter.use("/departements", departementRouter);
+apiRouter.use("/users", userRouter);
 apiRouter.use("/documents", documentRouter);
 apiRouter.use("/directions", directionRouter);
 apiRouter.use("/services", serviceRouter);

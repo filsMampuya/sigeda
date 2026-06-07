@@ -11,42 +11,42 @@ export class DocumentRepository {
 
   async list() {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection Document.");
+      throw new Error("Firestore is not configured for collection documents.");
     }
 
     await this.ensureSeeded();
-    const canonicalSnapshot = await this.db.collection("Document").get();
+    const canonicalSnapshot = await this.db.collection("documents").get();
 
     if (!canonicalSnapshot.empty) {
       return canonicalSnapshot.docs.map((doc) => normalizeDocument(doc.data()));
     }
 
-    const legacySnapshot = await this.db.collection("documents").get();
+    const legacySnapshot = await this.db.collection("Document").get();
     return legacySnapshot.docs.map((doc) => mapLegacyDocument(doc.data() as Record<string, unknown>));
   }
 
   async getById(id: string) {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection Document.");
+      throw new Error("Firestore is not configured for collection documents.");
     }
 
     await this.ensureSeeded();
-    const canonicalSnapshot = await this.db.collection("Document").doc(id).get();
+    const canonicalSnapshot = await this.db.collection("documents").doc(id).get();
 
     if (canonicalSnapshot.exists) {
       return normalizeDocument(canonicalSnapshot.data());
     }
 
-    const legacySnapshot = await this.db.collection("documents").doc(id).get();
+    const legacySnapshot = await this.db.collection("Document").doc(id).get();
     return legacySnapshot.exists ? mapLegacyDocument(legacySnapshot.data() as Record<string, unknown>) : null;
   }
 
   async upsert(entity: DocumentEntity) {
     if (!this.db) {
-      throw new Error("Firestore is not configured for collection Document.");
+      throw new Error("Firestore is not configured for collection documents.");
     }
 
-    await this.db.collection("Document").doc(entity.id).set(entity, { merge: true });
+    await this.db.collection("documents").doc(entity.id).set(removeUndefinedDeep(entity), { merge: true });
     return entity;
   }
 
@@ -57,14 +57,14 @@ export class DocumentRepository {
 
     if (!this.seedPromise) {
       this.seedPromise = (async () => {
-        const canonicalCollection = this.db!.collection("Document");
+        const canonicalCollection = this.db!.collection("documents");
         const existingCanonical = await canonicalCollection.limit(1).get();
 
         if (!existingCanonical.empty) {
           return;
         }
 
-        const legacyDocuments = await this.db!.collection("documents").limit(1).get();
+        const legacyDocuments = await this.db!.collection("Document").limit(1).get();
 
         if (!legacyDocuments.empty) {
           return;
@@ -177,4 +177,20 @@ function normalizeDocument(record: Record<string, unknown> | undefined): Documen
       record.dateDerniereModication ?? record.updatedAt ?? record.createdAt ?? new Date().toISOString()
     )
   };
+}
+
+function removeUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => removeUndefinedDeep(item)) as T;
+  }
+
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, entryValue]) => entryValue !== undefined)
+      .map(([key, entryValue]) => [key, removeUndefinedDeep(entryValue)]);
+
+    return Object.fromEntries(entries) as T;
+  }
+
+  return value;
 }

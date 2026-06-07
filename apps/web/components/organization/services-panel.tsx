@@ -51,7 +51,7 @@ export function ServicesPanel({
             required
           />
           <select
-            name="parentId"
+            name="parent"
             className="w-full rounded-xl border border-slate-200 px-4 py-3"
             required
             defaultValue=""
@@ -60,7 +60,13 @@ export function ServicesPanel({
               Selectionner une direction
             </option>
             {directions.map((direction) => (
-              <option key={direction.id} value={direction.id}>
+              <option
+                key={direction.id}
+                value={JSON.stringify({
+                  code: direction.code,
+                  designation: direction.designation
+                })}
+              >
                 {direction.designation}
               </option>
             ))}

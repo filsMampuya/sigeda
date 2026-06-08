@@ -19,4 +19,8 @@ export class InMemoryRepository<T extends { id: string }> {
     this.items.set(entity.id, entity);
     return entity;
   }
+
+  async delete(id: string): Promise<void> {
+    this.items.delete(id);
+  }
 }

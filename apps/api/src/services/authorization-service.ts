@@ -4,6 +4,20 @@ function isPrivilegedRole(role: AuthenticatedUser["role"]) {
   return role === "ADMIN" || role === "DIRECTION_GENERALE" || role === "AUDITEUR";
 }
 
+function belongsToDirection(user: AuthenticatedUser, document: DocumentEntity) {
+  if (!user.directionId) {
+    return false;
+  }
+
+  const linkedDirections = new Set(
+    [document.emitterDirectionId, document.directionId, ...document.receiverDirectionIds, ...document.copyDirectionIds].filter(
+      (value): value is string => Boolean(value)
+    )
+  );
+
+  return linkedDirections.has(user.directionId);
+}
+
 export class AuthorizationService {
   canAccessDocument(user: AuthenticatedUser, document: DocumentEntity) {
     const role = user.role;
@@ -17,7 +31,7 @@ export class AuthorizationService {
     }
 
     if (role === "DIRECTEUR") {
-      return user.directionId === document.directionId;
+      return belongsToDirection(user, document);
     }
 
     if (role === "CHEF_SERVICE") {

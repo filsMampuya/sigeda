@@ -10,6 +10,7 @@ export const documentRouter = Router();
 
 documentRouter.use(authenticate, requireAuth);
 documentRouter.get("/", asyncHandler(documentController.list));
+documentRouter.get("/recent", asyncHandler(documentController.recent));
 documentRouter.get("/search", asyncHandler(documentController.search));
 documentRouter.get("/:id", asyncHandler(documentController.getById));
 documentRouter.post("/", uploadFile.single("file"), asyncHandler(documentController.create));

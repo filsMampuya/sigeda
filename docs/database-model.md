@@ -16,6 +16,8 @@
 ## Hierarchie
 
 Chaque document reference obligatoirement `directionId`, `serviceId` et `bureauId`.
+L'unicite logique d'un document ne repose jamais sur `reference` seule, mais sur la combinaison
+`emitterDirectionId + year + referenceNumber` ou `emitterDirectionId + year + reference`.
 
 ## Principales entites
 
@@ -24,5 +26,7 @@ Chaque document reference obligatoirement `directionId`, `serviceId` et `bureauI
 - `Service`
 - `Bureau`
 - `DocumentEntity`
+- `DocumentArchive`
+- `ArchiveFolder`
 - `PhysicalArchive`
 - `AuditLog`

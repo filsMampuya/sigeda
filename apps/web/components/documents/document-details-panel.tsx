@@ -2,6 +2,7 @@ import type { DocumentEntity } from "@sigeda/shared/types";
 
 import { Card } from "@/components/ui/card";
 import { getPublicApiBaseUrl } from "@/lib/env";
+import { formatShortDate, formatStructureLabel } from "@/lib/format";
 
 export function DocumentDetailsPanel({ document }: { document: DocumentEntity | null }) {
   const publicApiBaseUrl = getPublicApiBaseUrl();
@@ -16,7 +17,7 @@ export function DocumentDetailsPanel({ document }: { document: DocumentEntity | 
       <Card>
         <h3 className="text-lg font-semibold text-brand-navy">Document introuvable</h3>
         <p className="mt-3 text-sm text-slate-600">
-          Le document demande n'est pas accessible ou n'existe pas.
+          Le document demande n&apos;est pas accessible ou n&apos;existe pas.
         </p>
       </Card>
     );
@@ -24,47 +25,76 @@ export function DocumentDetailsPanel({ document }: { document: DocumentEntity | 
 
   return (
     <div className="space-y-6">
-      <Card>
-        <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{document.numeroReference}</p>
-        <h3 className="mt-2 text-2xl font-semibold text-brand-navy">
-          {document.title ?? document.fileName ?? "Document"}
-        </h3>
-        <p className="mt-3 text-sm text-slate-600">{document.description ?? "Aucune description fournie."}</p>
+      <Card className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{document.numeroReference}</p>
+            <h3 className="mt-2 text-2xl font-semibold text-brand-navy">
+              {document.title ?? document.fileName ?? "Document"}
+            </h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+              {document.status ?? "-"}
+            </span>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+              {document.confidentialityLevel ?? "-"}
+            </span>
+          </div>
+        </div>
+        {document.subject ? <p className="text-sm text-slate-700">{document.subject}</p> : null}
+        {document.description ? <p className="text-sm text-slate-500">{document.description}</p> : null}
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
         <Card>
-          <h4 className="text-lg font-semibold text-brand-navy">Metadonnees</h4>
-          <dl className="mt-4 grid gap-4 md:grid-cols-2 text-sm text-slate-600">
+          <h4 className="text-lg font-semibold text-brand-navy">Vue metier</h4>
+          <dl className="mt-4 grid gap-4 text-sm text-slate-600 md:grid-cols-2">
+            <div>
+              <dt className="font-medium text-slate-900">Direction emettrice</dt>
+              <dd>{formatStructureLabel(document.direction.code, document.direction.designation, document.directionId)}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-slate-900">Annee</dt>
+              <dd>{document.year}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-slate-900">Code reference</dt>
+              <dd>{document.referenceCode}</dd>
+            </div>
+            <div>
+              <dt className="font-medium text-slate-900">Numero annuel</dt>
+              <dd>{document.referenceNumber}</dd>
+            </div>
             <div>
               <dt className="font-medium text-slate-900">Type</dt>
               <dd>{document.type}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Confidentialite</dt>
-              <dd>{document.confidentialityLevel ?? "-"}</dd>
+              <dt className="font-medium text-slate-900">Creation</dt>
+              <dd>{formatShortDate(document.createdAt)}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Statut</dt>
-              <dd>{document.status ?? "-"}</dd>
+              <dt className="font-medium text-slate-900">Signataire</dt>
+              <dd>{document.signerName ?? "-"}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Version</dt>
               <dd>{document.version}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Direction</dt>
-              <dd>{document.direction.designation}</dd>
+              <dt className="font-medium text-slate-900">Destinataires</dt>
+              <dd>{document.receiverDirectionIds.join(", ") || "-"}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Service</dt>
-              <dd>{document.serviceId ?? "-"}</dd>
+              <dt className="font-medium text-slate-900">Copies</dt>
+              <dd>{document.copyDirectionIds.join(", ") || "-"}</dd>
             </div>
-            <div>
-              <dt className="font-medium text-slate-900">Bureau</dt>
-              <dd>{document.bureauId ?? "-"}</dd>
+            <div className="md:col-span-2">
+              <dt className="font-medium text-slate-900">Resume</dt>
+              <dd>{document.summary ?? "-"}</dd>
             </div>
-            <div>
+            <div className="md:col-span-2">
               <dt className="font-medium text-slate-900">Mots-cles</dt>
               <dd>{document.keywords.join(", ") || "-"}</dd>
             </div>
@@ -87,15 +117,15 @@ export function DocumentDetailsPanel({ document }: { document: DocumentEntity | 
               <dd>{document.storageProvider ?? "-"}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Statut de numerisation</dt>
+              <dt className="font-medium text-slate-900">Statut numerisation</dt>
               <dd>{document.digitizationStatus ?? "-"}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Statut OCR</dt>
+              <dt className="font-medium text-slate-900">OCR</dt>
               <dd>{document.ocrStatus ?? "-"}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Acces fichier</dt>
+              <dt className="font-medium text-slate-900">Fichier</dt>
               <dd>
                 {fileHref ? (
                   <a href={fileHref} target="_blank" rel="noreferrer" className="text-brand-navy underline">
@@ -112,7 +142,7 @@ export function DocumentDetailsPanel({ document }: { document: DocumentEntity | 
 
       {document.ocrText ? (
         <Card>
-          <h4 className="text-lg font-semibold text-brand-navy">Texte OCR extrait</h4>
+          <h4 className="text-lg font-semibold text-brand-navy">Texte OCR</h4>
           <pre className="mt-4 whitespace-pre-wrap rounded-xl bg-slate-50 p-4 text-sm text-slate-700">
             {document.ocrText}
           </pre>

@@ -1,11 +1,12 @@
 import { DocumentCreateForm } from "@/components/documents/document-create-form";
-import { getBureaux, getDirections, getServices } from "@/lib/api";
+import { getBureaux, getCurrentUser, getDirections, getServices } from "@/lib/api";
 
 export default async function NewDocumentPage() {
-  const [directions, services, bureaux] = await Promise.all([
+  const [directions, services, bureaux, currentUser] = await Promise.all([
     getDirections(),
     getServices(),
-    getBureaux()
+    getBureaux(),
+    getCurrentUser()
   ]);
 
   return (
@@ -13,6 +14,7 @@ export default async function NewDocumentPage() {
       directions={directions ?? []}
       services={services ?? []}
       bureaux={bureaux ?? []}
+      currentUser={currentUser?.user ?? null}
     />
   );
 }

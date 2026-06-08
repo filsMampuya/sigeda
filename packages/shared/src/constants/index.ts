@@ -71,3 +71,5 @@ export const digitizationStatuses = [
 ] as const;
 
 export const ocrStatuses = ["NOT_APPLICABLE", "PENDING", "COMPLETED", "FAILED"] as const;
+
+export const movementTypes = ["ENTREE", "SORTIE"] as const;

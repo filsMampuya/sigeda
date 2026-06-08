@@ -1,9 +1,15 @@
 import type {
+  ArchiveFolder,
+  ArchiveFolderListItem,
   AuthenticatedUser,
   AuditLog,
   Departement,
+  DocumentArchiveListItem,
   DocumentEntity,
-  User,
+  PaginatedResult,
+  PhysicalArchive,
+  PhysicalArchiveListItem,
+  User
 } from "@sigeda/shared/types";
 
 import { getServerAuthToken } from "@/lib/auth";
@@ -112,12 +118,59 @@ export function getDocuments(searchParams?: URLSearchParams) {
   return fetchApi<DocumentEntity[]>(path);
 }
 
+export function searchDocuments(searchParams?: URLSearchParams) {
+  const query = searchParams?.toString();
+  const path = query ? `/api/documents/search?${query}` : "/api/documents/search";
+  return fetchApi<PaginatedResult<DocumentEntity>>(path);
+}
+
+export function getRecentDocuments(searchParams?: URLSearchParams) {
+  const query = searchParams?.toString();
+  const path = query ? `/api/documents/recent?${query}` : "/api/documents/recent";
+  return fetchApi<PaginatedResult<DocumentEntity>>(path);
+}
+
 export function getDocumentById(id: string) {
   return fetchApi<DocumentEntity>(`/api/documents/${id}`);
 }
 
 export function getAuditLogs() {
   return fetchApi<AuditLog[]>("/api/audit-logs");
+}
+
+export function getDocumentArchives() {
+  return fetchApi<PaginatedResult<DocumentArchiveListItem>>("/api/document-archives");
+}
+
+export function getDocumentArchivesWithFilters(searchParams?: URLSearchParams) {
+  const query = searchParams?.toString();
+  const path = query ? `/api/document-archives?${query}` : "/api/document-archives";
+  return fetchApi<PaginatedResult<DocumentArchiveListItem>>(path);
+}
+
+export function getPhysicalArchives(searchParams?: URLSearchParams) {
+  const query = searchParams?.toString();
+  const path = query ? `/api/physical-archives?${query}` : "/api/physical-archives";
+  return fetchApi<PaginatedResult<PhysicalArchiveListItem>>(path);
+}
+
+export function getArchiveFolders(searchParams?: URLSearchParams) {
+  const query = searchParams?.toString();
+  const path = query ? `/api/archive-folders?${query}` : "/api/archive-folders";
+  return fetchApi<PaginatedResult<ArchiveFolderListItem>>(path);
+}
+
+export function updateArchiveFolderStatus(id: string, status: "ACTIVE" | "ARCHIVED") {
+  return postApi<{ status: "ACTIVE" | "ARCHIVED" }, ArchiveFolder>(`/api/archive-folders/${id}/status`, { status });
+}
+
+export function createArchiveFolder(input: {
+  year: number;
+  bureauId: string;
+  partnerDirectionId: string;
+  accessibleBureauIds?: string[];
+}) {
+  return postApi<typeof input, ArchiveFolder>("/api/archive-folders", input);
 }
 
 export function getDirections() {
@@ -196,6 +249,22 @@ export function createBureau(input: {
 
 export function createDocument(input: Record<string, unknown>) {
   return postApi<typeof input, DocumentEntity>("/api/documents", input);
+}
+
+export function createPhysicalArchive(input: {
+  documentArchiveId: string;
+  documentId: string;
+  partnerDirectionId?: string;
+  site: string;
+  batiment: string;
+  salle: string;
+  rayon: string;
+  etagere: string;
+  classeur: string;
+  dossier: string;
+  boiteArchive: string;
+}) {
+  return postApi<typeof input, PhysicalArchive>("/api/physical-archives", input);
 }
 
 export function createUser(input: {

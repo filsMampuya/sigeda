@@ -64,21 +64,28 @@ export class UserService {
       throw new HttpError(409, "User matricule already exists.");
     }
 
-    const bureau = await this.findBureau(input.bureau.code);
+    const organization = await this.resolveOrganizationFromBureau(input.bureau.code);
+    this.assertRoleOrganizationConsistency(input.profile.code, organization.direction);
     const defaultPassword = generateDevelopmentPassword();
     const timestamp = Date.now();
     const entity: User = {
       id: randomUUID(),
       personne: input.personne,
       profile: input.profile,
+      role: input.profile.code as User["role"],
+      isActive: true,
       email: input.email,
       matricule: input.matricule,
       bureau: {
-        code: bureau.code,
-        designation: bureau.designation
+        code: organization.bureau.code,
+        designation: organization.bureau.designation
       },
       dateCreation: timestamp,
-      dateDerniereModification: timestamp
+      dateDerniereModification: timestamp,
+      directionId: organization.direction.id,
+      serviceId: organization.service.id,
+      bureauId: organization.bureau.id,
+      displayName: `${input.personne.nom} ${input.personne.prenom}`.trim()
     };
 
     const user = userSchema.parse(await this.repository.upsert(entity));
@@ -108,6 +115,33 @@ export class UserService {
     }
 
     return bureau;
+  }
+
+  private async resolveOrganizationFromBureau(code: string) {
+    const departements = await this.departementRepository.list();
+    const bureau = await this.findBureau(code);
+    const service = departements.find((departement) => departement.code === bureau.parent?.code);
+
+    if (!service || service.type !== "Service") {
+      throw new HttpError(400, "Le bureau doit etre rattache a un service valide.");
+    }
+
+    const direction = departements.find((departement) => departement.code === service.parent?.code);
+
+    if (!direction || (direction.type !== "Direction" && direction.type !== "Direction Generale")) {
+      throw new HttpError(400, "Le service doit etre rattache a une direction valide.");
+    }
+
+    return { bureau, service, direction };
+  }
+
+  private assertRoleOrganizationConsistency(role: string, direction: Departement) {
+    if (role === "DIRECTION_GENERALE" && direction.type !== "Direction Generale") {
+      throw new HttpError(
+        400,
+        "Le profil Direction generale doit etre rattache exclusivement a une structure relevant de la Direction generale."
+      );
+    }
   }
 }
 

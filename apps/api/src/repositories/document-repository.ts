@@ -85,9 +85,26 @@ export class DocumentRepository {
 }
 
 function mapLegacyDocument(record: Record<string, unknown>): DocumentEntity {
+  const emitterDirectionId =
+    typeof record.emitterDirectionId === "string"
+      ? record.emitterDirectionId
+      : typeof record.directionId === "string"
+        ? record.directionId
+        : undefined;
+  const reference = typeof record.reference === "string" ? record.reference : String(record.numeroReference ?? "");
+  const referenceYear = resolveDocumentYear(record);
+  const parsedReference = parseReference(reference);
+
   return {
     id: String(record.id),
     numeroReference: String(record.numeroReference ?? record.reference ?? ""),
+    year: typeof record.year === "number" ? record.year : referenceYear,
+    referenceNumber:
+      typeof record.referenceNumber === "number" ? record.referenceNumber : parsedReference.referenceNumber,
+    referenceCode:
+      typeof record.referenceCode === "string" && record.referenceCode
+        ? record.referenceCode
+        : parsedReference.referenceCode,
     dateCreation: String(record.dateCreation ?? record.createdAt ?? new Date().toISOString()),
     user:
       typeof record.user === "object" && record.user
@@ -123,6 +140,7 @@ function mapLegacyDocument(record: Record<string, unknown>): DocumentEntity {
     dateDerniereModication: String(
       record.dateDerniereModication ?? record.updatedAt ?? record.createdAt ?? new Date().toISOString()
     ),
+    reference,
     fileName:
       typeof record.fileName === "string"
         ? record.fileName
@@ -137,17 +155,34 @@ function mapLegacyDocument(record: Record<string, unknown>): DocumentEntity {
         : typeof record.fileUrl === "string"
           ? record.fileUrl
           : undefined,
+    fileUrl:
+      typeof record.fileUrl === "string"
+        ? record.fileUrl
+        : typeof record.urlFileName === "string"
+          ? record.urlFileName
+          : undefined,
     title: typeof record.title === "string" ? record.title : undefined,
+    subject: typeof record.subject === "string" ? record.subject : undefined,
     description: typeof record.description === "string" ? record.description : undefined,
+    summary: typeof record.summary === "string" ? record.summary : undefined,
     directionId: typeof record.directionId === "string" ? record.directionId : undefined,
     serviceId: typeof record.serviceId === "string" ? record.serviceId : undefined,
     bureauId: typeof record.bureauId === "string" ? record.bureauId : undefined,
     authorId: typeof record.authorId === "string" ? record.authorId : undefined,
+    authorName: typeof record.authorName === "string" ? record.authorName : undefined,
+    signerId: typeof record.signerId === "string" ? record.signerId : undefined,
+    signerName: typeof record.signerName === "string" ? record.signerName : undefined,
+    emitterDirectionId,
+    receiverDirectionIds: Array.isArray(record.receiverDirectionIds)
+      ? (record.receiverDirectionIds as string[])
+      : [],
+    copyDirectionIds: Array.isArray(record.copyDirectionIds) ? (record.copyDirectionIds as string[]) : [],
     confidentialityLevel: record.confidentialityLevel as DocumentEntity["confidentialityLevel"],
     status: record.status as DocumentEntity["status"],
     keywords: Array.isArray(record.keywords) ? (record.keywords as string[]) : [],
     physicalArchiveId: typeof record.physicalArchiveId === "string" ? record.physicalArchiveId : undefined,
     version: typeof record.version === "number" ? record.version : 1,
+    attachments: Array.isArray(record.attachments) ? (record.attachments as DocumentEntity["attachments"]) : [],
     originalFileName: typeof record.originalFileName === "string" ? record.originalFileName : undefined,
     mimeType: typeof record.mimeType === "string" ? record.mimeType : undefined,
     fileSizeBytes: typeof record.fileSizeBytes === "number" ? record.fileSizeBytes : undefined,
@@ -159,7 +194,12 @@ function mapLegacyDocument(record: Record<string, unknown>): DocumentEntity {
     ocrExtractedAt: typeof record.ocrExtractedAt === "string" ? record.ocrExtractedAt : undefined,
     createdAt: String(record.createdAt ?? record.dateCreation ?? new Date().toISOString()),
     updatedAt: String(record.updatedAt ?? record.dateDerniereModication ?? record.createdAt ?? new Date().toISOString()),
-    archivedAt: typeof record.archivedAt === "string" ? record.archivedAt : undefined
+    archivedAt: typeof record.archivedAt === "string" ? record.archivedAt : undefined,
+    filePath: typeof record.filePath === "string" ? record.filePath : undefined,
+    aiExtractedData:
+      record.aiExtractedData && typeof record.aiExtractedData === "object"
+        ? (record.aiExtractedData as DocumentEntity["aiExtractedData"])
+        : undefined
   };
 }
 
@@ -171,11 +211,40 @@ function normalizeDocument(record: Record<string, unknown> | undefined): Documen
   return {
     ...mapLegacyDocument(record),
     numeroReference: String(record.numeroReference ?? ""),
+    year: typeof record.year === "number" ? record.year : resolveDocumentYear(record),
     dateCreation: String(record.dateCreation ?? record.createdAt ?? new Date().toISOString()),
     type: String(record.type ?? "AUTRE"),
     dateDerniereModication: String(
       record.dateDerniereModication ?? record.updatedAt ?? record.createdAt ?? new Date().toISOString()
     )
+  };
+}
+
+function resolveDocumentYear(record: Record<string, unknown>) {
+  const rawDate =
+    typeof record.createdAt === "string"
+      ? record.createdAt
+      : typeof record.dateCreation === "string"
+        ? record.dateCreation
+        : new Date().toISOString();
+  const date = new Date(rawDate);
+  return Number.isNaN(date.getTime()) ? new Date().getFullYear() : date.getFullYear();
+}
+
+function parseReference(reference: string) {
+  const trimmed = reference.trim();
+  const match = trimmed.match(/^(.*?)(\d+)\s*$/);
+
+  if (!match) {
+    return {
+      referenceCode: trimmed || "REF",
+      referenceNumber: 0
+    };
+  }
+
+  return {
+    referenceCode: match[1].replace(/[-\s]+$/, "") || trimmed,
+    referenceNumber: Number.parseInt(match[2], 10)
   };
 }
 

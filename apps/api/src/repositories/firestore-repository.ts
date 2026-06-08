@@ -36,6 +36,14 @@ export class FirestoreRepository<T extends { id: string }> {
     return entity;
   }
 
+  async delete(id: string): Promise<void> {
+    if (!this.db) {
+      throw new Error(`Firestore is not configured for collection ${this.collectionName}.`);
+    }
+    await this.ensureSeeded();
+    await this.db.collection(this.collectionName).doc(id).delete();
+  }
+
   private async ensureSeeded() {
     if (!this.db || this.seedData.length === 0) {
       return;

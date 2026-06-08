@@ -13,7 +13,6 @@ export default async function DirectionsPage() {
       <SectionIntro
         eyebrow="Organisation"
         title="Directions"
-        description="Gestion des directions de l'Hotel des Monnaies et point d'entree de la hierarchie administrative."
       />
       <DirectionsPanel directions={directions ?? []} />
     </div>

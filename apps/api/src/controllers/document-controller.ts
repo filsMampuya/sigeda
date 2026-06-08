@@ -45,6 +45,9 @@ export const documentController = {
     response.json(await documentService.reject(getParam(request.params.id)));
   },
   async search(request: Request, response: Response) {
-    response.json(await documentService.search(request.query, request.user));
+    response.json(await documentService.searchPaginated(request.query, request.user));
+  },
+  async recent(request: Request, response: Response) {
+    response.json(await documentService.searchRecent(request.query, request.user));
   }
 };

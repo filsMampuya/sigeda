@@ -1,10 +1,13 @@
-import type { AuditLog, Departement, DocumentEntity, User } from "@sigeda/shared/types";
+import type { ArchiveFolder, AuditLog, Departement, DocumentArchive, DocumentEntity, PhysicalArchive, User } from "@sigeda/shared/types";
 
 import { firestore } from "../config/firebase-admin";
 import {
   seedAuditLogs,
+  seedArchiveFolders,
+  seedDocumentArchives,
   seedDepartements,
   seedDocuments,
+  seedPhysicalArchives,
   seedUsers
 } from "../seed/demo-data";
 import { DepartementRepository } from "./departement-repository";
@@ -39,4 +42,22 @@ export function createAuditLogRepository() {
   return useFirestore()
     ? new FirestoreRepository<AuditLog>(firestore, "auditLogs", seedAuditLogs)
     : new InMemoryRepository<AuditLog>(seedAuditLogs);
+}
+
+export function createArchiveFolderRepository() {
+  return useFirestore()
+    ? new FirestoreRepository<ArchiveFolder>(firestore, "archiveFolders", seedArchiveFolders)
+    : new InMemoryRepository<ArchiveFolder>(seedArchiveFolders);
+}
+
+export function createDocumentArchiveRepository() {
+  return useFirestore()
+    ? new FirestoreRepository<DocumentArchive>(firestore, "documentArchives", seedDocumentArchives)
+    : new InMemoryRepository<DocumentArchive>(seedDocumentArchives);
+}
+
+export function createPhysicalArchiveRepository() {
+  return useFirestore()
+    ? new FirestoreRepository<PhysicalArchive>(firestore, "physicalArchives", seedPhysicalArchives)
+    : new InMemoryRepository<PhysicalArchive>(seedPhysicalArchives);
 }

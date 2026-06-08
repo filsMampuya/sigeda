@@ -15,6 +15,10 @@
 - `POST /api/documents/:id/validate`
 - `POST /api/documents/:id/reject`
 - `GET /api/documents/search`
+- `GET /api/document-archives`
+- `GET /api/archive-folders`
+- `POST /api/archive-folders/:id/status`
+  Body: `{ "status": "ACTIVE" | "CLOSED" }`
 
 ## Organisation
 
@@ -29,3 +33,5 @@
 
 - `GET /api/audit-logs`
 - `GET /api/dashboard/stats`
+- `GET /api/physical-archives`
+- `POST /api/physical-archives`

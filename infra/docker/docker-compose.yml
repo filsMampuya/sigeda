@@ -89,6 +89,10 @@ services:
       NEXT_PUBLIC_SIGEDA_API_URL: http://localhost:4100
       SIGEDA_ON_PREMISE_API_URL: http://api-nest:4100/api/v1
       NEXT_PUBLIC_SIGEDA_ON_PREMISE_API_URL: http://localhost:4100/api/v1
+      KEYCLOAK_URL: http://localhost:8080
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_REALM: sigeda
+      KEYCLOAK_CLIENT_ID: sigeda-web
       NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8080
       NEXT_PUBLIC_KEYCLOAK_REALM: sigeda
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: sigeda-web

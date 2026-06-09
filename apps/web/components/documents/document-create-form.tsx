@@ -1,14 +1,13 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { FirebaseError } from "firebase/app";
 import type { AuthenticatedUser, DepartementListItem } from "@sigeda/shared/types";
 import { confidentialityLevels, documentTypes } from "@sigeda/shared/constants";
 
 import { DocumentUploadStatus } from "@/components/documents/document-upload-status";
 import { Card } from "@/components/ui/card";
+import { getClientAuthToken } from "@/lib/client-auth-token";
 import { getPublicApiBaseUrl } from "@/lib/env";
-import { getFirebaseAuth } from "@/lib/firebase-client";
 import { formatStructureLabel } from "@/lib/format";
 
 type DocumentCreateFormProps = {
@@ -44,14 +43,7 @@ export function DocumentCreateForm({
   }
 
   async function handleSubmit(formData: FormData) {
-    const auth = getFirebaseAuth();
-    const firebaseUser = auth?.currentUser;
-
-    if (!firebaseUser) {
-      throw new Error("Votre session a expire. Reconnectez-vous.");
-    }
-
-    const idToken = await firebaseUser.getIdToken();
+    const accessToken = await getClientAuthToken();
 
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) {
@@ -93,7 +85,7 @@ export function DocumentCreateForm({
     const createResponse = await fetch(`${apiBaseUrl}/api/documents`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${idToken}`
+        Authorization: `Bearer ${accessToken}`
       },
       body: payload
     });
@@ -125,8 +117,7 @@ export function DocumentCreateForm({
           try {
             await handleSubmit(formData);
           } catch (error) {
-            const fallbackMessage = error instanceof FirebaseError ? error.message : "Operation echouee.";
-            setFeedback(error instanceof Error ? error.message : fallbackMessage);
+            setFeedback(error instanceof Error ? error.message : "Operation echouee.");
           }
         })
       }

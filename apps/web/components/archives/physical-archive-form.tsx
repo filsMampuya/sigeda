@@ -2,11 +2,10 @@
 
 import { useMemo, useState, useTransition } from "react";
 import type { DocumentArchiveListItem, PhysicalArchiveListItem } from "@sigeda/shared/types";
-import { FirebaseError } from "firebase/app";
 
 import { Card } from "@/components/ui/card";
+import { getClientAuthToken } from "@/lib/client-auth-token";
 import { getPublicApiBaseUrl } from "@/lib/env";
-import { getFirebaseAuth } from "@/lib/firebase-client";
 import { formatStructureLabel } from "@/lib/format";
 
 type PhysicalArchiveFormProps = {
@@ -33,14 +32,7 @@ export function PhysicalArchiveForm({
   const groupedFolders = useMemo(() => groupPhysicalArchives(physicalArchives), [physicalArchives]);
 
   async function handleSubmit(formData: FormData) {
-    const auth = getFirebaseAuth();
-    const firebaseUser = auth?.currentUser;
-
-    if (!firebaseUser) {
-      throw new Error("Votre session a expire. Reconnectez-vous.");
-    }
-
-    const idToken = await firebaseUser.getIdToken();
+    const accessToken = await getClientAuthToken();
     const documentArchiveId = String(formData.get("documentArchiveId") ?? "");
     const selectedDocumentArchive = documentArchives.find((archive) => archive.id === documentArchiveId);
 
@@ -66,7 +58,7 @@ export function PhysicalArchiveForm({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`
+        Authorization: `Bearer ${accessToken}`
       },
       body: JSON.stringify(payload)
     });
@@ -103,8 +95,7 @@ export function PhysicalArchiveForm({
             try {
               await handleSubmit(formData);
             } catch (error) {
-              const fallbackMessage = error instanceof FirebaseError ? error.message : "Operation echouee.";
-              setFeedback(error instanceof Error ? error.message : fallbackMessage);
+              setFeedback(error instanceof Error ? error.message : "Operation echouee.");
             }
           })
         }

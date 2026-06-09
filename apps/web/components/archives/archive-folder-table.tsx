@@ -4,8 +4,8 @@ import { useTransition } from "react";
 import type { ArchiveFolderListItem } from "@sigeda/shared/types";
 
 import { Card } from "@/components/ui/card";
+import { getClientAuthToken } from "@/lib/client-auth-token";
 import { getPublicApiBaseUrl } from "@/lib/env";
-import { getFirebaseAuth } from "@/lib/firebase-client";
 
 export function ArchiveFolderTable({
   rows,
@@ -18,19 +18,12 @@ export function ArchiveFolderTable({
   const [isPending, startTransition] = useTransition();
 
   async function updateStatus(id: string, status: "ACTIVE" | "ARCHIVED") {
-    const auth = getFirebaseAuth();
-    const firebaseUser = auth?.currentUser;
-
-    if (!firebaseUser) {
-      throw new Error("Votre session a expire. Reconnectez-vous.");
-    }
-
-    const idToken = await firebaseUser.getIdToken();
+    const accessToken = await getClientAuthToken();
     const response = await fetch(`${apiBaseUrl}/api/archive-folders/${id}/status`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${idToken}`
+        Authorization: `Bearer ${accessToken}`
       },
       body: JSON.stringify({ status })
     });

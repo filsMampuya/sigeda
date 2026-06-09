@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { authCookieName } from "@/lib/auth";
 
 type SessionBody = {
-  idToken?: string;
+  accessToken?: string;
 };
 
 function isSecureRequest(request: Request) {
@@ -19,12 +19,12 @@ function isSecureRequest(request: Request) {
 export async function POST(request: Request) {
   const body = (await request.json()) as SessionBody;
 
-  if (!body.idToken) {
-    return NextResponse.json({ message: "Missing idToken." }, { status: 400 });
+  if (!body.accessToken) {
+    return NextResponse.json({ message: "Missing accessToken." }, { status: 400 });
   }
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(authCookieName, body.idToken, {
+  response.cookies.set(authCookieName, body.accessToken, {
     httpOnly: true,
     secure: isSecureRequest(request),
     sameSite: "lax",

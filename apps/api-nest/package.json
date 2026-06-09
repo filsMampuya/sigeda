@@ -9,6 +9,7 @@
     "lint": "tsc --noEmit -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "format": "echo format api-nest",
+    "test:smoke": "tsx scripts/smoke-test.ts",
     "start": "node dist/main.js"
   },
   "dependencies": {

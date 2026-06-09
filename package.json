@@ -14,6 +14,7 @@
     "db:migrate": "npm run prisma:migrate --workspace @sigeda/database",
     "db:seed": "npm run prisma:seed --workspace @sigeda/database",
     "dev:onprem": "docker compose -f infra/docker/docker-compose.yml up",
+    "test:onprem": "npm run test:smoke --workspace @sigeda/api-nest",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "turbo run format"

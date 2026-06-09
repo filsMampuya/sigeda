@@ -10,6 +10,10 @@
   "scripts": {
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
+    "build:onprem": "npm run build --workspace @sigeda/shared && npm run build --workspace @sigeda/database && npm run build --workspace @sigeda/api-nest",
+    "db:migrate": "npm run prisma:migrate --workspace @sigeda/database",
+    "db:seed": "npm run prisma:seed --workspace @sigeda/database",
+    "dev:onprem": "docker compose -f infra/docker/docker-compose.yml up",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "turbo run format"

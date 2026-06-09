@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum DepartmentType {
+  DIRECTION_GENERALE
+  DIRECTION
+  SERVICE
+  BUREAU
+}
+
+enum FolderStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum MovementType {
+  ENTREE
+  SORTIE
+}
+
+enum DocumentStatus {
+  BROUILLON
+  EN_VALIDATION
+  VALIDE
+  ARCHIVE
+  REJETE
+}
+
+enum RecipientKind {
+  RECEIVER
+  COPY
+}
+
+enum AttachmentStorageProvider {
+  MINIO
+}
+
+model Department {
+  id          String         @id @default(uuid()) @db.Uuid
+  code        String         @unique
+  designation String
+  type        DepartmentType
+  parentId    String?        @map("parent_id") @db.Uuid
+  parent      Department?    @relation("DepartmentHierarchy", fields: [parentId], references: [id])
+  children    Department[]   @relation("DepartmentHierarchy")
+  users       User[]
+  documents   Document[]     @relation("EmitterDirection")
+  recipients  DocumentRecipient[] @relation("RecipientDirection")
+  folders     Folder[]       @relation("OwnerDirection")
+  bureauFolders Folder[]     @relation("BureauFolders")
+  partnerFolders Folder[]    @relation("PartnerDirection")
+  bureauArchives DocumentArchive[] @relation("BureauArchives")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  @@map("departments")
+}
+
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  code        String           @unique
+  name        String
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@map("roles")
+}
+
+model Permission {
+  id        String           @id @default(uuid()) @db.Uuid
+  code      String           @unique
+  name      String
+  roles     RolePermission[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id") @db.Uuid
+  permissionId String     @map("permission_id") @db.Uuid
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id             String       @id @default(uuid()) @db.Uuid
+  keycloakId     String       @unique @map("keycloak_id")
+  matricule      String       @unique
+  email          String       @unique
+  nom            String
+  prenom         String
+  roleId         String       @map("role_id") @db.Uuid
+  role           Role         @relation(fields: [roleId], references: [id])
+  departmentId   String?      @map("department_id") @db.Uuid
+  department     Department?  @relation(fields: [departmentId], references: [id])
+  isActive       Boolean      @default(true) @map("is_active")
+  documents      Document[]
+  archives       DocumentArchive[] @relation("ArchiveActor")
+  auditLogs      AuditLog[]
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Document {
+  id                 String              @id @default(uuid()) @db.Uuid
+  reference          String
+  referenceNumber    Int                 @map("reference_number")
+  year               Int
+  title              String
+  subject            String?
+  summary            String?
+  type               String
+  status             DocumentStatus      @default(BROUILLON)
+  confidentiality    String?
+  emitterDirectionId String              @map("emitter_direction_id") @db.Uuid
+  emitterDirection   Department          @relation("EmitterDirection", fields: [emitterDirectionId], references: [id])
+  authorId           String              @map("author_id") @db.Uuid
+  author             User                @relation(fields: [authorId], references: [id])
+  recipients         DocumentRecipient[]
+  archives           DocumentArchive[]
+  attachments        Attachment[]
+  versions           DocumentVersion[]
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+
+  @@unique([emitterDirectionId, year, referenceNumber])
+  @@index([year, status])
+  @@map("documents")
+}
+
+model DocumentRecipient {
+  id           String        @id @default(uuid()) @db.Uuid
+  documentId   String        @map("document_id") @db.Uuid
+  document     Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  directionId  String        @map("direction_id") @db.Uuid
+  direction    Department    @relation("RecipientDirection", fields: [directionId], references: [id])
+  kind         RecipientKind
+  createdAt    DateTime      @default(now()) @map("created_at")
+
+  @@unique([documentId, directionId, kind])
+  @@map("document_recipients")
+}
+
+model Folder {
+  id                 String       @id @default(uuid()) @db.Uuid
+  year               Int
+  bureauId           String       @map("bureau_id") @db.Uuid
+  bureau             Department   @relation("BureauFolders", fields: [bureauId], references: [id])
+  ownerDirectionId   String       @map("owner_direction_id") @db.Uuid
+  ownerDirection     Department   @relation("OwnerDirection", fields: [ownerDirectionId], references: [id])
+  partnerDirectionId String       @map("partner_direction_id") @db.Uuid
+  partnerDirection   Department   @relation("PartnerDirection", fields: [partnerDirectionId], references: [id])
+  status             FolderStatus @default(ACTIVE)
+  archives           DocumentArchive[]
+  createdAt          DateTime     @default(now()) @map("created_at")
+  updatedAt          DateTime     @updatedAt @map("updated_at")
+
+  @@unique([year, bureauId, ownerDirectionId, partnerDirectionId])
+  @@map("folders")
+}
+
+model DocumentArchive {
+  id           String       @id @default(uuid()) @db.Uuid
+  documentId   String       @map("document_id") @db.Uuid
+  document     Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  bureauId     String       @map("bureau_id") @db.Uuid
+  bureau       Department   @relation("BureauArchives", fields: [bureauId], references: [id])
+  folderId     String       @map("folder_id") @db.Uuid
+  folder       Folder       @relation(fields: [folderId], references: [id])
+  movementType MovementType @map("movement_type")
+  archivedAt   DateTime     @default(now()) @map("archived_at")
+  archivedById String       @map("archived_by") @db.Uuid
+  archivedBy   User         @relation("ArchiveActor", fields: [archivedById], references: [id])
+
+  @@unique([documentId, bureauId, folderId, movementType])
+  @@map("document_archives")
+}
+
+model Attachment {
+  id              String                    @id @default(uuid()) @db.Uuid
+  documentId      String                    @map("document_id") @db.Uuid
+  document        Document                  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  bucket          String
+  objectKey       String                    @map("object_key")
+  fileName        String                    @map("file_name")
+  mimeType        String                    @map("mime_type")
+  sizeBytes       BigInt                    @map("size_bytes")
+  checksumSha256  String                    @map("checksum_sha256")
+  version         Int                       @default(1)
+  storageProvider AttachmentStorageProvider @default(MINIO) @map("storage_provider")
+  createdAt       DateTime                  @default(now()) @map("created_at")
+
+  @@map("attachments")
+}
+
+model DocumentVersion {
+  id         String   @id @default(uuid()) @db.Uuid
+  documentId String   @map("document_id") @db.Uuid
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version    Int
+  snapshot   Json
+  createdBy  String   @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@unique([documentId, version])
+  @@map("document_versions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id")
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

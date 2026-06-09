@@ -6,13 +6,18 @@ import type {
   documentStatuses,
   documentFileKinds,
   documentTypes,
+  departmentTypes,
+  folderStatuses,
   movementTypes,
+  onPremiseRoles,
   ocrStatuses,
   roles
 } from "../constants";
 
 export type Role = (typeof roles)[number];
+export type OnPremiseRole = (typeof onPremiseRoles)[number];
 export type DepartementType = (typeof departementTypes)[number];
+export type DepartmentType = (typeof departmentTypes)[number];
 export type DocumentType = (typeof documentTypes)[number];
 export type ConfidentialityLevel = (typeof confidentialityLevels)[number];
 export type DocumentStatus = (typeof documentStatuses)[number];
@@ -22,6 +27,28 @@ export type DigitizationStatus = (typeof digitizationStatuses)[number];
 export type OcrStatus = (typeof ocrStatuses)[number];
 export type MovementType = (typeof movementTypes)[number];
 export type ArchiveFolderStatus = "ACTIVE" | "ARCHIVED";
+export type FolderStatus = (typeof folderStatuses)[number];
+
+export interface Department {
+  id: string;
+  code: string;
+  designation: string;
+  type: DepartmentType;
+  parentId?: string | null;
+  createdAt: string | number;
+  updatedAt: string | number;
+}
+
+export interface Folder {
+  id: string;
+  year: number;
+  bureauId: string;
+  ownerDirectionId: string;
+  partnerDirectionId: string;
+  status: FolderStatus;
+  createdAt: string | number;
+  updatedAt: string | number;
+}
 
 export interface PaginatedResult<T> {
   items: T[];

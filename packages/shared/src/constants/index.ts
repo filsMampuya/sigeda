@@ -11,6 +11,12 @@ export const roles = [
 
 export const departementTypes = ["Direction Generale", "Direction", "Service", "Bureau"] as const;
 
+export const departmentTypes = ["DIRECTION_GENERALE", "DIRECTION", "SERVICE", "BUREAU"] as const;
+
+export const onPremiseRoles = ["ADMIN", "DIRECTEUR_GENERAL", "DIRECTEUR", "MANAGER", "AGENT", "AUDITEUR"] as const;
+
+export const folderStatuses = ["ACTIVE", "ARCHIVED"] as const;
+
 export type Role = (typeof roles)[number];
 export function isRole(value: string): value is Role {
   return (roles as readonly string[]).includes(value);

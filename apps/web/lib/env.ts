@@ -1,7 +1,7 @@
 // Lien pour basculer en remote ou en local
 
-const defaultApiUrl = "https://us-central1-sigeda-c80ea.cloudfunctions.net/server";
-// const defaultApiUrl = "http://127.0.0.1:4000";
+// const defaultApiUrl = "https://us-central1-sigeda-c80ea.cloudfunctions.net/server";
+const defaultApiUrl = "http://127.0.0.1:4000";
 
 
 export function getServerApiBaseUrl() {
@@ -10,6 +10,22 @@ export function getServerApiBaseUrl() {
 
 export function getPublicApiBaseUrl() {
   return process.env.NEXT_PUBLIC_SIGEDA_API_URL ?? defaultApiUrl;
+}
+
+export function getServerOnPremiseApiBaseUrl() {
+  return process.env.SIGEDA_ON_PREMISE_API_URL ?? `${getServerApiBaseUrl()}/api/v1`;
+}
+
+export function getPublicOnPremiseApiBaseUrl() {
+  return process.env.NEXT_PUBLIC_SIGEDA_ON_PREMISE_API_URL ?? `${getPublicApiBaseUrl()}/api/v1`;
+}
+
+export function getKeycloakPublicConfig() {
+  return {
+    url: process.env.NEXT_PUBLIC_KEYCLOAK_URL ?? null,
+    realm: process.env.NEXT_PUBLIC_KEYCLOAK_REALM ?? null,
+    clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID ?? null
+  };
 }
 
 function getRequiredEnv(name: string) {

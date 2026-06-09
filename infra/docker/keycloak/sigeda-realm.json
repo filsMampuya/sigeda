@@ -1,0 +1,43 @@
+{
+  "realm": "sigeda",
+  "enabled": true,
+  "displayName": "SIGEDA",
+  "roles": {
+    "realm": [
+      { "name": "ADMIN" },
+      { "name": "DIRECTEUR_GENERAL" },
+      { "name": "DIRECTEUR" },
+      { "name": "MANAGER" },
+      { "name": "AGENT" },
+      { "name": "AUDITEUR" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "sigeda-api",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": true
+    },
+    {
+      "clientId": "sigeda-web",
+      "enabled": true,
+      "publicClient": true,
+      "redirectUris": ["http://localhost:3000/*", "http://localhost:8088/*"],
+      "webOrigins": ["http://localhost:3000", "http://localhost:8088"],
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@sigeda.local",
+      "email": "admin@sigeda.local",
+      "firstName": "SIGEDA",
+      "lastName": "ADMIN",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaAdmin1!", "temporary": true }],
+      "realmRoles": ["ADMIN"]
+    }
+  ]
+}

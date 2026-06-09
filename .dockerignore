@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+.next
+**/.next
+.turbo
+**/.turbo
+dist
+**/dist
+coverage
+**/coverage
+.git
+firebase-debug.log
+apps/api/data/documents
+apps/web/tsconfig.tsbuildinfo
+**/*.tsbuildinfo

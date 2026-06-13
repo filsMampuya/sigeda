@@ -14,7 +14,7 @@ function isSecureRequest(request: Request) {
 }
 
 export function GET(request: Request) {
-  const response = NextResponse.redirect(buildKeycloakLogoutUrl(request.url));
+  const response = NextResponse.redirect(buildKeycloakLogoutUrl(request));
 
   for (const name of [authCookieName, authStateCookieName]) {
     response.cookies.set(name, "", {

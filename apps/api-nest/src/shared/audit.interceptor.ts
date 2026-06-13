@@ -17,20 +17,37 @@ export class AuditInterceptor implements NestInterceptor {
           return;
         }
 
-        void this.prisma.auditLog.create({
-          data: {
-            action: `${request.method} ${request.path}`,
-            entityType: "HTTP_REQUEST",
-            userId: undefined,
-            ipAddress: request.ip,
-            userAgent: request.headers["user-agent"],
-            metadata: {
-              subject: request.user?.sub,
-              email: request.user?.email
-            }
-          }
-        }).catch(() => undefined);
+        void this.logRequestAudit(request);
       })
     );
+  }
+
+  private async logRequestAudit(request: Request & { user?: AuthenticatedPrincipal }) {
+    const dbUser = request.user?.sub
+      ? await this.prisma.user
+          .findUnique({
+            where: {
+              keycloakId: request.user.sub
+            },
+            select: {
+              id: true
+            }
+          })
+          .catch(() => null)
+      : null;
+
+    return this.prisma.auditLog.create({
+      data: {
+        action: `${request.method} ${request.path}`,
+        entityType: "HTTP_REQUEST",
+        userId: dbUser?.id,
+        ipAddress: request.ip,
+        userAgent: request.headers["user-agent"],
+        metadata: {
+          subject: request.user?.sub,
+          email: request.user?.email
+        }
+      }
+    });
   }
 }

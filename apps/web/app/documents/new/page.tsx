@@ -1,20 +1,32 @@
 import { DocumentCreateForm } from "@/components/documents/document-create-form";
-import { getBureaux, getCurrentUser, getDirections, getServices } from "@/lib/api";
+import { BackButton } from "@/components/ui/back-button";
+import { PageHeader } from "@/components/ui/page-header";
+import { getBureaux, getCurrentUser, getDirections, getServices, getUsers } from "@/lib/api";
 
 export default async function NewDocumentPage() {
-  const [directions, services, bureaux, currentUser] = await Promise.all([
+  const [directions, services, bureaux, currentUser, users] = await Promise.all([
     getDirections(),
     getServices(),
     getBureaux(),
-    getCurrentUser()
+    getCurrentUser(),
+    getUsers()
   ]);
 
   return (
-    <DocumentCreateForm
-      directions={directions ?? []}
-      services={services ?? []}
-      bureaux={bureaux ?? []}
-      currentUser={currentUser?.user ?? null}
-    />
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="Documents"
+        title="Nouveau document"
+        description="Enregistrement, numerisation et classement initial dans un meme parcours."
+        actions={<BackButton fallbackHref="/documents" label="Retour aux documents" />}
+      />
+      <DocumentCreateForm
+        directions={directions ?? []}
+        services={services ?? []}
+        bureaux={bureaux ?? []}
+        users={users ?? []}
+        currentUser={currentUser?.user ?? null}
+      />
+    </div>
   );
 }

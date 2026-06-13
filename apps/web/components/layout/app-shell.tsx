@@ -11,15 +11,17 @@ export function AppShell({ children }: { children: ReactNode }) {
   const isLoginPage = pathname === "/login";
 
   if (isLoginPage) {
-    return <main className="min-h-screen p-6">{children}</main>;
+    return <main className="min-h-screen bg-[var(--background)] p-6">{children}</main>;
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[var(--background)]">
       <Sidebar />
       <div className="flex min-h-screen flex-1 flex-col">
         <Topbar />
-        <main className="flex-1 p-6">{children}</main>
+        <main className="flex-1 p-5 lg:p-6">
+          <div className="mx-auto w-full max-w-[1680px]">{children}</div>
+        </main>
       </div>
     </div>
   );

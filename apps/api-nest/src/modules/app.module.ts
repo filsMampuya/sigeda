@@ -12,6 +12,8 @@ import { DocumentArchivesModule } from "./document-archives/document-archives.mo
 import { AttachmentsModule } from "./attachments/attachments.module.js";
 import { SearchModule } from "./search/search.module.js";
 import { AuditModule } from "./audit/audit.module.js";
+import { PhysicalArchivesModule } from "./physical-archives/physical-archives.module.js";
+import { DashboardModule } from "./dashboard/dashboard.module.js";
 
 @Module({
   imports: [
@@ -25,7 +27,9 @@ import { AuditModule } from "./audit/audit.module.js";
     DocumentArchivesModule,
     AttachmentsModule,
     SearchModule,
-    AuditModule
+    AuditModule,
+    PhysicalArchivesModule,
+    DashboardModule
   ],
   providers: [
     {

@@ -3,6 +3,7 @@ import { AuthGuard } from "../auth/auth.guard.js";
 import { RolesGuard } from "../auth/roles.guard.js";
 import { Roles } from "../auth/roles.decorator.js";
 import { DepartmentsService } from "./departments.service.js";
+import { CreateDepartmentDto } from "./dto/create-department.dto.js";
 
 @UseGuards(AuthGuard, RolesGuard)
 @Controller("departments")
@@ -26,7 +27,7 @@ export class DepartmentsController {
 
   @Post()
   @Roles("ADMIN")
-  create(@Body() body: Parameters<DepartmentsService["create"]>[0]) {
+  create(@Body() body: CreateDepartmentDto) {
     return this.departments.create(body);
   }
 }

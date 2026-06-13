@@ -51,7 +51,8 @@ async function main() {
       code: "SRV_COMPTA",
       designation: "Service Comptabilite",
       type: DepartmentType.SERVICE,
-      parentId: direction.id
+      parentId: direction.id,
+      directionId: direction.id
     }
   });
 
@@ -62,7 +63,22 @@ async function main() {
       code: "B_CADRE",
       designation: "Bureau du Cadre",
       type: DepartmentType.BUREAU,
-      parentId: service.id
+      parentId: service.id,
+      directionId: direction.id,
+      serviceId: service.id
+    }
+  });
+
+  await prisma.department.upsert({
+    where: { code: "B_DG" },
+    update: {},
+    create: {
+      code: "B_DG",
+      designation: "Bureau du Directeur General",
+      type: DepartmentType.BUREAU,
+      parentId: dg.id,
+      directionId: dg.id,
+      serviceId: null
     }
   });
 

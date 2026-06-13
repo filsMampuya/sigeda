@@ -6,8 +6,7 @@ export const navigationItems = [
   { href: "/documents", label: "Documents" },
   { href: "/archives-documentaires", label: "Archives documentaires" },
   { href: "/classeurs-annuels", label: "Classeurs annuels" },
-  { href: "/archives-physiques", label: "Archives physiques" },
   { href: "/audit", label: "Audit" },
   { href: "/admin/users", label: "Utilisateurs" },
-  { href: "/admin/settings", label: "Parametres" }
+  { href: "/admin/settings", label: "Mon profil" }
 ];

@@ -37,6 +37,12 @@ enum RecipientKind {
   COPY
 }
 
+enum AnnotationStatus {
+  PENDING
+  APPLIED
+  DISMISSED
+}
+
 enum AttachmentStorageProvider {
   MINIO
 }
@@ -49,6 +55,12 @@ model Department {
   parentId    String?        @map("parent_id") @db.Uuid
   parent      Department?    @relation("DepartmentHierarchy", fields: [parentId], references: [id])
   children    Department[]   @relation("DepartmentHierarchy")
+  directionId String?        @map("direction_id") @db.Uuid
+  direction   Department?    @relation("DepartmentDirection", fields: [directionId], references: [id])
+  directionChildren Department[] @relation("DepartmentDirection")
+  serviceId   String?        @map("service_id") @db.Uuid
+  service     Department?    @relation("DepartmentService", fields: [serviceId], references: [id])
+  serviceChildren Department[] @relation("DepartmentService")
   users       User[]
   documents   Document[]     @relation("EmitterDirection")
   recipients  DocumentRecipient[] @relation("RecipientDirection")
@@ -56,6 +68,12 @@ model Department {
   bureauFolders Folder[]     @relation("BureauFolders")
   partnerFolders Folder[]    @relation("PartnerDirection")
   bureauArchives DocumentArchive[] @relation("BureauArchives")
+  physicalArchives PhysicalArchive[] @relation("PhysicalArchiveDirection")
+  physicalArchivePartners PhysicalArchive[] @relation("PhysicalArchivePartnerDirection")
+  documentSigners DocumentSigner[] @relation("DocumentSignerDepartment")
+  sourceAnnotations DocumentAnnotation[] @relation("AnnotationSourceDirection")
+  recordedAnnotations DocumentAnnotation[] @relation("AnnotationRecordedByDirection")
+  targetTransmissions DocumentTransmission[] @relation("TransmissionTargetDirection")
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
@@ -108,7 +126,11 @@ model User {
   department     Department?  @relation(fields: [departmentId], references: [id])
   isActive       Boolean      @default(true) @map("is_active")
   documents      Document[]
+  documentSigners DocumentSigner[]
   archives       DocumentArchive[] @relation("ArchiveActor")
+  createdAnnotations DocumentAnnotation[] @relation("DocumentAnnotationAuthor")
+  createdVersions  DocumentVersion[] @relation("DocumentVersionAuthor")
+  createdTransmissions DocumentTransmission[] @relation("DocumentTransmissionAuthor")
   auditLogs      AuditLog[]
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
@@ -132,15 +154,37 @@ model Document {
   authorId           String              @map("author_id") @db.Uuid
   author             User                @relation(fields: [authorId], references: [id])
   recipients         DocumentRecipient[]
+  signers            DocumentSigner[]
   archives           DocumentArchive[]
+  physicalArchives   PhysicalArchive[]
   attachments        Attachment[]
   versions           DocumentVersion[]
+  annotations        DocumentAnnotation[]
+  transmissions      DocumentTransmission[]
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
 
   @@unique([emitterDirectionId, year, referenceNumber])
   @@index([year, status])
   @@map("documents")
+}
+
+model DocumentSigner {
+  id             String         @id @default(uuid()) @db.Uuid
+  documentId     String         @map("document_id") @db.Uuid
+  document       Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId         String?        @map("user_id") @db.Uuid
+  user           User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName       String         @map("full_name")
+  functionTitle  String?        @map("function_title")
+  departmentId   String         @map("department_id") @db.Uuid
+  department     Department     @relation("DocumentSignerDepartment", fields: [departmentId], references: [id])
+  departmentType DepartmentType @map("department_type")
+  signingOrder   Int?           @map("signing_order")
+  createdAt      DateTime       @default(now()) @map("created_at")
+
+  @@index([documentId, signingOrder])
+  @@map("document_signers")
 }
 
 model DocumentRecipient {
@@ -161,12 +205,14 @@ model Folder {
   year               Int
   bureauId           String       @map("bureau_id") @db.Uuid
   bureau             Department   @relation("BureauFolders", fields: [bureauId], references: [id])
+  accessibleBureauIds String[]    @default([]) @map("accessible_bureau_ids")
   ownerDirectionId   String       @map("owner_direction_id") @db.Uuid
   ownerDirection     Department   @relation("OwnerDirection", fields: [ownerDirectionId], references: [id])
   partnerDirectionId String       @map("partner_direction_id") @db.Uuid
   partnerDirection   Department   @relation("PartnerDirection", fields: [partnerDirectionId], references: [id])
   status             FolderStatus @default(ACTIVE)
   archives           DocumentArchive[]
+  physicalArchives   PhysicalArchive[]
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
 
@@ -183,12 +229,44 @@ model DocumentArchive {
   folderId     String       @map("folder_id") @db.Uuid
   folder       Folder       @relation(fields: [folderId], references: [id])
   movementType MovementType @map("movement_type")
+  physicalArchives PhysicalArchive[]
   archivedAt   DateTime     @default(now()) @map("archived_at")
   archivedById String       @map("archived_by") @db.Uuid
   archivedBy   User         @relation("ArchiveActor", fields: [archivedById], references: [id])
 
   @@unique([documentId, bureauId, folderId, movementType])
   @@map("document_archives")
+}
+
+model PhysicalArchive {
+  id                 String          @id @default(uuid()) @db.Uuid
+  documentArchiveId  String          @map("document_archive_id") @db.Uuid
+  documentArchive    DocumentArchive @relation(fields: [documentArchiveId], references: [id], onDelete: Cascade)
+  documentId         String          @map("document_id") @db.Uuid
+  document           Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  directionId        String?         @map("direction_id") @db.Uuid
+  direction          Department?     @relation("PhysicalArchiveDirection", fields: [directionId], references: [id])
+  partnerDirectionId String?         @map("partner_direction_id") @db.Uuid
+  partnerDirection   Department?     @relation("PhysicalArchivePartnerDirection", fields: [partnerDirectionId], references: [id])
+  year               Int
+  folderId           String          @map("folder_id") @db.Uuid
+  folder             Folder          @relation(fields: [folderId], references: [id])
+  movementType       MovementType    @map("movement_type")
+  site               String
+  batiment           String
+  salle              String
+  rayon              String
+  etagere            String
+  classeur           String
+  dossier            String
+  boiteArchive       String          @map("boite_archive")
+  classementKey      String          @map("classement_key")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+
+  @@unique([documentArchiveId, partnerDirectionId, year])
+  @@index([folderId])
+  @@map("physical_archives")
 }
 
 model Attachment {
@@ -209,16 +287,62 @@ model Attachment {
 }
 
 model DocumentVersion {
-  id         String   @id @default(uuid()) @db.Uuid
-  documentId String   @map("document_id") @db.Uuid
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  version    Int
-  snapshot   Json
-  createdBy  String   @map("created_by") @db.Uuid
-  createdAt  DateTime @default(now()) @map("created_at")
+  id                String                 @id @default(uuid()) @db.Uuid
+  documentId        String                 @map("document_id") @db.Uuid
+  document          Document               @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  version           Int
+  snapshot          Json
+  changeSummary     String?                @map("change_summary")
+  sourceAnnotationIds String[]             @default([]) @map("source_annotation_ids")
+  createdById       String                 @map("created_by") @db.Uuid
+  createdByUser     User                   @relation("DocumentVersionAuthor", fields: [createdById], references: [id])
+  annotations       DocumentAnnotation[]
+  transmissions     DocumentTransmission[]
+  createdAt         DateTime               @default(now()) @map("created_at")
 
   @@unique([documentId, version])
   @@map("document_versions")
+}
+
+model DocumentAnnotation {
+  id                  String           @id @default(uuid()) @db.Uuid
+  documentId          String           @map("document_id") @db.Uuid
+  document            Document         @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentVersionId   String           @map("document_version_id") @db.Uuid
+  documentVersion     DocumentVersion  @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  sourceDirectionId   String           @map("source_direction_id") @db.Uuid
+  sourceDirection     Department       @relation("AnnotationSourceDirection", fields: [sourceDirectionId], references: [id])
+  recordedByDirectionId String         @map("recorded_by_direction_id") @db.Uuid
+  recordedByDirection Department       @relation("AnnotationRecordedByDirection", fields: [recordedByDirectionId], references: [id])
+  createdByUserId     String           @map("created_by_user_id") @db.Uuid
+  createdByUser       User             @relation("DocumentAnnotationAuthor", fields: [createdByUserId], references: [id])
+  status              AnnotationStatus @default(PENDING)
+  content             String
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  @@index([documentId, createdAt])
+  @@index([documentVersionId, sourceDirectionId])
+  @@map("document_annotations")
+}
+
+model DocumentTransmission {
+  id                String          @id @default(uuid()) @db.Uuid
+  documentId        String          @map("document_id") @db.Uuid
+  document          Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  documentVersionId String          @map("document_version_id") @db.Uuid
+  documentVersion   DocumentVersion @relation(fields: [documentVersionId], references: [id], onDelete: Cascade)
+  targetDirectionId String          @map("target_direction_id") @db.Uuid
+  targetDirection   Department      @relation("TransmissionTargetDirection", fields: [targetDirectionId], references: [id])
+  kind              RecipientKind
+  sentByUserId      String          @map("sent_by_user_id") @db.Uuid
+  sentByUser        User            @relation("DocumentTransmissionAuthor", fields: [sentByUserId], references: [id])
+  sentAt            DateTime        @default(now()) @map("sent_at")
+  respondedAt       DateTime?       @map("responded_at")
+
+  @@index([documentId, sentAt])
+  @@index([documentVersionId, targetDirectionId])
+  @@map("document_transmissions")
 }
 
 model AuditLog {

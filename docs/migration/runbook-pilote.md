@@ -25,6 +25,7 @@ Services exposes :
 - Frontend Next.js : `http://localhost:3000`
 - Frontend via Nginx : `http://localhost:8088`
 - PostgreSQL : `localhost:5432`
+- pgAdmin : `http://localhost:5050`
 - Keycloak : `http://localhost:8080`
 - MinIO API : `http://localhost:9000`
 - MinIO console : `http://localhost:9001`
@@ -43,6 +44,14 @@ npm run prisma:migrate --workspace @sigeda/database
 npm run prisma:seed --workspace @sigeda/database
 ```
 
+Pour retrouver une base de demonstration propre apres des tests fonctionnels :
+
+```powershell
+npm run db:reset-demo
+```
+
+Cette commande reinitialise PostgreSQL, rejoue les migrations puis recharge uniquement le seed pilote minimal.
+
 ## Build
 
 ```powershell
@@ -55,6 +64,18 @@ npm run build --workspace @sigeda/api-nest
 
 - Email : `admin@sigeda.local`
 - Mot de passe temporaire : `SigedaAdmin1!`
+
+## Interfaces d'administration
+
+- Keycloak admin console : `http://localhost:8080/admin/`
+  - Login : `admin`
+  - Mot de passe : `admin`
+- pgAdmin : `http://localhost:5050`
+  - Email : `admin@sigeda.dev`
+  - Mot de passe : `SigedaPgAdmin1!`
+- OpenSearch
+  - Utilisateur : `admin`
+  - Mot de passe : `CentralBankSearch_2026!Vault`
 
 Changer ce mot de passe avant tout usage hors poste local.
 

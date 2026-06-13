@@ -12,7 +12,7 @@ import type {
   onPremiseRoles,
   ocrStatuses,
   roles
-} from "../constants";
+} from "../constants/index.js";
 
 export type Role = (typeof roles)[number];
 export type OnPremiseRole = (typeof onPremiseRoles)[number];
@@ -28,6 +28,7 @@ export type OcrStatus = (typeof ocrStatuses)[number];
 export type MovementType = (typeof movementTypes)[number];
 export type ArchiveFolderStatus = "ACTIVE" | "ARCHIVED";
 export type FolderStatus = (typeof folderStatuses)[number];
+export type AnnotationStatus = "PENDING" | "APPLIED" | "DISMISSED";
 
 export interface Department {
   id: string;
@@ -35,6 +36,8 @@ export interface Department {
   designation: string;
   type: DepartmentType;
   parentId?: string | null;
+  directionId?: string | null;
+  serviceId?: string | null;
   createdAt: string | number;
   updatedAt: string | number;
 }
@@ -73,6 +76,8 @@ export interface DepartementReference {
   type?: DepartementType;
   code: string;
   designation: string;
+  directionId?: string | null;
+  serviceId?: string | null;
 }
 
 export interface Departement {
@@ -80,6 +85,8 @@ export interface Departement {
   type: DepartementType;
   code: string;
   designation: string;
+  directionId?: string | null;
+  serviceId?: string | null;
   parent?: {
     code: string;
     designation: string;
@@ -94,6 +101,8 @@ export interface Departement {
 export interface DepartementListItem extends Departement {
   parentId?: string | null;
   parentDesignation?: string | null;
+  directionDesignation?: string | null;
+  serviceDesignation?: string | null;
 }
 
 export type Direction = Departement;
@@ -189,6 +198,72 @@ export interface DocumentAttachment {
   mimeType?: string;
 }
 
+export interface DocumentSigner {
+  userId?: string;
+  fullName: string;
+  functionTitle?: string;
+  departmentId: string;
+  departmentType: DepartmentType;
+  signingOrder?: number;
+}
+
+export interface DocumentVersionRecord {
+  id: string;
+  documentId: string;
+  version: number;
+  changeSummary?: string;
+  sourceAnnotationIds: string[];
+  createdById: string;
+  createdByName?: string;
+  createdAt: string;
+}
+
+export interface DocumentAnnotationRecord {
+  id: string;
+  documentId: string;
+  documentVersionId: string;
+  documentVersionNumber: number;
+  sourceDirectionId: string;
+  sourceDirectionCode?: string;
+  sourceDirectionName?: string;
+  recordedByDirectionId: string;
+  recordedByDirectionCode?: string;
+  recordedByDirectionName?: string;
+  createdByUserId: string;
+  createdByUserName?: string;
+  status: AnnotationStatus;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentTransmissionRecord {
+  id: string;
+  documentId: string;
+  documentVersionId: string;
+  documentVersionNumber: number;
+  targetDirectionId: string;
+  targetDirectionCode?: string;
+  targetDirectionName?: string;
+  kind: "RECEIVER" | "COPY";
+  sentByUserId: string;
+  sentByUserName?: string;
+  sentAt: string;
+  respondedAt?: string;
+}
+
+export interface DocumentTimelineEvent {
+  id: string;
+  type: "VERSION_CREATED" | "TRANSMISSION_SENT" | "ANNOTATION_CREATED" | "DOCUMENT_CREATED" | "DOCUMENT_VALIDATED";
+  documentId: string;
+  documentVersionNumber: number;
+  label: string;
+  description: string;
+  actorName?: string;
+  directionName?: string;
+  createdAt: string;
+}
+
 export interface AIExtractedData {
   reference?: string;
   year?: number;
@@ -201,6 +276,7 @@ export interface AIExtractedData {
   copyDirectionIds?: string[];
   documentType?: DocumentType | string;
   signerName?: string;
+  signers?: DocumentSigner[];
   confidentialityLevel?: ConfidentialityLevel;
   summary?: string;
   keywords?: string[];
@@ -233,9 +309,13 @@ export interface DocumentEntity {
   authorName?: string;
   signerId?: string;
   signerName?: string;
+  signers?: DocumentSigner[];
   emitterDirectionId?: string;
   receiverDirectionIds: string[];
   copyDirectionIds: string[];
+  receiverDirectionNames?: string[];
+  copyDirectionNames?: string[];
+  movementType?: MovementType;
   confidentialityLevel?: ConfidentialityLevel;
   status?: DocumentStatus;
   keywords: string[];
@@ -254,6 +334,21 @@ export interface DocumentEntity {
   createdAt: string;
   updatedAt: string;
   archivedAt?: string;
+  archiveFolders?: Array<{
+    id: string;
+    bureauId: string;
+    folderId: string;
+    movementType: MovementType;
+    archivedAt: string;
+  }>;
+  annotations?: DocumentAnnotationRecord[];
+  versionsHistory?: DocumentVersionRecord[];
+  transmissions?: DocumentTransmissionRecord[];
+  timeline?: DocumentTimelineEvent[];
+  pendingResponseDirectionIds?: string[];
+  pendingResponseDirectionNames?: string[];
+  respondedDirectionIds?: string[];
+  respondedDirectionNames?: string[];
   fileUrl?: string;
   filePath?: string;
   aiExtractedData?: AIExtractedData;
@@ -270,6 +365,7 @@ export interface DocumentArchive {
   folderId?: string;
   movementType: MovementType;
   archivedAt: string;
+  updatedAt?: string;
   archivedBy: string;
   archiveFolderId?: string;
 }
@@ -300,6 +396,7 @@ export interface ArchiveFolder {
   directionId?: string;
   partnerDirectionId: string;
   createdAt: string;
+  updatedAt: string;
   status: ArchiveFolderStatus;
 }
 
@@ -315,6 +412,29 @@ export interface ArchiveFolderListItem extends ArchiveFolder {
   accessibleBureauNames?: string[];
   archiveCount: number;
   latestArchivedAt?: string;
+}
+
+export interface ArchiveFolderDocumentListItem {
+  archiveId: string;
+  documentId: string;
+  folderId?: string;
+  movementType: MovementType;
+  archivedAt: string;
+  reference: string;
+  referenceNumber: number;
+  title: string;
+  subject?: string;
+  createdAt: string;
+  emitterDirectionId: string;
+  emitterDirectionCode?: string;
+  emitterDirectionName?: string;
+  receiverDirectionNames: string[];
+  copyDirectionNames: string[];
+  signers: Array<{
+    fullName: string;
+    functionTitle?: string;
+    signingOrder?: number;
+  }>;
 }
 
 export interface AuditLog {

@@ -2,25 +2,45 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: sigeda
-      POSTGRES_USER: sigeda
-      POSTGRES_PASSWORD: sigeda
+      POSTGRES_DB: ${SIGEDA_POSTGRES_DB:-sigeda}
+      POSTGRES_USER: ${SIGEDA_POSTGRES_USER:-sigeda}
+      POSTGRES_PASSWORD: ${SIGEDA_POSTGRES_PASSWORD:-sigeda}
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U sigeda -d sigeda"]
+      test: ["CMD-SHELL", "pg_isready -U ${SIGEDA_POSTGRES_USER:-sigeda} -d ${SIGEDA_POSTGRES_DB:-sigeda}"]
       interval: 10s
       timeout: 5s
       retries: 10
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: sigeda-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${SIGEDA_PGADMIN_EMAIL:-admin@sigeda.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${SIGEDA_PGADMIN_PASSWORD:-SigedaPgAdmin_2026!}
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "True"
+      PGADMIN_CONFIG_LOGIN_BANNER: "'SIGEDA PostgreSQL Administration'"
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 20
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./pgadmin/pgpass:/pgpass:ro
+      - pgadmin-data:/var/lib/pgadmin
 
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: sigeda
-      MINIO_ROOT_PASSWORD: sigeda-password
+      MINIO_ROOT_USER: ${SIGEDA_MINIO_ROOT_USER:-sigeda}
+      MINIO_ROOT_PASSWORD: ${SIGEDA_MINIO_ROOT_PASSWORD:-sigeda-password}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -31,8 +51,8 @@ services:
     image: quay.io/keycloak/keycloak:25.0
     command: start-dev --import-realm
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
+      KEYCLOAK_ADMIN: ${SIGEDA_KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${SIGEDA_KEYCLOAK_ADMIN_PASSWORD:-admin}
     ports:
       - "8080:8080"
     volumes:
@@ -42,8 +62,8 @@ services:
     image: opensearchproject/opensearch:2.15.0
     environment:
       discovery.type: single-node
-      plugins.security.disabled: "true"
-      OPENSEARCH_INITIAL_ADMIN_PASSWORD: CentralBankSearch_2026!Vault
+      plugins.security.disabled: ${SIGEDA_OPENSEARCH_SECURITY_DISABLED:-true}
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${SIGEDA_OPENSEARCH_ADMIN_PASSWORD:-CentralBankSearch_2026!Vault}
       OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
     ports:
       - "9200:9200"
@@ -57,15 +77,23 @@ services:
       dockerfile: apps/api-nest/Dockerfile
     environment:
       PORT: 4100
-      DATABASE_URL: postgresql://sigeda:sigeda@postgres:5432/sigeda
-      KEYCLOAK_ISSUER: http://localhost:8080/realms/sigeda
+      DATABASE_URL: postgresql://${SIGEDA_POSTGRES_USER:-sigeda}:${SIGEDA_POSTGRES_PASSWORD:-sigeda}@postgres:5432/${SIGEDA_POSTGRES_DB:-sigeda}
+      KEYCLOAK_ISSUER: ${SIGEDA_KEYCLOAK_ISSUER:-http://localhost:8080/realms/sigeda}
       KEYCLOAK_JWKS_URI: http://keycloak:8080/realms/sigeda/protocol/openid-connect/certs
-      KEYCLOAK_AUDIENCE: sigeda-web
+      KEYCLOAK_AUDIENCE: ${SIGEDA_KEYCLOAK_CLIENT_ID:-sigeda-web}
+      KEYCLOAK_REALM: ${SIGEDA_KEYCLOAK_REALM:-sigeda}
+      KEYCLOAK_ADMIN_BASE_URL: ${SIGEDA_KEYCLOAK_ADMIN_BASE_URL:-http://keycloak:8080}
+      KEYCLOAK_ADMIN_USERNAME: ${SIGEDA_KEYCLOAK_ADMIN_USER:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${SIGEDA_KEYCLOAK_ADMIN_PASSWORD:-admin}
       MINIO_ENDPOINT: http://minio:9000
-      MINIO_BUCKET: sigeda-documents
-      MINIO_ACCESS_KEY: sigeda
-      MINIO_SECRET_KEY: sigeda-password
+      MINIO_PUBLIC_ENDPOINT: ${SIGEDA_MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      MINIO_BUCKET: ${SIGEDA_MINIO_BUCKET:-sigeda-documents}
+      MINIO_ACCESS_KEY: ${SIGEDA_MINIO_ROOT_USER:-sigeda}
+      MINIO_SECRET_KEY: ${SIGEDA_MINIO_ROOT_PASSWORD:-sigeda-password}
       OPENSEARCH_NODE: http://opensearch:9200
+      CORS_ORIGIN: ${SIGEDA_CORS_ORIGIN:-http://localhost:8088,http://localhost:3000}
+      HTTP_BODY_LIMIT: ${SIGEDA_HTTP_BODY_LIMIT:-10mb}
+      MAX_DOCUMENT_UPLOAD_BYTES: ${SIGEDA_MAX_DOCUMENT_UPLOAD_BYTES:-26214400}
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,18 +117,15 @@ services:
       NEXT_PUBLIC_SIGEDA_API_URL: http://localhost:4100
       SIGEDA_ON_PREMISE_API_URL: http://api-nest:4100/api/v1
       NEXT_PUBLIC_SIGEDA_ON_PREMISE_API_URL: http://localhost:4100/api/v1
-      KEYCLOAK_URL: http://localhost:8080
+      KEYCLOAK_URL: ${SIGEDA_KEYCLOAK_URL:-http://localhost:8080}
       KEYCLOAK_INTERNAL_URL: http://keycloak:8080
-      KEYCLOAK_REALM: sigeda
-      KEYCLOAK_CLIENT_ID: sigeda-web
-      NEXT_PUBLIC_KEYCLOAK_URL: http://localhost:8080
-      NEXT_PUBLIC_KEYCLOAK_REALM: sigeda
-      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: sigeda-web
+      KEYCLOAK_REALM: ${SIGEDA_KEYCLOAK_REALM:-sigeda}
+      KEYCLOAK_CLIENT_ID: ${SIGEDA_KEYCLOAK_CLIENT_ID:-sigeda-web}
+      NEXT_PUBLIC_KEYCLOAK_URL: ${SIGEDA_KEYCLOAK_URL:-http://localhost:8080}
+      NEXT_PUBLIC_KEYCLOAK_REALM: ${SIGEDA_KEYCLOAK_REALM:-sigeda}
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${SIGEDA_KEYCLOAK_CLIENT_ID:-sigeda-web}
     depends_on:
       - api-nest
-    ports:
-      - "3000:3000"
-
   nginx:
     image: nginx:1.27-alpine
     ports:
@@ -113,5 +138,6 @@ services:
 
 volumes:
   postgres-data:
+  pgadmin-data:
   minio-data:
   opensearch-data:

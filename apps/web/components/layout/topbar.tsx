@@ -3,10 +3,10 @@ import { LogoutButton } from "@/components/auth/logout-button";
 
 export function Topbar() {
   return (
-    <header className="flex items-center justify-between border-b border-[var(--border)] bg-white/80 px-6 py-4 backdrop-blur">
+    <header className="flex items-center justify-between border-b border-[var(--border)] bg-[var(--header-tint)] px-5 py-3 shadow-[0_1px_0_rgba(16,38,60,0.04)]">
       <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Direction Generale</p>
-        <h2 className="text-lg font-semibold text-slate-900">Pilotage documentaire</h2>
+        <p className="text-[10px] uppercase tracking-[0.24em] text-slate-500">SIGEDA</p>
+        <h2 className="text-base font-semibold text-brand-navy">Hotel des Monnaies</h2>
       </div>
       <div className="flex items-center gap-3">
         <CurrentUserBadge />

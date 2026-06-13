@@ -1,9 +1,9 @@
 import { ArchiveFolderCreateForm } from "@/components/archives/archive-folder-create-form";
 import { ArchiveFilters } from "@/components/archives/archive-filters";
 import { ArchiveFolderTable } from "@/components/archives/archive-folder-table";
-import { Card } from "@/components/ui/card";
-import { PaginationControls } from "@/components/ui/pagination-controls";
-import { getArchiveFolders, getBureaux, getCurrentUser, getDirections } from "@/lib/api";
+import { BackButton } from "@/components/ui/back-button";
+import { PageHeader } from "@/components/ui/page-header";
+import { getArchiveFolders, getCurrentUser, getDirections } from "@/lib/api";
 
 type ArchiveFoldersPageProps = {
   searchParams?: {
@@ -12,6 +12,10 @@ type ArchiveFoldersPageProps = {
     section?: string;
     partnerDirectionId?: string;
     status?: string;
+    dateField?: "createdAt" | "updatedAt";
+    periodPreset?: "today" | "week" | "month" | "quarter" | "year" | "previousYear" | "custom";
+    dateFrom?: string;
+    dateTo?: string;
     page?: string;
     pageSize?: string;
   };
@@ -40,57 +44,80 @@ export default async function ArchiveFoldersPage({ searchParams }: ArchiveFolder
     params.set("status", searchParams.status);
   }
 
+  if (searchParams?.dateField) {
+    params.set("dateField", searchParams.dateField);
+  }
+
+  if (searchParams?.periodPreset) {
+    params.set("periodPreset", searchParams.periodPreset);
+  }
+
+  if (searchParams?.dateFrom) {
+    params.set("dateFrom", searchParams.dateFrom);
+  }
+
+  if (searchParams?.dateTo) {
+    params.set("dateTo", searchParams.dateTo);
+  }
+
   params.set("page", searchParams?.page ?? "1");
   params.set("pageSize", searchParams?.pageSize ?? "10");
 
-  const [folders, currentUser, directions, bureaux] = await Promise.all([
+  const [folders, currentUser, directions] = await Promise.all([
     getArchiveFolders(params),
     getCurrentUser(),
-    getDirections(),
-    getBureaux()
+    getDirections()
   ]);
-  const canManage = ["ADMIN", "ARCHIVISTE", "DIRECTEUR", "CHEF_SERVICE", "CHEF_BUREAU"].includes(
+  const canManage = ["ADMIN", "DIRECTEUR_GENERAL", "DIRECTEUR", "MANAGER"].includes(
     currentUser?.user?.role ?? ""
   );
+  const canCreateFolder = Boolean(currentUser?.user?.bureauId);
   const partnerDirections = (directions ?? []).filter(
     (direction) => direction.type === "Direction" || direction.type === "Direction Generale"
   );
 
   return (
-    <div className="space-y-6">
-      <Card className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Classeurs annuels</p>
-        <h1 className="text-2xl font-semibold text-brand-navy">Structure annuelle des classeurs</h1>
-        <p className="max-w-3xl text-sm text-slate-600">
-          Chaque classeur est distingue par l&apos;annee, la direction, la direction partenaire et la section
-          ENTREE ou SORTIE.
-        </p>
-      </Card>
-
-      <ArchiveFilters
-        q={searchParams?.q}
-        year={searchParams?.year}
-        section={searchParams?.section}
-        partnerDirectionId={searchParams?.partnerDirectionId}
-        status={searchParams?.status}
-        partnerDirections={partnerDirections}
-        showStatusFilter
+    <div className="space-y-4">
+      <PageHeader
+        eyebrow="Classeurs annuels"
+        title="Structure annuelle des classeurs"
+        description="Suivi des classeurs actifs, archives et acces documentaires par bureau."
+        actions={<BackButton fallbackHref="/documents" label="Retour aux documents" />}
       />
-      {canManage ? (
-        <ArchiveFolderCreateForm
-          bureaux={(bureaux ?? []).filter((departement) => departement.type === "Bureau")}
-          partnerDirections={partnerDirections}
-        />
-      ) : null}
-      <ArchiveFolderTable rows={folders?.items ?? []} canManage={canManage} />
-      {folders ? (
-        <PaginationControls
-          page={folders.page}
-          pageSize={folders.pageSize}
-          total={folders.total}
-          totalPages={folders.totalPages}
-        />
-      ) : null}
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(360px,0.9fr)] xl:items-start">
+        <div className="min-w-0">
+          <ArchiveFilters
+            q={searchParams?.q}
+            year={searchParams?.year}
+            section={searchParams?.section}
+            partnerDirectionId={searchParams?.partnerDirectionId}
+            status={searchParams?.status}
+            dateField={searchParams?.dateField}
+            periodPreset={searchParams?.periodPreset}
+            dateFrom={searchParams?.dateFrom}
+            dateTo={searchParams?.dateTo}
+            partnerDirections={partnerDirections}
+            showStatusFilter
+          />
+        </div>
+        {canCreateFolder ? (
+          <div className="min-w-0">
+            <ArchiveFolderCreateForm
+              currentUser={currentUser?.user ?? null}
+              partnerDirections={partnerDirections}
+            />
+          </div>
+        ) : null}
+      </div>
+      <ArchiveFolderTable
+        rows={folders?.items ?? []}
+        canManage={canManage}
+        page={folders?.page ?? 1}
+        pageSize={folders?.pageSize ?? 10}
+        total={folders?.total ?? 0}
+        totalPages={folders?.totalPages ?? 1}
+      />
     </div>
   );
 }

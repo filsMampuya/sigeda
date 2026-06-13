@@ -4,6 +4,7 @@ import {
   auditActions,
   confidentialityLevels,
   departementTypes,
+  departmentTypes,
   digitizationStatuses,
   documentStatuses,
   documentFileKinds,
@@ -22,7 +23,9 @@ export const departementReferenceSchema = z.object({
   id: z.string().optional(),
   type: z.enum(departementTypes).optional(),
   code: z.string().min(1),
-  designation: z.string().min(1)
+  designation: z.string().min(1),
+  directionId: z.string().nullable().optional(),
+  serviceId: z.string().nullable().optional()
 });
 
 export const createUserSchema = z.object({
@@ -70,6 +73,7 @@ export const createUserResultSchema = z.object({
 });
 
 export const parentDepartementSchema = z.object({
+  id: z.string().trim().min(1).optional(),
   code: z.string().trim().min(1),
   designation: z.string().trim().min(1)
 });
@@ -79,6 +83,8 @@ export const departementSchema = z.object({
   type: z.enum(departementTypes),
   code: z.string().min(1),
   designation: z.string().min(1),
+  directionId: z.string().nullable().optional(),
+  serviceId: z.string().nullable().optional(),
   parent: parentDepartementSchema.nullable().optional(),
   parents: z.array(z.string()),
   dateCreation: z.number(),
@@ -96,7 +102,9 @@ export const createDepartementSchema = z.object({
   type: z.enum(departementTypes),
   code: z.string().trim().min(1),
   designation: z.string().trim().min(1),
-  parent: parentDepartementSchema.optional()
+  parent: parentDepartementSchema.optional(),
+  direction: parentDepartementSchema.optional(),
+  service: parentDepartementSchema.optional()
 }).strict().superRefine((value, context) => {
   if (value.type === "Direction Generale" && value.parent) {
     context.addIssue({
@@ -106,11 +114,35 @@ export const createDepartementSchema = z.object({
     });
   }
 
-  if (value.type !== "Direction Generale" && !value.parent) {
+  if (value.type === "Direction" && !value.parent) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["parent"],
-      message: "parent is required for this departement type."
+      message: "parent is required for Direction."
+    });
+  }
+
+  if (value.type === "Service" && !value.parent) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["parent"],
+      message: "parent is required for Service."
+    });
+  }
+
+  if (value.type === "Bureau" && !value.direction) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["direction"],
+      message: "direction is required for Bureau."
+    });
+  }
+
+  if (value.type !== "Bureau" && (value.direction || value.service)) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["direction"],
+      message: "direction/service can only be provided for Bureau."
     });
   }
 });
@@ -154,7 +186,8 @@ export const createServiceSchema = z.object({
 });
 
 export const createBureauSchema = z.object({
-  parentId: z.string().min(1),
+  directionId: z.string().min(1),
+  serviceId: z.string().optional(),
   code: z.string().min(1),
   designation: z.string().min(1),
   description: z.string().optional()
@@ -216,6 +249,15 @@ export const documentAttachmentSchema = z.object({
   mimeType: z.string().optional()
 });
 
+export const documentSignerSchema = z.object({
+  userId: z.string().optional(),
+  fullName: z.string().min(1),
+  functionTitle: z.string().optional(),
+  departmentId: z.string().min(1),
+  departmentType: z.enum(departmentTypes),
+  signingOrder: z.number().int().positive().optional()
+});
+
 export const aiExtractedDataSchema = z.object({
   reference: z.string().optional(),
   year: z.number().int().min(2000).max(3000).optional(),
@@ -228,6 +270,7 @@ export const aiExtractedDataSchema = z.object({
   copyDirectionIds: z.array(z.string()).optional(),
   documentType: z.union([z.enum(documentTypes), z.string().min(1)]).optional(),
   signerName: z.string().optional(),
+  signers: z.array(documentSignerSchema).optional(),
   confidentialityLevel: z.enum(confidentialityLevels).optional(),
   summary: z.string().optional(),
   keywords: z.array(z.string()).optional(),
@@ -260,9 +303,11 @@ export const documentSchema = z.object({
   authorName: z.string().optional(),
   signerId: z.string().optional(),
   signerName: z.string().optional(),
+  signers: z.array(documentSignerSchema).optional(),
   emitterDirectionId: z.string().optional(),
   receiverDirectionIds: z.array(z.string()),
   copyDirectionIds: z.array(z.string()),
+  movementType: z.enum(movementTypes).optional(),
   confidentialityLevel: z.enum(confidentialityLevels).optional(),
   status: z.enum(documentStatuses).optional(),
   keywords: z.array(z.string()),
@@ -308,6 +353,7 @@ export const createDocumentSchema = z
     authorId: z.string().optional(),
     signerId: z.string().optional(),
     signerName: z.string().optional(),
+    signers: z.array(documentSignerSchema).optional(),
     confidentialityLevel: z.enum(confidentialityLevels).optional(),
     status: z.enum(documentStatuses).optional(),
     keywords: z.array(z.string()).optional(),
@@ -376,7 +422,6 @@ export const archiveFolderSchema = z.object({
 
 export const createArchiveFolderSchema = z.object({
   year: z.number().int().min(2000).max(3000),
-  bureauId: z.string().min(1),
   partnerDirectionId: z.string().min(1),
   accessibleBureauIds: z.array(z.string().min(1)).default([])
 });

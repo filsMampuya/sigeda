@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getServerAuthToken } from "@/lib/auth";
-import { getServerApiBaseUrl } from "@/lib/env";
+import { getServerOnPremiseApiBaseUrl } from "@/lib/env";
 
 export async function GET() {
   const authToken = getServerAuthToken();
@@ -11,7 +11,7 @@ export async function GET() {
   }
 
   try {
-    const response = await fetch(`${getServerApiBaseUrl()}/api/auth/me`, {
+    const response = await fetch(`${getServerOnPremiseApiBaseUrl()}/auth/me`, {
       headers: {
         Authorization: `Bearer ${authToken}`
       },

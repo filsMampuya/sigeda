@@ -9,6 +9,7 @@ FROM node:22-bookworm-slim AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN rm -rf apps/web/.next node_modules/@sigeda/web/.next
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV SIGEDA_API_URL=http://api-nest:4100
 ENV NEXT_PUBLIC_SIGEDA_API_URL=http://localhost:4100

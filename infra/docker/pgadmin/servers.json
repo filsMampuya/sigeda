@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "SIGEDA PostgreSQL",
+      "Group": "SIGEDA",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "sigeda",
+      "Username": "sigeda",
+      "SSLMode": "prefer",
+      "PassFile": "/pgpass"
+    }
+  }
+}

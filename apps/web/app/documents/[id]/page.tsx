@@ -1,12 +1,16 @@
 import { DocumentDetailsPanel } from "@/components/documents/document-details-panel";
-import { getDocumentById } from "@/lib/api";
+import { getCurrentUser, getDirections, getDocumentById } from "@/lib/api";
 
 export default async function DocumentDetailPage({
   params
 }: {
   params: { id: string };
 }) {
-  const document = await getDocumentById(params.id);
+  const [document, directions, currentUser] = await Promise.all([
+    getDocumentById(params.id),
+    getDirections(),
+    getCurrentUser()
+  ]);
 
-  return <DocumentDetailsPanel document={document} />;
+  return <DocumentDetailsPanel currentUser={currentUser?.user ?? null} directions={directions ?? []} document={document} />;
 }

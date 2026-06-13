@@ -19,6 +19,7 @@
     "format": "echo format database",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:reset": "prisma migrate reset --force",
     "prisma:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {

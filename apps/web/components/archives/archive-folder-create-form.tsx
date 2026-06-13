@@ -1,23 +1,28 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { Departement } from "@sigeda/shared/types";
+import { FolderPlus } from "lucide-react";
+import type { AuthenticatedUser, Departement } from "@sigeda/shared/types";
 
 import { Card } from "@/components/ui/card";
+import { FormField } from "@/components/ui/form-field";
 import { getClientAuthToken } from "@/lib/client-auth-token";
-import { getPublicApiBaseUrl } from "@/lib/env";
+import { getPublicOnPremiseApiBaseUrl } from "@/lib/env";
 import { formatStructureLabel } from "@/lib/format";
 
 type ArchiveFolderCreateFormProps = {
-  bureaux: Departement[];
+  currentUser: AuthenticatedUser | null;
   partnerDirections: Departement[];
 };
 
+const inputClassName =
+  "h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-500";
+
 export function ArchiveFolderCreateForm({
-  bureaux,
+  currentUser,
   partnerDirections
 }: ArchiveFolderCreateFormProps) {
-  const apiBaseUrl = getPublicApiBaseUrl();
+  const apiBaseUrl = getPublicOnPremiseApiBaseUrl();
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const currentYear = new Date().getFullYear();
@@ -26,15 +31,10 @@ export function ArchiveFolderCreateForm({
     const accessToken = await getClientAuthToken();
     const payload = {
       year: Number.parseInt(String(formData.get("year") ?? currentYear), 10),
-      bureauId: String(formData.get("bureauId") ?? ""),
-      partnerDirectionId: String(formData.get("partnerDirectionId") ?? ""),
-      accessibleBureauIds: formData
-        .getAll("accessibleBureauIds")
-        .map((value) => String(value))
-        .filter(Boolean)
+      partnerDirectionId: String(formData.get("partnerDirectionId") ?? "")
     };
 
-    const response = await fetch(`${apiBaseUrl}/api/archive-folders`, {
+    const response = await fetch(`${apiBaseUrl}/folders`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -54,6 +54,7 @@ export function ArchiveFolderCreateForm({
 
   return (
     <form
+      className="min-w-0"
       action={(formData) =>
         startTransition(async () => {
           try {
@@ -64,79 +65,68 @@ export function ArchiveFolderCreateForm({
         })
       }
     >
-      <Card className="space-y-5">
-        <div>
-          <h2 className="text-lg font-semibold text-brand-navy">Nouveau classeur annuel</h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Le classeur est cree dans un bureau et peut etre ouvert a plusieurs bureaux autorises.
-          </p>
+      <Card className="min-w-0 space-y-4 p-5">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+            <FolderPlus className="h-4 w-4" />
+          </span>
+          <div>
+            <h2 className="text-base font-semibold text-brand-navy">Nouveau classeur annuel</h2>
+            <p className="text-sm text-slate-600">Le bureau est determine automatiquement a partir du compte connecte.</p>
+          </div>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <input
-            name="year"
-            type="number"
-            defaultValue={currentYear}
-            min={2000}
-            max={3000}
-            className="rounded-xl border border-slate-200 px-4 py-3"
-            placeholder="Annee"
-            required
-          />
-          <select
-            name="partnerDirectionId"
-            className="rounded-xl border border-slate-200 px-4 py-3"
-            defaultValue=""
-            required
-          >
-            <option value="" disabled>
-              Selectionner la direction partenaire
-            </option>
-            {partnerDirections.map((direction) => (
-              <option key={direction.id} value={direction.id}>
-                {formatStructureLabel(direction.code, direction.designation)}
-              </option>
-            ))}
-          </select>
-          <select
-            name="bureauId"
-            className="rounded-xl border border-slate-200 px-4 py-3"
-            defaultValue=""
-            required
-          >
-            <option value="" disabled>
-              Selectionner le bureau createur
-            </option>
-            {bureaux.map((bureau) => (
-              <option key={bureau.id} value={bureau.id}>
-                {formatStructureLabel(bureau.code, bureau.designation)}
-              </option>
-            ))}
-          </select>
-          <label className="space-y-2 text-sm text-slate-700">
-            <span className="font-medium text-slate-900">Bureaux autorises</span>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <FormField label="Annee" required>
+            <input
+              name="year"
+              type="number"
+              defaultValue={currentYear}
+              min={2000}
+              max={3000}
+              className={inputClassName}
+              placeholder="Annee"
+              required
+            />
+          </FormField>
+          <FormField label="Direction partenaire" required>
             <select
-              name="accessibleBureauIds"
-              multiple
-              className="min-h-40 w-full rounded-xl border border-slate-200 px-4 py-3"
+              name="partnerDirectionId"
+              className={inputClassName}
+              defaultValue=""
+              required
             >
-              {bureaux.map((bureau) => (
-                <option key={bureau.id} value={bureau.id}>
-                  {formatStructureLabel(bureau.code, bureau.designation)}
+              <option value="" disabled>
+                Selectionner la direction partenaire
+              </option>
+              {partnerDirections.map((direction) => (
+                <option key={direction.id} value={direction.id}>
+                  {formatStructureLabel(direction.code, direction.designation)}
                 </option>
               ))}
             </select>
-          </label>
+          </FormField>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 md:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Bureau de classement</p>
+            <p className="mt-2">
+              {currentUser?.bureauId
+                ? "Le classeur sera cree automatiquement dans le bureau rattache a votre compte."
+                : "Votre compte doit etre rattache a un bureau pour creer un classeur."}
+            </p>
+          </div>
         </div>
+
         {feedback ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900">
             {feedback}
           </div>
         ) : null}
+
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={isPending}
-            className="rounded-xl bg-brand-navy px-5 py-3 text-sm font-medium text-white disabled:opacity-60"
+            disabled={isPending || !currentUser?.bureauId}
+            className="h-10 rounded-xl bg-brand-navy px-4 text-sm font-medium text-white disabled:opacity-60"
           >
             {isPending ? "Traitement..." : "Creer le classeur"}
           </button>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { authCookieName, authStateCookieName } from "@/lib/auth";
 import { exchangeCodeForToken } from "@/lib/keycloak";
+import { getRequestUrl } from "@/lib/request-url";
 
 function isSecureRequest(request: Request) {
   const forwardedProtocol = request.headers.get("x-forwarded-proto");
@@ -25,12 +26,12 @@ export async function GET(request: Request) {
     ?.split("=")[1];
 
   if (!code || !state || !storedState || state !== storedState) {
-    return NextResponse.redirect(new URL("/login?error=keycloak_state", request.url));
+    return NextResponse.redirect(getRequestUrl(request, "/login?error=keycloak_state"));
   }
 
   try {
-    const token = await exchangeCodeForToken(request.url, code);
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
+    const token = await exchangeCodeForToken(request, code);
+    const response = NextResponse.redirect(getRequestUrl(request, "/dashboard"));
 
     response.cookies.set(authCookieName, token.access_token, {
       httpOnly: true,
@@ -49,6 +50,6 @@ export async function GET(request: Request) {
 
     return response;
   } catch {
-    return NextResponse.redirect(new URL("/login?error=keycloak_callback", request.url));
+    return NextResponse.redirect(getRequestUrl(request, "/login?error=keycloak_callback"));
   }
 }

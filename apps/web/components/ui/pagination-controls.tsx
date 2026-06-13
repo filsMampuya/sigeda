@@ -22,16 +22,22 @@ export function PaginationControls({ page, pageSize, total, totalPages }: Pagina
     router.replace(`${pathname}?${params.toString()}`);
   }
 
+  const rangeStart = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const rangeEnd = total === 0 ? 0 : Math.min(total, page * pageSize);
+
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-      <p className="text-sm text-slate-600">
-        {total} element{total > 1 ? "s" : ""} • page {page} / {totalPages}
-      </p>
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Pagination</p>
+        <p className="text-sm text-slate-600">
+          {rangeStart}-{rangeEnd} sur {total} resultat{total > 1 ? "s" : ""} | page {page} / {totalPages}
+        </p>
+      </div>
       <div className="flex items-center gap-3">
         <select
           value={String(pageSize)}
           onChange={(event) => updateParams(1, Number.parseInt(event.target.value, 10))}
-          className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+          className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm"
         >
           <option value="10">10 / page</option>
           <option value="20">20 / page</option>
@@ -41,7 +47,7 @@ export function PaginationControls({ page, pageSize, total, totalPages }: Pagina
           type="button"
           onClick={() => updateParams(Math.max(1, page - 1))}
           disabled={page <= 1}
-          className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
+          className="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 disabled:opacity-50"
         >
           Precedent
         </button>
@@ -49,7 +55,7 @@ export function PaginationControls({ page, pageSize, total, totalPages }: Pagina
           type="button"
           onClick={() => updateParams(Math.min(totalPages, page + 1))}
           disabled={page >= totalPages}
-          className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
+          className="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 disabled:opacity-50"
         >
           Suivant
         </button>

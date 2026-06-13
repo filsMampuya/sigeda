@@ -4,16 +4,80 @@
 
 :root {
   color-scheme: light;
-  --background: #f3f5f8;
-  --foreground: #102235;
+  --background: #edf1f5;
+  --foreground: #10263c;
   --card: #ffffff;
-  --muted: #607084;
-  --border: rgba(15, 39, 68, 0.12);
+  --muted: #516272;
+  --border: rgba(16, 38, 60, 0.16);
+  --panel: #f7f9fb;
+  --sidebar: #0f2840;
+  --sidebar-foreground: #f7fafc;
+  --accent: #b38a2e;
+  --accent-soft: rgba(179, 138, 46, 0.14);
+  --header-tint: #eef3f8;
+  --table-head: #dfe8f1;
+  --table-head-strong: #c9d8e6;
 }
 
 body {
   background:
-    radial-gradient(circle at top right, rgba(182, 140, 42, 0.12), transparent 25%),
-    linear-gradient(180deg, #f6f8fb 0%, #eef2f6 100%);
+    linear-gradient(180deg, #f7f9fb 0%, #edf2f6 100%);
   color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+th {
+  vertical-align: middle;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff;
+  }
+
+  body {
+    color: #0f172a;
+  }
+
+  aside,
+  header,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:space-y-0 > * + * {
+    margin-top: 0 !important;
+  }
+
+  .print-report-shell {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  table {
+    page-break-inside: auto;
+  }
+
+  tr,
+  td,
+  th {
+    page-break-inside: avoid;
+  }
 }

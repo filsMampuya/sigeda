@@ -15,7 +15,7 @@ function isSecureRequest(request: Request) {
 
 export function GET(request: Request) {
   const state = createAuthState();
-  const response = NextResponse.redirect(buildKeycloakAuthorizeUrl(request.url, state));
+  const response = NextResponse.redirect(buildKeycloakAuthorizeUrl(request, state));
 
   response.cookies.set(authStateCookieName, state, {
     httpOnly: true,

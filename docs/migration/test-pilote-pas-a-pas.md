@@ -92,6 +92,12 @@ OpenSearch :
 http://localhost:9200
 ```
 
+pgAdmin :
+
+```txt
+http://localhost:5050
+```
+
 Mot de passe admin OpenSearch pilote :
 
 ```txt
@@ -118,7 +124,28 @@ MinIO :
 sigeda / sigeda-password
 ```
 
-## 8. Arret
+pgAdmin :
+
+```txt
+admin@sigeda.dev / SigedaPgAdmin1!
+```
+
+## 9. Verifier la creation d'un document
+
+1. Ouvrir `http://localhost:8088/documents/new`.
+2. Se connecter avec `admin@sigeda.local / SigedaAdmin1!`.
+3. Selectionner une direction destinataire differente de la direction emettrice.
+4. Selectionner deux signataires dans la liste disponible.
+5. Verifier que l'ordre des signataires peut etre modifie.
+6. Soumettre le formulaire.
+7. Verifier la creation des lignes dans :
+   - `documents`
+   - `document_signers`
+   - `document_archives`
+   - `physical_archives`
+   - `audit_logs`
+
+## 10. Arret
 
 ```powershell
 docker compose -f infra/docker/docker-compose.yml down

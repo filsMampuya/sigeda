@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "format": "echo format api-nest",
     "test:smoke": "tsx scripts/smoke-test.ts",
+    "test:functional": "tsx scripts/functional-test.ts",
     "start": "node dist/main.js"
   },
   "dependencies": {
@@ -18,13 +19,19 @@
     "@nestjs/platform-express": "^10.4.15",
     "@sigeda/database": "*",
     "@sigeda/shared": "*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "express": "^4.21.2",
+    "helmet": "^8.1.0",
     "jose": "^5.9.6",
+    "minio": "^8.0.7",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.10.1",
     "tsx": "^4.19.1",
     "typescript": "^5.5.4"

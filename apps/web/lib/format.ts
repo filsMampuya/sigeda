@@ -32,7 +32,10 @@ export function formatShortDate(value?: string | number | null) {
 
   return new Intl.DateTimeFormat("fr-FR", {
     day: "2-digit",
-    month: "short",
-    year: "numeric"
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
   }).format(date);
 }

@@ -13,8 +13,8 @@ const sans = Merriweather_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "SIGEDA",
-  description: "Systeme integre de gestion electronique des documents et archives"
+  title: "SIGEDA | Hotel des Monnaies",
+  description: "Plateforme documentaire institutionnelle de l'Hotel des Monnaies"
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

@@ -1,37 +1,37 @@
 # API Specification
 
+Specification de transition pour l'API NestJS on-premise exposee sous `http://localhost:4100/api/v1`.
+
 ## Auth
 
-- `GET /api/auth/me`
+- `GET /api/v1/auth/me`
 
 ## Documents
 
-- `POST /api/documents`
-- `GET /api/documents`
-- `GET /api/documents/:id`
-- `PUT /api/documents/:id`
-- `DELETE /api/documents/:id`
-- `POST /api/documents/:id/archive`
-- `POST /api/documents/:id/validate`
-- `POST /api/documents/:id/reject`
-- `GET /api/documents/search`
-- `GET /api/document-archives`
-- `GET /api/archive-folders`
-- `POST /api/archive-folders/:id/status`
-  Body: `{ "status": "ACTIVE" | "CLOSED" }`
+- `POST /api/v1/documents`
+  - Cree un document.
+  - Accepte `receiverDirectionIds`, `copyDirectionIds` et `signers`.
+- `GET /api/v1/documents`
+- `GET /api/v1/documents/:id`
+- `GET /api/v1/document-archives`
+- `GET /api/v1/folders`
+- `POST /api/v1/folders`
+- `POST /api/v1/folders/:id/status`
+  - Body: `{ "status": "ACTIVE" | "ARCHIVED" }`
+- `GET /api/v1/physical-archives`
+- `POST /api/v1/physical-archives`
 
 ## Organisation
 
-- `GET /api/directions`
-- `POST /api/directions`
-- `GET /api/services`
-- `POST /api/services`
-- `GET /api/bureaux`
-- `POST /api/bureaux`
+- `GET /api/v1/departments`
+- `GET /api/v1/departments/hierarchy`
+- `POST /api/v1/departments`
+- `GET /api/v1/users`
+- `POST /api/v1/users`
 
-## Audit et dashboard
+## Recherche, audit et dashboard
 
-- `GET /api/audit-logs`
-- `GET /api/dashboard/stats`
-- `GET /api/physical-archives`
-- `POST /api/physical-archives`
+- `GET /api/v1/search/index-plan`
+- `GET /api/v1/search/documents`
+- `GET /api/v1/audit-logs`
+- `GET /api/v1/dashboard/stats`

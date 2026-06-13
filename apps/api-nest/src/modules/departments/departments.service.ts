@@ -1,18 +1,19 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { DepartmentType } from "@sigeda/database";
 import { PrismaService } from "../prisma/prisma.service.js";
+import { resolveOwnerDirectionIdFromBureau } from "../../shared/department-scope.js";
 
 type CreateDepartmentInput = {
   code: string;
   designation: string;
   type: DepartmentType;
   parentId?: string | null;
+  directionId?: string | null;
+  serviceId?: string | null;
 };
 
 const requiredParentType: Partial<Record<DepartmentType, DepartmentType>> = {
-  DIRECTION: "DIRECTION_GENERALE",
-  SERVICE: "DIRECTION",
-  BUREAU: "SERVICE"
+  DIRECTION: "DIRECTION_GENERALE"
 };
 
 @Injectable()
@@ -36,20 +37,26 @@ export class DepartmentsService {
   }
 
   async create(input: CreateDepartmentInput) {
+    const normalizedType = String(input.type ?? "").toUpperCase() as DepartmentType;
     const existing = await this.prisma.department.findUnique({ where: { code: input.code } });
 
     if (existing) {
       throw new ConflictException("Department code already exists.");
     }
 
-    await this.assertParent(input.type, input.parentId);
+    const normalized = await this.normalizeDepartmentInput({
+      ...input,
+      type: normalizedType
+    });
 
     return this.prisma.department.create({
       data: {
-        code: input.code.trim().toUpperCase(),
-        designation: input.designation.trim(),
-        type: input.type,
-        parentId: input.parentId ?? null
+        code: normalized.code.trim().toUpperCase(),
+        designation: normalized.designation.trim(),
+        type: normalized.type,
+        parentId: normalized.parentId ?? null,
+        directionId: normalized.directionId ?? null,
+        serviceId: normalized.serviceId ?? null
       }
     });
   }
@@ -83,13 +90,92 @@ export class DepartmentsService {
       throw new BadRequestException("Bureau invalide.");
     }
 
-    const ownerDirection = bureau.parent?.parent;
+    const ownerDirectionId = resolveOwnerDirectionIdFromBureau(bureau);
+
+    if (!ownerDirectionId) {
+      throw new BadRequestException("Direction proprietaire introuvable pour ce bureau.");
+    }
+
+    const ownerDirection = await this.prisma.department.findUnique({ where: { id: ownerDirectionId } });
 
     if (!ownerDirection || !["DIRECTION", "DIRECTION_GENERALE"].includes(ownerDirection.type)) {
       throw new BadRequestException("Direction proprietaire introuvable pour ce bureau.");
     }
 
     return ownerDirection;
+  }
+
+  private async normalizeDepartmentInput(input: CreateDepartmentInput) {
+    if (input.type === "BUREAU" || input.directionId || input.serviceId) {
+      return this.normalizeBureauInput(input);
+    }
+
+    await this.assertParent(input.type, input.parentId);
+
+    return {
+      ...input,
+      directionId: input.type === "SERVICE" ? input.parentId ?? null : null,
+      serviceId: null
+    };
+  }
+
+  private async normalizeBureauInput(input: CreateDepartmentInput) {
+    let resolvedDirectionId = input.directionId ?? null;
+    let resolvedServiceId = input.serviceId ?? null;
+    let resolvedParentId = input.parentId ?? null;
+
+    if (!resolvedDirectionId && resolvedParentId) {
+      const parent = await this.prisma.department.findUnique({ where: { id: resolvedParentId } });
+
+      if (!parent) {
+        throw new BadRequestException("Parent department not found.");
+      }
+
+      if (parent.type === "SERVICE") {
+        resolvedServiceId = parent.id;
+        resolvedDirectionId = parent.directionId ?? parent.parentId ?? null;
+      } else if (parent.type === "DIRECTION" || parent.type === "DIRECTION_GENERALE") {
+        resolvedDirectionId = parent.id;
+      } else {
+        throw new BadRequestException("BUREAU parent must be SERVICE, DIRECTION or DIRECTION_GENERALE.");
+      }
+    }
+
+    if (!resolvedDirectionId) {
+      throw new BadRequestException("Direction is required for BUREAU.");
+    }
+
+    const direction = await this.prisma.department.findUnique({ where: { id: resolvedDirectionId } });
+
+    if (!direction || !["DIRECTION", "DIRECTION_GENERALE"].includes(direction.type)) {
+      throw new BadRequestException("BUREAU direction must be DIRECTION or DIRECTION_GENERALE.");
+    }
+
+    if (resolvedServiceId) {
+      const service = await this.prisma.department.findUnique({ where: { id: resolvedServiceId } });
+
+      if (!service || service.type !== "SERVICE") {
+        throw new BadRequestException("BUREAU service must be SERVICE.");
+      }
+
+      if (service.directionId !== direction.id && service.parentId !== direction.id) {
+        throw new BadRequestException("SERVICE parent direction must match bureau direction.");
+      }
+
+      return {
+        ...input,
+        parentId: service.id,
+        directionId: direction.id,
+        serviceId: service.id
+      };
+    }
+
+    return {
+      ...input,
+      parentId: direction.id,
+      directionId: direction.id,
+      serviceId: null
+    };
   }
 
   private async assertParent(type: DepartmentType, parentId?: string | null) {
@@ -105,9 +191,20 @@ export class DepartmentsService {
     }
 
     const parent = await this.prisma.department.findUnique({ where: { id: parentId } });
+    if (!parent) {
+      throw new BadRequestException("Parent department not found.");
+    }
+
+    if (type === "SERVICE") {
+      if (!["DIRECTION", "DIRECTION_GENERALE"].includes(parent.type)) {
+        throw new BadRequestException("SERVICE parent must be DIRECTION or DIRECTION_GENERALE.");
+      }
+      return;
+    }
+
     const expectedType = requiredParentType[type];
 
-    if (!parent || parent.type !== expectedType) {
+    if (!expectedType || parent.type !== expectedType) {
       throw new BadRequestException(`${type} parent must be ${expectedType}.`);
     }
   }

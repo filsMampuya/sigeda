@@ -13,8 +13,10 @@
     "build:onprem": "npm run build --workspace @sigeda/shared && npm run build --workspace @sigeda/database && npm run build --workspace @sigeda/api-nest",
     "db:migrate": "npm run prisma:migrate --workspace @sigeda/database",
     "db:seed": "npm run prisma:seed --workspace @sigeda/database",
+    "db:reset-demo": "npm run prisma:reset --workspace @sigeda/database",
     "dev:onprem": "docker compose -f infra/docker/docker-compose.yml up",
     "test:onprem": "npm run test:smoke --workspace @sigeda/api-nest",
+    "test:functional:onprem": "npm run test:functional --workspace @sigeda/api-nest",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "format": "turbo run format"

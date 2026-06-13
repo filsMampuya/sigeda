@@ -3,6 +3,7 @@ import { AuthGuard } from "../auth/auth.guard.js";
 import { Roles } from "../auth/roles.decorator.js";
 import { RolesGuard } from "../auth/roles.guard.js";
 import { UsersService } from "./users.service.js";
+import { CreateUserDto } from "./dto/create-user.dto.js";
 
 @UseGuards(AuthGuard, RolesGuard)
 @Controller("users")
@@ -22,7 +23,7 @@ export class UsersController {
 
   @Post()
   @Roles("ADMIN")
-  create(@Body() body: Parameters<UsersService["create"]>[0]) {
+  create(@Body() body: CreateUserDto) {
     return this.users.create(body);
   }
 }

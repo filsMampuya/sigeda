@@ -74,7 +74,6 @@ model Department {
   documentSigners DocumentSigner[] @relation("DocumentSignerDepartment")
   sourceAnnotations DocumentAnnotation[] @relation("AnnotationSourceDirection")
   recordedAnnotations DocumentAnnotation[] @relation("AnnotationRecordedByDirection")
-  archiveAnnotations DocumentArchiveAnnotation[] @relation("ArchiveAnnotationDirection")
   targetTransmissions DocumentTransmission[] @relation("TransmissionTargetDirection")
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
@@ -131,7 +130,6 @@ model User {
   documentSigners DocumentSigner[]
   archives       DocumentArchive[] @relation("ArchiveActor")
   createdAnnotations DocumentAnnotation[] @relation("DocumentAnnotationAuthor")
-  archiveDocumentAnnotations DocumentArchiveAnnotation[] @relation("DocumentArchiveAnnotationAuthor")
   createdVersions  DocumentVersion[] @relation("DocumentVersionAuthor")
   createdTransmissions DocumentTransmission[] @relation("DocumentTransmissionAuthor")
   auditLogs      AuditLog[]
@@ -233,7 +231,6 @@ model DocumentArchive {
   folder       Folder       @relation(fields: [folderId], references: [id])
   movementType MovementType @map("movement_type")
   physicalArchives PhysicalArchive[]
-  annotations  DocumentArchiveAnnotation[]
   archivedAt   DateTime     @default(now()) @map("archived_at")
   archivedById String       @map("archived_by") @db.Uuid
   archivedBy   User         @relation("ArchiveActor", fields: [archivedById], references: [id])
@@ -354,30 +351,6 @@ model DocumentTransmission {
   @@index([documentId, sentAt])
   @@index([documentVersionId, targetDirectionId])
   @@map("document_transmissions")
-}
-
-model DocumentArchiveAnnotation {
-  id               String                    @id @default(uuid()) @db.Uuid
-  documentArchiveId String                   @map("document_archive_id") @db.Uuid
-  documentArchive  DocumentArchive           @relation(fields: [documentArchiveId], references: [id], onDelete: Cascade)
-  authorUserId     String                    @map("author_user_id") @db.Uuid
-  authorUser       User                      @relation("DocumentArchiveAnnotationAuthor", fields: [authorUserId], references: [id])
-  authorDirectionId String                   @map("author_direction_id") @db.Uuid
-  authorDirection  Department                @relation("ArchiveAnnotationDirection", fields: [authorDirectionId], references: [id])
-  comment          String?
-  bucket           String?
-  objectKey        String?                   @map("object_key")
-  fileName         String?                   @map("file_name")
-  mimeType         String?                   @map("mime_type")
-  sizeBytes        BigInt?                   @map("size_bytes")
-  checksumSha256   String?                   @map("checksum_sha256")
-  storageProvider  AttachmentStorageProvider? @map("storage_provider")
-  createdAt        DateTime                  @default(now()) @map("created_at")
-  updatedAt        DateTime                  @updatedAt @map("updated_at")
-
-  @@index([documentArchiveId, createdAt])
-  @@index([authorDirectionId, createdAt])
-  @@map("document_archive_annotations")
 }
 
 model AuditLog {

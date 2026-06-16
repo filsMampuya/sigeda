@@ -306,23 +306,6 @@ exports.Prisma.DocumentTransmissionScalarFieldEnum = {
   respondedAt: 'respondedAt'
 };
 
-exports.Prisma.DocumentArchiveAnnotationScalarFieldEnum = {
-  id: 'id',
-  documentArchiveId: 'documentArchiveId',
-  authorUserId: 'authorUserId',
-  authorDirectionId: 'authorDirectionId',
-  comment: 'comment',
-  bucket: 'bucket',
-  objectKey: 'objectKey',
-  fileName: 'fileName',
-  mimeType: 'mimeType',
-  sizeBytes: 'sizeBytes',
-  checksumSha256: 'checksumSha256',
-  storageProvider: 'storageProvider',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-};
-
 exports.Prisma.AuditLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -420,7 +403,6 @@ exports.Prisma.ModelName = {
   DocumentVersion: 'DocumentVersion',
   DocumentAnnotation: 'DocumentAnnotation',
   DocumentTransmission: 'DocumentTransmission',
-  DocumentArchiveAnnotation: 'DocumentArchiveAnnotation',
   AuditLog: 'AuditLog'
 };
 

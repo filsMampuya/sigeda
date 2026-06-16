@@ -41,6 +41,6 @@ Les besoins suivants doivent etre servis a partir du document :
 - classement des directions emettrices les plus annotees ;
 - classement des directions annotatrices les plus actives.
 
-## Note de transition
+## Rationalisation technique
 
-Le schema PostgreSQL contient encore des structures historiques liees a l'archive documentaire. Elles ne constituent plus la doctrine fonctionnelle de reference et devront etre retirees lors d'une passe de rationalisation dediee.
+La filiere technique d'annotation propre a `document-archives` a ete retiree de la doctrine cible, de l'API active et du schema Prisma de reference. Toute annotation doit desormais transiter par le document.

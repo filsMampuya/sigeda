@@ -89,11 +89,6 @@ export type DocumentAnnotation = $Result.DefaultSelection<Prisma.$DocumentAnnota
  */
 export type DocumentTransmission = $Result.DefaultSelection<Prisma.$DocumentTransmissionPayload>
 /**
- * Model DocumentArchiveAnnotation
- * 
- */
-export type DocumentArchiveAnnotation = $Result.DefaultSelection<Prisma.$DocumentArchiveAnnotationPayload>
-/**
  * Model AuditLog
  * 
  */
@@ -465,16 +460,6 @@ export class PrismaClient<
     * ```
     */
   get documentTransmission(): Prisma.DocumentTransmissionDelegate<ExtArgs>;
-
-  /**
-   * `prisma.documentArchiveAnnotation`: Exposes CRUD operations for the **DocumentArchiveAnnotation** model.
-    * Example usage:
-    * ```ts
-    * // Fetch zero or more DocumentArchiveAnnotations
-    * const documentArchiveAnnotations = await prisma.documentArchiveAnnotation.findMany()
-    * ```
-    */
-  get documentArchiveAnnotation(): Prisma.DocumentArchiveAnnotationDelegate<ExtArgs>;
 
   /**
    * `prisma.auditLog`: Exposes CRUD operations for the **AuditLog** model.
@@ -941,7 +926,6 @@ export namespace Prisma {
     DocumentVersion: 'DocumentVersion',
     DocumentAnnotation: 'DocumentAnnotation',
     DocumentTransmission: 'DocumentTransmission',
-    DocumentArchiveAnnotation: 'DocumentArchiveAnnotation',
     AuditLog: 'AuditLog'
   };
 
@@ -958,7 +942,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "department" | "role" | "permission" | "rolePermission" | "user" | "document" | "documentSigner" | "documentRecipient" | "folder" | "documentArchive" | "physicalArchive" | "attachment" | "documentVersion" | "documentAnnotation" | "documentTransmission" | "documentArchiveAnnotation" | "auditLog"
+      modelProps: "department" | "role" | "permission" | "rolePermission" | "user" | "document" | "documentSigner" | "documentRecipient" | "folder" | "documentArchive" | "physicalArchive" | "attachment" | "documentVersion" | "documentAnnotation" | "documentTransmission" | "auditLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -2012,76 +1996,6 @@ export namespace Prisma {
           }
         }
       }
-      DocumentArchiveAnnotation: {
-        payload: Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>
-        fields: Prisma.DocumentArchiveAnnotationFieldRefs
-        operations: {
-          findUnique: {
-            args: Prisma.DocumentArchiveAnnotationFindUniqueArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload> | null
-          }
-          findUniqueOrThrow: {
-            args: Prisma.DocumentArchiveAnnotationFindUniqueOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload>
-          }
-          findFirst: {
-            args: Prisma.DocumentArchiveAnnotationFindFirstArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload> | null
-          }
-          findFirstOrThrow: {
-            args: Prisma.DocumentArchiveAnnotationFindFirstOrThrowArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload>
-          }
-          findMany: {
-            args: Prisma.DocumentArchiveAnnotationFindManyArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload>[]
-          }
-          create: {
-            args: Prisma.DocumentArchiveAnnotationCreateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload>
-          }
-          createMany: {
-            args: Prisma.DocumentArchiveAnnotationCreateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          createManyAndReturn: {
-            args: Prisma.DocumentArchiveAnnotationCreateManyAndReturnArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload>[]
-          }
-          delete: {
-            args: Prisma.DocumentArchiveAnnotationDeleteArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload>
-          }
-          update: {
-            args: Prisma.DocumentArchiveAnnotationUpdateArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload>
-          }
-          deleteMany: {
-            args: Prisma.DocumentArchiveAnnotationDeleteManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          updateMany: {
-            args: Prisma.DocumentArchiveAnnotationUpdateManyArgs<ExtArgs>
-            result: BatchPayload
-          }
-          upsert: {
-            args: Prisma.DocumentArchiveAnnotationUpsertArgs<ExtArgs>
-            result: $Utils.PayloadToResult<Prisma.$DocumentArchiveAnnotationPayload>
-          }
-          aggregate: {
-            args: Prisma.DocumentArchiveAnnotationAggregateArgs<ExtArgs>
-            result: $Utils.Optional<AggregateDocumentArchiveAnnotation>
-          }
-          groupBy: {
-            args: Prisma.DocumentArchiveAnnotationGroupByArgs<ExtArgs>
-            result: $Utils.Optional<DocumentArchiveAnnotationGroupByOutputType>[]
-          }
-          count: {
-            args: Prisma.DocumentArchiveAnnotationCountArgs<ExtArgs>
-            result: $Utils.Optional<DocumentArchiveAnnotationCountAggregateOutputType> | number
-          }
-        }
-      }
       AuditLog: {
         payload: Prisma.$AuditLogPayload<ExtArgs>
         fields: Prisma.AuditLogFieldRefs
@@ -2328,7 +2242,6 @@ export namespace Prisma {
     documentSigners: number
     sourceAnnotations: number
     recordedAnnotations: number
-    archiveAnnotations: number
     targetTransmissions: number
   }
 
@@ -2348,7 +2261,6 @@ export namespace Prisma {
     documentSigners?: boolean | DepartmentCountOutputTypeCountDocumentSignersArgs
     sourceAnnotations?: boolean | DepartmentCountOutputTypeCountSourceAnnotationsArgs
     recordedAnnotations?: boolean | DepartmentCountOutputTypeCountRecordedAnnotationsArgs
-    archiveAnnotations?: boolean | DepartmentCountOutputTypeCountArchiveAnnotationsArgs
     targetTransmissions?: boolean | DepartmentCountOutputTypeCountTargetTransmissionsArgs
   }
 
@@ -2471,13 +2383,6 @@ export namespace Prisma {
   /**
    * DepartmentCountOutputType without action
    */
-  export type DepartmentCountOutputTypeCountArchiveAnnotationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: DocumentArchiveAnnotationWhereInput
-  }
-
-  /**
-   * DepartmentCountOutputType without action
-   */
   export type DepartmentCountOutputTypeCountTargetTransmissionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: DocumentTransmissionWhereInput
   }
@@ -2563,7 +2468,6 @@ export namespace Prisma {
     documentSigners: number
     archives: number
     createdAnnotations: number
-    archiveDocumentAnnotations: number
     createdVersions: number
     createdTransmissions: number
     auditLogs: number
@@ -2574,7 +2478,6 @@ export namespace Prisma {
     documentSigners?: boolean | UserCountOutputTypeCountDocumentSignersArgs
     archives?: boolean | UserCountOutputTypeCountArchivesArgs
     createdAnnotations?: boolean | UserCountOutputTypeCountCreatedAnnotationsArgs
-    archiveDocumentAnnotations?: boolean | UserCountOutputTypeCountArchiveDocumentAnnotationsArgs
     createdVersions?: boolean | UserCountOutputTypeCountCreatedVersionsArgs
     createdTransmissions?: boolean | UserCountOutputTypeCountCreatedTransmissionsArgs
     auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
@@ -2617,13 +2520,6 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountCreatedAnnotationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: DocumentAnnotationWhereInput
-  }
-
-  /**
-   * UserCountOutputType without action
-   */
-  export type UserCountOutputTypeCountArchiveDocumentAnnotationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: DocumentArchiveAnnotationWhereInput
   }
 
   /**
@@ -2788,12 +2684,10 @@ export namespace Prisma {
 
   export type DocumentArchiveCountOutputType = {
     physicalArchives: number
-    annotations: number
   }
 
   export type DocumentArchiveCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     physicalArchives?: boolean | DocumentArchiveCountOutputTypeCountPhysicalArchivesArgs
-    annotations?: boolean | DocumentArchiveCountOutputTypeCountAnnotationsArgs
   }
 
   // Custom InputTypes
@@ -2812,13 +2706,6 @@ export namespace Prisma {
    */
   export type DocumentArchiveCountOutputTypeCountPhysicalArchivesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: PhysicalArchiveWhereInput
-  }
-
-  /**
-   * DocumentArchiveCountOutputType without action
-   */
-  export type DocumentArchiveCountOutputTypeCountAnnotationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: DocumentArchiveAnnotationWhereInput
   }
 
 
@@ -3080,7 +2967,6 @@ export namespace Prisma {
     documentSigners?: boolean | Department$documentSignersArgs<ExtArgs>
     sourceAnnotations?: boolean | Department$sourceAnnotationsArgs<ExtArgs>
     recordedAnnotations?: boolean | Department$recordedAnnotationsArgs<ExtArgs>
-    archiveAnnotations?: boolean | Department$archiveAnnotationsArgs<ExtArgs>
     targetTransmissions?: boolean | Department$targetTransmissionsArgs<ExtArgs>
     _count?: boolean | DepartmentCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["department"]>
@@ -3131,7 +3017,6 @@ export namespace Prisma {
     documentSigners?: boolean | Department$documentSignersArgs<ExtArgs>
     sourceAnnotations?: boolean | Department$sourceAnnotationsArgs<ExtArgs>
     recordedAnnotations?: boolean | Department$recordedAnnotationsArgs<ExtArgs>
-    archiveAnnotations?: boolean | Department$archiveAnnotationsArgs<ExtArgs>
     targetTransmissions?: boolean | Department$targetTransmissionsArgs<ExtArgs>
     _count?: boolean | DepartmentCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -3162,7 +3047,6 @@ export namespace Prisma {
       documentSigners: Prisma.$DocumentSignerPayload<ExtArgs>[]
       sourceAnnotations: Prisma.$DocumentAnnotationPayload<ExtArgs>[]
       recordedAnnotations: Prisma.$DocumentAnnotationPayload<ExtArgs>[]
-      archiveAnnotations: Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>[]
       targetTransmissions: Prisma.$DocumentTransmissionPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -3557,7 +3441,6 @@ export namespace Prisma {
     documentSigners<T extends Department$documentSignersArgs<ExtArgs> = {}>(args?: Subset<T, Department$documentSignersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentSignerPayload<ExtArgs>, T, "findMany"> | Null>
     sourceAnnotations<T extends Department$sourceAnnotationsArgs<ExtArgs> = {}>(args?: Subset<T, Department$sourceAnnotationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentAnnotationPayload<ExtArgs>, T, "findMany"> | Null>
     recordedAnnotations<T extends Department$recordedAnnotationsArgs<ExtArgs> = {}>(args?: Subset<T, Department$recordedAnnotationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentAnnotationPayload<ExtArgs>, T, "findMany"> | Null>
-    archiveAnnotations<T extends Department$archiveAnnotationsArgs<ExtArgs> = {}>(args?: Subset<T, Department$archiveAnnotationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "findMany"> | Null>
     targetTransmissions<T extends Department$targetTransmissionsArgs<ExtArgs> = {}>(args?: Subset<T, Department$targetTransmissionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentTransmissionPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -4257,26 +4140,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: DocumentAnnotationScalarFieldEnum | DocumentAnnotationScalarFieldEnum[]
-  }
-
-  /**
-   * Department.archiveAnnotations
-   */
-  export type Department$archiveAnnotationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    where?: DocumentArchiveAnnotationWhereInput
-    orderBy?: DocumentArchiveAnnotationOrderByWithRelationInput | DocumentArchiveAnnotationOrderByWithRelationInput[]
-    cursor?: DocumentArchiveAnnotationWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: DocumentArchiveAnnotationScalarFieldEnum | DocumentArchiveAnnotationScalarFieldEnum[]
   }
 
   /**
@@ -7355,7 +7218,6 @@ export namespace Prisma {
     documentSigners?: boolean | User$documentSignersArgs<ExtArgs>
     archives?: boolean | User$archivesArgs<ExtArgs>
     createdAnnotations?: boolean | User$createdAnnotationsArgs<ExtArgs>
-    archiveDocumentAnnotations?: boolean | User$archiveDocumentAnnotationsArgs<ExtArgs>
     createdVersions?: boolean | User$createdVersionsArgs<ExtArgs>
     createdTransmissions?: boolean | User$createdTransmissionsArgs<ExtArgs>
     auditLogs?: boolean | User$auditLogsArgs<ExtArgs>
@@ -7399,7 +7261,6 @@ export namespace Prisma {
     documentSigners?: boolean | User$documentSignersArgs<ExtArgs>
     archives?: boolean | User$archivesArgs<ExtArgs>
     createdAnnotations?: boolean | User$createdAnnotationsArgs<ExtArgs>
-    archiveDocumentAnnotations?: boolean | User$archiveDocumentAnnotationsArgs<ExtArgs>
     createdVersions?: boolean | User$createdVersionsArgs<ExtArgs>
     createdTransmissions?: boolean | User$createdTransmissionsArgs<ExtArgs>
     auditLogs?: boolean | User$auditLogsArgs<ExtArgs>
@@ -7419,7 +7280,6 @@ export namespace Prisma {
       documentSigners: Prisma.$DocumentSignerPayload<ExtArgs>[]
       archives: Prisma.$DocumentArchivePayload<ExtArgs>[]
       createdAnnotations: Prisma.$DocumentAnnotationPayload<ExtArgs>[]
-      archiveDocumentAnnotations: Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>[]
       createdVersions: Prisma.$DocumentVersionPayload<ExtArgs>[]
       createdTransmissions: Prisma.$DocumentTransmissionPayload<ExtArgs>[]
       auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
@@ -7806,7 +7666,6 @@ export namespace Prisma {
     documentSigners<T extends User$documentSignersArgs<ExtArgs> = {}>(args?: Subset<T, User$documentSignersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentSignerPayload<ExtArgs>, T, "findMany"> | Null>
     archives<T extends User$archivesArgs<ExtArgs> = {}>(args?: Subset<T, User$archivesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentArchivePayload<ExtArgs>, T, "findMany"> | Null>
     createdAnnotations<T extends User$createdAnnotationsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdAnnotationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentAnnotationPayload<ExtArgs>, T, "findMany"> | Null>
-    archiveDocumentAnnotations<T extends User$archiveDocumentAnnotationsArgs<ExtArgs> = {}>(args?: Subset<T, User$archiveDocumentAnnotationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "findMany"> | Null>
     createdVersions<T extends User$createdVersionsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentVersionPayload<ExtArgs>, T, "findMany"> | Null>
     createdTransmissions<T extends User$createdTransmissionsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdTransmissionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentTransmissionPayload<ExtArgs>, T, "findMany"> | Null>
     auditLogs<T extends User$auditLogsArgs<ExtArgs> = {}>(args?: Subset<T, User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany"> | Null>
@@ -8260,26 +8119,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: DocumentAnnotationScalarFieldEnum | DocumentAnnotationScalarFieldEnum[]
-  }
-
-  /**
-   * User.archiveDocumentAnnotations
-   */
-  export type User$archiveDocumentAnnotationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    where?: DocumentArchiveAnnotationWhereInput
-    orderBy?: DocumentArchiveAnnotationOrderByWithRelationInput | DocumentArchiveAnnotationOrderByWithRelationInput[]
-    cursor?: DocumentArchiveAnnotationWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: DocumentArchiveAnnotationScalarFieldEnum | DocumentArchiveAnnotationScalarFieldEnum[]
   }
 
   /**
@@ -12874,7 +12713,6 @@ export namespace Prisma {
     bureau?: boolean | DepartmentDefaultArgs<ExtArgs>
     folder?: boolean | FolderDefaultArgs<ExtArgs>
     physicalArchives?: boolean | DocumentArchive$physicalArchivesArgs<ExtArgs>
-    annotations?: boolean | DocumentArchive$annotationsArgs<ExtArgs>
     archivedBy?: boolean | UserDefaultArgs<ExtArgs>
     _count?: boolean | DocumentArchiveCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["documentArchive"]>
@@ -12908,7 +12746,6 @@ export namespace Prisma {
     bureau?: boolean | DepartmentDefaultArgs<ExtArgs>
     folder?: boolean | FolderDefaultArgs<ExtArgs>
     physicalArchives?: boolean | DocumentArchive$physicalArchivesArgs<ExtArgs>
-    annotations?: boolean | DocumentArchive$annotationsArgs<ExtArgs>
     archivedBy?: boolean | UserDefaultArgs<ExtArgs>
     _count?: boolean | DocumentArchiveCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -12926,7 +12763,6 @@ export namespace Prisma {
       bureau: Prisma.$DepartmentPayload<ExtArgs>
       folder: Prisma.$FolderPayload<ExtArgs>
       physicalArchives: Prisma.$PhysicalArchivePayload<ExtArgs>[]
-      annotations: Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>[]
       archivedBy: Prisma.$UserPayload<ExtArgs>
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -13305,7 +13141,6 @@ export namespace Prisma {
     bureau<T extends DepartmentDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DepartmentDefaultArgs<ExtArgs>>): Prisma__DepartmentClient<$Result.GetResult<Prisma.$DepartmentPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     folder<T extends FolderDefaultArgs<ExtArgs> = {}>(args?: Subset<T, FolderDefaultArgs<ExtArgs>>): Prisma__FolderClient<$Result.GetResult<Prisma.$FolderPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     physicalArchives<T extends DocumentArchive$physicalArchivesArgs<ExtArgs> = {}>(args?: Subset<T, DocumentArchive$physicalArchivesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PhysicalArchivePayload<ExtArgs>, T, "findMany"> | Null>
-    annotations<T extends DocumentArchive$annotationsArgs<ExtArgs> = {}>(args?: Subset<T, DocumentArchive$annotationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "findMany"> | Null>
     archivedBy<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -13678,26 +13513,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: PhysicalArchiveScalarFieldEnum | PhysicalArchiveScalarFieldEnum[]
-  }
-
-  /**
-   * DocumentArchive.annotations
-   */
-  export type DocumentArchive$annotationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    where?: DocumentArchiveAnnotationWhereInput
-    orderBy?: DocumentArchiveAnnotationOrderByWithRelationInput | DocumentArchiveAnnotationOrderByWithRelationInput[]
-    cursor?: DocumentArchiveAnnotationWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: DocumentArchiveAnnotationScalarFieldEnum | DocumentArchiveAnnotationScalarFieldEnum[]
   }
 
   /**
@@ -19121,1093 +18936,6 @@ export namespace Prisma {
 
 
   /**
-   * Model DocumentArchiveAnnotation
-   */
-
-  export type AggregateDocumentArchiveAnnotation = {
-    _count: DocumentArchiveAnnotationCountAggregateOutputType | null
-    _avg: DocumentArchiveAnnotationAvgAggregateOutputType | null
-    _sum: DocumentArchiveAnnotationSumAggregateOutputType | null
-    _min: DocumentArchiveAnnotationMinAggregateOutputType | null
-    _max: DocumentArchiveAnnotationMaxAggregateOutputType | null
-  }
-
-  export type DocumentArchiveAnnotationAvgAggregateOutputType = {
-    sizeBytes: number | null
-  }
-
-  export type DocumentArchiveAnnotationSumAggregateOutputType = {
-    sizeBytes: bigint | null
-  }
-
-  export type DocumentArchiveAnnotationMinAggregateOutputType = {
-    id: string | null
-    documentArchiveId: string | null
-    authorUserId: string | null
-    authorDirectionId: string | null
-    comment: string | null
-    bucket: string | null
-    objectKey: string | null
-    fileName: string | null
-    mimeType: string | null
-    sizeBytes: bigint | null
-    checksumSha256: string | null
-    storageProvider: $Enums.AttachmentStorageProvider | null
-    createdAt: Date | null
-    updatedAt: Date | null
-  }
-
-  export type DocumentArchiveAnnotationMaxAggregateOutputType = {
-    id: string | null
-    documentArchiveId: string | null
-    authorUserId: string | null
-    authorDirectionId: string | null
-    comment: string | null
-    bucket: string | null
-    objectKey: string | null
-    fileName: string | null
-    mimeType: string | null
-    sizeBytes: bigint | null
-    checksumSha256: string | null
-    storageProvider: $Enums.AttachmentStorageProvider | null
-    createdAt: Date | null
-    updatedAt: Date | null
-  }
-
-  export type DocumentArchiveAnnotationCountAggregateOutputType = {
-    id: number
-    documentArchiveId: number
-    authorUserId: number
-    authorDirectionId: number
-    comment: number
-    bucket: number
-    objectKey: number
-    fileName: number
-    mimeType: number
-    sizeBytes: number
-    checksumSha256: number
-    storageProvider: number
-    createdAt: number
-    updatedAt: number
-    _all: number
-  }
-
-
-  export type DocumentArchiveAnnotationAvgAggregateInputType = {
-    sizeBytes?: true
-  }
-
-  export type DocumentArchiveAnnotationSumAggregateInputType = {
-    sizeBytes?: true
-  }
-
-  export type DocumentArchiveAnnotationMinAggregateInputType = {
-    id?: true
-    documentArchiveId?: true
-    authorUserId?: true
-    authorDirectionId?: true
-    comment?: true
-    bucket?: true
-    objectKey?: true
-    fileName?: true
-    mimeType?: true
-    sizeBytes?: true
-    checksumSha256?: true
-    storageProvider?: true
-    createdAt?: true
-    updatedAt?: true
-  }
-
-  export type DocumentArchiveAnnotationMaxAggregateInputType = {
-    id?: true
-    documentArchiveId?: true
-    authorUserId?: true
-    authorDirectionId?: true
-    comment?: true
-    bucket?: true
-    objectKey?: true
-    fileName?: true
-    mimeType?: true
-    sizeBytes?: true
-    checksumSha256?: true
-    storageProvider?: true
-    createdAt?: true
-    updatedAt?: true
-  }
-
-  export type DocumentArchiveAnnotationCountAggregateInputType = {
-    id?: true
-    documentArchiveId?: true
-    authorUserId?: true
-    authorDirectionId?: true
-    comment?: true
-    bucket?: true
-    objectKey?: true
-    fileName?: true
-    mimeType?: true
-    sizeBytes?: true
-    checksumSha256?: true
-    storageProvider?: true
-    createdAt?: true
-    updatedAt?: true
-    _all?: true
-  }
-
-  export type DocumentArchiveAnnotationAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which DocumentArchiveAnnotation to aggregate.
-     */
-    where?: DocumentArchiveAnnotationWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of DocumentArchiveAnnotations to fetch.
-     */
-    orderBy?: DocumentArchiveAnnotationOrderByWithRelationInput | DocumentArchiveAnnotationOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the start position
-     */
-    cursor?: DocumentArchiveAnnotationWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` DocumentArchiveAnnotations from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` DocumentArchiveAnnotations.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Count returned DocumentArchiveAnnotations
-    **/
-    _count?: true | DocumentArchiveAnnotationCountAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to average
-    **/
-    _avg?: DocumentArchiveAnnotationAvgAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to sum
-    **/
-    _sum?: DocumentArchiveAnnotationSumAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the minimum value
-    **/
-    _min?: DocumentArchiveAnnotationMinAggregateInputType
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-     * 
-     * Select which fields to find the maximum value
-    **/
-    _max?: DocumentArchiveAnnotationMaxAggregateInputType
-  }
-
-  export type GetDocumentArchiveAnnotationAggregateType<T extends DocumentArchiveAnnotationAggregateArgs> = {
-        [P in keyof T & keyof AggregateDocumentArchiveAnnotation]: P extends '_count' | 'count'
-      ? T[P] extends true
-        ? number
-        : GetScalarType<T[P], AggregateDocumentArchiveAnnotation[P]>
-      : GetScalarType<T[P], AggregateDocumentArchiveAnnotation[P]>
-  }
-
-
-
-
-  export type DocumentArchiveAnnotationGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: DocumentArchiveAnnotationWhereInput
-    orderBy?: DocumentArchiveAnnotationOrderByWithAggregationInput | DocumentArchiveAnnotationOrderByWithAggregationInput[]
-    by: DocumentArchiveAnnotationScalarFieldEnum[] | DocumentArchiveAnnotationScalarFieldEnum
-    having?: DocumentArchiveAnnotationScalarWhereWithAggregatesInput
-    take?: number
-    skip?: number
-    _count?: DocumentArchiveAnnotationCountAggregateInputType | true
-    _avg?: DocumentArchiveAnnotationAvgAggregateInputType
-    _sum?: DocumentArchiveAnnotationSumAggregateInputType
-    _min?: DocumentArchiveAnnotationMinAggregateInputType
-    _max?: DocumentArchiveAnnotationMaxAggregateInputType
-  }
-
-  export type DocumentArchiveAnnotationGroupByOutputType = {
-    id: string
-    documentArchiveId: string
-    authorUserId: string
-    authorDirectionId: string
-    comment: string | null
-    bucket: string | null
-    objectKey: string | null
-    fileName: string | null
-    mimeType: string | null
-    sizeBytes: bigint | null
-    checksumSha256: string | null
-    storageProvider: $Enums.AttachmentStorageProvider | null
-    createdAt: Date
-    updatedAt: Date
-    _count: DocumentArchiveAnnotationCountAggregateOutputType | null
-    _avg: DocumentArchiveAnnotationAvgAggregateOutputType | null
-    _sum: DocumentArchiveAnnotationSumAggregateOutputType | null
-    _min: DocumentArchiveAnnotationMinAggregateOutputType | null
-    _max: DocumentArchiveAnnotationMaxAggregateOutputType | null
-  }
-
-  type GetDocumentArchiveAnnotationGroupByPayload<T extends DocumentArchiveAnnotationGroupByArgs> = Prisma.PrismaPromise<
-    Array<
-      PickEnumerable<DocumentArchiveAnnotationGroupByOutputType, T['by']> &
-        {
-          [P in ((keyof T) & (keyof DocumentArchiveAnnotationGroupByOutputType))]: P extends '_count'
-            ? T[P] extends boolean
-              ? number
-              : GetScalarType<T[P], DocumentArchiveAnnotationGroupByOutputType[P]>
-            : GetScalarType<T[P], DocumentArchiveAnnotationGroupByOutputType[P]>
-        }
-      >
-    >
-
-
-  export type DocumentArchiveAnnotationSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    documentArchiveId?: boolean
-    authorUserId?: boolean
-    authorDirectionId?: boolean
-    comment?: boolean
-    bucket?: boolean
-    objectKey?: boolean
-    fileName?: boolean
-    mimeType?: boolean
-    sizeBytes?: boolean
-    checksumSha256?: boolean
-    storageProvider?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-    documentArchive?: boolean | DocumentArchiveDefaultArgs<ExtArgs>
-    authorUser?: boolean | UserDefaultArgs<ExtArgs>
-    authorDirection?: boolean | DepartmentDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["documentArchiveAnnotation"]>
-
-  export type DocumentArchiveAnnotationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
-    id?: boolean
-    documentArchiveId?: boolean
-    authorUserId?: boolean
-    authorDirectionId?: boolean
-    comment?: boolean
-    bucket?: boolean
-    objectKey?: boolean
-    fileName?: boolean
-    mimeType?: boolean
-    sizeBytes?: boolean
-    checksumSha256?: boolean
-    storageProvider?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-    documentArchive?: boolean | DocumentArchiveDefaultArgs<ExtArgs>
-    authorUser?: boolean | UserDefaultArgs<ExtArgs>
-    authorDirection?: boolean | DepartmentDefaultArgs<ExtArgs>
-  }, ExtArgs["result"]["documentArchiveAnnotation"]>
-
-  export type DocumentArchiveAnnotationSelectScalar = {
-    id?: boolean
-    documentArchiveId?: boolean
-    authorUserId?: boolean
-    authorDirectionId?: boolean
-    comment?: boolean
-    bucket?: boolean
-    objectKey?: boolean
-    fileName?: boolean
-    mimeType?: boolean
-    sizeBytes?: boolean
-    checksumSha256?: boolean
-    storageProvider?: boolean
-    createdAt?: boolean
-    updatedAt?: boolean
-  }
-
-  export type DocumentArchiveAnnotationInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    documentArchive?: boolean | DocumentArchiveDefaultArgs<ExtArgs>
-    authorUser?: boolean | UserDefaultArgs<ExtArgs>
-    authorDirection?: boolean | DepartmentDefaultArgs<ExtArgs>
-  }
-  export type DocumentArchiveAnnotationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    documentArchive?: boolean | DocumentArchiveDefaultArgs<ExtArgs>
-    authorUser?: boolean | UserDefaultArgs<ExtArgs>
-    authorDirection?: boolean | DepartmentDefaultArgs<ExtArgs>
-  }
-
-  export type $DocumentArchiveAnnotationPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    name: "DocumentArchiveAnnotation"
-    objects: {
-      documentArchive: Prisma.$DocumentArchivePayload<ExtArgs>
-      authorUser: Prisma.$UserPayload<ExtArgs>
-      authorDirection: Prisma.$DepartmentPayload<ExtArgs>
-    }
-    scalars: $Extensions.GetPayloadResult<{
-      id: string
-      documentArchiveId: string
-      authorUserId: string
-      authorDirectionId: string
-      comment: string | null
-      bucket: string | null
-      objectKey: string | null
-      fileName: string | null
-      mimeType: string | null
-      sizeBytes: bigint | null
-      checksumSha256: string | null
-      storageProvider: $Enums.AttachmentStorageProvider | null
-      createdAt: Date
-      updatedAt: Date
-    }, ExtArgs["result"]["documentArchiveAnnotation"]>
-    composites: {}
-  }
-
-  type DocumentArchiveAnnotationGetPayload<S extends boolean | null | undefined | DocumentArchiveAnnotationDefaultArgs> = $Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload, S>
-
-  type DocumentArchiveAnnotationCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
-    Omit<DocumentArchiveAnnotationFindManyArgs, 'select' | 'include' | 'distinct'> & {
-      select?: DocumentArchiveAnnotationCountAggregateInputType | true
-    }
-
-  export interface DocumentArchiveAnnotationDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
-    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DocumentArchiveAnnotation'], meta: { name: 'DocumentArchiveAnnotation' } }
-    /**
-     * Find zero or one DocumentArchiveAnnotation that matches the filter.
-     * @param {DocumentArchiveAnnotationFindUniqueArgs} args - Arguments to find a DocumentArchiveAnnotation
-     * @example
-     * // Get one DocumentArchiveAnnotation
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.findUnique({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUnique<T extends DocumentArchiveAnnotationFindUniqueArgs>(args: SelectSubset<T, DocumentArchiveAnnotationFindUniqueArgs<ExtArgs>>): Prisma__DocumentArchiveAnnotationClient<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
-
-    /**
-     * Find one DocumentArchiveAnnotation that matches the filter or throw an error with `error.code='P2025'` 
-     * if no matches were found.
-     * @param {DocumentArchiveAnnotationFindUniqueOrThrowArgs} args - Arguments to find a DocumentArchiveAnnotation
-     * @example
-     * // Get one DocumentArchiveAnnotation
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.findUniqueOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findUniqueOrThrow<T extends DocumentArchiveAnnotationFindUniqueOrThrowArgs>(args: SelectSubset<T, DocumentArchiveAnnotationFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DocumentArchiveAnnotationClient<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
-
-    /**
-     * Find the first DocumentArchiveAnnotation that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {DocumentArchiveAnnotationFindFirstArgs} args - Arguments to find a DocumentArchiveAnnotation
-     * @example
-     * // Get one DocumentArchiveAnnotation
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.findFirst({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirst<T extends DocumentArchiveAnnotationFindFirstArgs>(args?: SelectSubset<T, DocumentArchiveAnnotationFindFirstArgs<ExtArgs>>): Prisma__DocumentArchiveAnnotationClient<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
-
-    /**
-     * Find the first DocumentArchiveAnnotation that matches the filter or
-     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {DocumentArchiveAnnotationFindFirstOrThrowArgs} args - Arguments to find a DocumentArchiveAnnotation
-     * @example
-     * // Get one DocumentArchiveAnnotation
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.findFirstOrThrow({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     */
-    findFirstOrThrow<T extends DocumentArchiveAnnotationFindFirstOrThrowArgs>(args?: SelectSubset<T, DocumentArchiveAnnotationFindFirstOrThrowArgs<ExtArgs>>): Prisma__DocumentArchiveAnnotationClient<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
-
-    /**
-     * Find zero or more DocumentArchiveAnnotations that matches the filter.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {DocumentArchiveAnnotationFindManyArgs} args - Arguments to filter and select certain fields only.
-     * @example
-     * // Get all DocumentArchiveAnnotations
-     * const documentArchiveAnnotations = await prisma.documentArchiveAnnotation.findMany()
-     * 
-     * // Get first 10 DocumentArchiveAnnotations
-     * const documentArchiveAnnotations = await prisma.documentArchiveAnnotation.findMany({ take: 10 })
-     * 
-     * // Only select the `id`
-     * const documentArchiveAnnotationWithIdOnly = await prisma.documentArchiveAnnotation.findMany({ select: { id: true } })
-     * 
-     */
-    findMany<T extends DocumentArchiveAnnotationFindManyArgs>(args?: SelectSubset<T, DocumentArchiveAnnotationFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "findMany">>
-
-    /**
-     * Create a DocumentArchiveAnnotation.
-     * @param {DocumentArchiveAnnotationCreateArgs} args - Arguments to create a DocumentArchiveAnnotation.
-     * @example
-     * // Create one DocumentArchiveAnnotation
-     * const DocumentArchiveAnnotation = await prisma.documentArchiveAnnotation.create({
-     *   data: {
-     *     // ... data to create a DocumentArchiveAnnotation
-     *   }
-     * })
-     * 
-     */
-    create<T extends DocumentArchiveAnnotationCreateArgs>(args: SelectSubset<T, DocumentArchiveAnnotationCreateArgs<ExtArgs>>): Prisma__DocumentArchiveAnnotationClient<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "create">, never, ExtArgs>
-
-    /**
-     * Create many DocumentArchiveAnnotations.
-     * @param {DocumentArchiveAnnotationCreateManyArgs} args - Arguments to create many DocumentArchiveAnnotations.
-     * @example
-     * // Create many DocumentArchiveAnnotations
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.createMany({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     *     
-     */
-    createMany<T extends DocumentArchiveAnnotationCreateManyArgs>(args?: SelectSubset<T, DocumentArchiveAnnotationCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create many DocumentArchiveAnnotations and returns the data saved in the database.
-     * @param {DocumentArchiveAnnotationCreateManyAndReturnArgs} args - Arguments to create many DocumentArchiveAnnotations.
-     * @example
-     * // Create many DocumentArchiveAnnotations
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.createManyAndReturn({
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * 
-     * // Create many DocumentArchiveAnnotations and only return the `id`
-     * const documentArchiveAnnotationWithIdOnly = await prisma.documentArchiveAnnotation.createManyAndReturn({ 
-     *   select: { id: true },
-     *   data: [
-     *     // ... provide data here
-     *   ]
-     * })
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * 
-     */
-    createManyAndReturn<T extends DocumentArchiveAnnotationCreateManyAndReturnArgs>(args?: SelectSubset<T, DocumentArchiveAnnotationCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "createManyAndReturn">>
-
-    /**
-     * Delete a DocumentArchiveAnnotation.
-     * @param {DocumentArchiveAnnotationDeleteArgs} args - Arguments to delete one DocumentArchiveAnnotation.
-     * @example
-     * // Delete one DocumentArchiveAnnotation
-     * const DocumentArchiveAnnotation = await prisma.documentArchiveAnnotation.delete({
-     *   where: {
-     *     // ... filter to delete one DocumentArchiveAnnotation
-     *   }
-     * })
-     * 
-     */
-    delete<T extends DocumentArchiveAnnotationDeleteArgs>(args: SelectSubset<T, DocumentArchiveAnnotationDeleteArgs<ExtArgs>>): Prisma__DocumentArchiveAnnotationClient<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "delete">, never, ExtArgs>
-
-    /**
-     * Update one DocumentArchiveAnnotation.
-     * @param {DocumentArchiveAnnotationUpdateArgs} args - Arguments to update one DocumentArchiveAnnotation.
-     * @example
-     * // Update one DocumentArchiveAnnotation
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.update({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    update<T extends DocumentArchiveAnnotationUpdateArgs>(args: SelectSubset<T, DocumentArchiveAnnotationUpdateArgs<ExtArgs>>): Prisma__DocumentArchiveAnnotationClient<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "update">, never, ExtArgs>
-
-    /**
-     * Delete zero or more DocumentArchiveAnnotations.
-     * @param {DocumentArchiveAnnotationDeleteManyArgs} args - Arguments to filter DocumentArchiveAnnotations to delete.
-     * @example
-     * // Delete a few DocumentArchiveAnnotations
-     * const { count } = await prisma.documentArchiveAnnotation.deleteMany({
-     *   where: {
-     *     // ... provide filter here
-     *   }
-     * })
-     * 
-     */
-    deleteMany<T extends DocumentArchiveAnnotationDeleteManyArgs>(args?: SelectSubset<T, DocumentArchiveAnnotationDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Update zero or more DocumentArchiveAnnotations.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {DocumentArchiveAnnotationUpdateManyArgs} args - Arguments to update one or more rows.
-     * @example
-     * // Update many DocumentArchiveAnnotations
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.updateMany({
-     *   where: {
-     *     // ... provide filter here
-     *   },
-     *   data: {
-     *     // ... provide data here
-     *   }
-     * })
-     * 
-     */
-    updateMany<T extends DocumentArchiveAnnotationUpdateManyArgs>(args: SelectSubset<T, DocumentArchiveAnnotationUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
-
-    /**
-     * Create or update one DocumentArchiveAnnotation.
-     * @param {DocumentArchiveAnnotationUpsertArgs} args - Arguments to update or create a DocumentArchiveAnnotation.
-     * @example
-     * // Update or create a DocumentArchiveAnnotation
-     * const documentArchiveAnnotation = await prisma.documentArchiveAnnotation.upsert({
-     *   create: {
-     *     // ... data to create a DocumentArchiveAnnotation
-     *   },
-     *   update: {
-     *     // ... in case it already exists, update
-     *   },
-     *   where: {
-     *     // ... the filter for the DocumentArchiveAnnotation we want to update
-     *   }
-     * })
-     */
-    upsert<T extends DocumentArchiveAnnotationUpsertArgs>(args: SelectSubset<T, DocumentArchiveAnnotationUpsertArgs<ExtArgs>>): Prisma__DocumentArchiveAnnotationClient<$Result.GetResult<Prisma.$DocumentArchiveAnnotationPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
-
-
-    /**
-     * Count the number of DocumentArchiveAnnotations.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {DocumentArchiveAnnotationCountArgs} args - Arguments to filter DocumentArchiveAnnotations to count.
-     * @example
-     * // Count the number of DocumentArchiveAnnotations
-     * const count = await prisma.documentArchiveAnnotation.count({
-     *   where: {
-     *     // ... the filter for the DocumentArchiveAnnotations we want to count
-     *   }
-     * })
-    **/
-    count<T extends DocumentArchiveAnnotationCountArgs>(
-      args?: Subset<T, DocumentArchiveAnnotationCountArgs>,
-    ): Prisma.PrismaPromise<
-      T extends $Utils.Record<'select', any>
-        ? T['select'] extends true
-          ? number
-          : GetScalarType<T['select'], DocumentArchiveAnnotationCountAggregateOutputType>
-        : number
-    >
-
-    /**
-     * Allows you to perform aggregations operations on a DocumentArchiveAnnotation.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {DocumentArchiveAnnotationAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
-     * @example
-     * // Ordered by age ascending
-     * // Where email contains prisma.io
-     * // Limited to the 10 users
-     * const aggregations = await prisma.user.aggregate({
-     *   _avg: {
-     *     age: true,
-     *   },
-     *   where: {
-     *     email: {
-     *       contains: "prisma.io",
-     *     },
-     *   },
-     *   orderBy: {
-     *     age: "asc",
-     *   },
-     *   take: 10,
-     * })
-    **/
-    aggregate<T extends DocumentArchiveAnnotationAggregateArgs>(args: Subset<T, DocumentArchiveAnnotationAggregateArgs>): Prisma.PrismaPromise<GetDocumentArchiveAnnotationAggregateType<T>>
-
-    /**
-     * Group by DocumentArchiveAnnotation.
-     * Note, that providing `undefined` is treated as the value not being there.
-     * Read more here: https://pris.ly/d/null-undefined
-     * @param {DocumentArchiveAnnotationGroupByArgs} args - Group by arguments.
-     * @example
-     * // Group by city, order by createdAt, get count
-     * const result = await prisma.user.groupBy({
-     *   by: ['city', 'createdAt'],
-     *   orderBy: {
-     *     createdAt: true
-     *   },
-     *   _count: {
-     *     _all: true
-     *   },
-     * })
-     * 
-    **/
-    groupBy<
-      T extends DocumentArchiveAnnotationGroupByArgs,
-      HasSelectOrTake extends Or<
-        Extends<'skip', Keys<T>>,
-        Extends<'take', Keys<T>>
-      >,
-      OrderByArg extends True extends HasSelectOrTake
-        ? { orderBy: DocumentArchiveAnnotationGroupByArgs['orderBy'] }
-        : { orderBy?: DocumentArchiveAnnotationGroupByArgs['orderBy'] },
-      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
-      ByFields extends MaybeTupleToUnion<T['by']>,
-      ByValid extends Has<ByFields, OrderFields>,
-      HavingFields extends GetHavingFields<T['having']>,
-      HavingValid extends Has<ByFields, HavingFields>,
-      ByEmpty extends T['by'] extends never[] ? True : False,
-      InputErrors extends ByEmpty extends True
-      ? `Error: "by" must not be empty.`
-      : HavingValid extends False
-      ? {
-          [P in HavingFields]: P extends ByFields
-            ? never
-            : P extends string
-            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
-            : [
-                Error,
-                'Field ',
-                P,
-                ` in "having" needs to be provided in "by"`,
-              ]
-        }[HavingFields]
-      : 'take' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "take", you also need to provide "orderBy"'
-      : 'skip' extends Keys<T>
-      ? 'orderBy' extends Keys<T>
-        ? ByValid extends True
-          ? {}
-          : {
-              [P in OrderFields]: P extends ByFields
-                ? never
-                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-            }[OrderFields]
-        : 'Error: If you provide "skip", you also need to provide "orderBy"'
-      : ByValid extends True
-      ? {}
-      : {
-          [P in OrderFields]: P extends ByFields
-            ? never
-            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
-        }[OrderFields]
-    >(args: SubsetIntersection<T, DocumentArchiveAnnotationGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDocumentArchiveAnnotationGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
-  /**
-   * Fields of the DocumentArchiveAnnotation model
-   */
-  readonly fields: DocumentArchiveAnnotationFieldRefs;
-  }
-
-  /**
-   * The delegate class that acts as a "Promise-like" for DocumentArchiveAnnotation.
-   * Why is this prefixed with `Prisma__`?
-   * Because we want to prevent naming conflicts as mentioned in
-   * https://github.com/prisma/prisma-client-js/issues/707
-   */
-  export interface Prisma__DocumentArchiveAnnotationClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
-    readonly [Symbol.toStringTag]: "PrismaPromise"
-    documentArchive<T extends DocumentArchiveDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DocumentArchiveDefaultArgs<ExtArgs>>): Prisma__DocumentArchiveClient<$Result.GetResult<Prisma.$DocumentArchivePayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
-    authorUser<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
-    authorDirection<T extends DepartmentDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DepartmentDefaultArgs<ExtArgs>>): Prisma__DepartmentClient<$Result.GetResult<Prisma.$DepartmentPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
-    /**
-     * Attaches callbacks for the resolution and/or rejection of the Promise.
-     * @param onfulfilled The callback to execute when the Promise is resolved.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of which ever callback is executed.
-     */
-    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
-    /**
-     * Attaches a callback for only the rejection of the Promise.
-     * @param onrejected The callback to execute when the Promise is rejected.
-     * @returns A Promise for the completion of the callback.
-     */
-    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
-    /**
-     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
-     * resolved value cannot be modified from the callback.
-     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
-     * @returns A Promise for the completion of the callback.
-     */
-    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
-  }
-
-
-
-
-  /**
-   * Fields of the DocumentArchiveAnnotation model
-   */ 
-  interface DocumentArchiveAnnotationFieldRefs {
-    readonly id: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly documentArchiveId: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly authorUserId: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly authorDirectionId: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly comment: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly bucket: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly objectKey: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly fileName: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly mimeType: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly sizeBytes: FieldRef<"DocumentArchiveAnnotation", 'BigInt'>
-    readonly checksumSha256: FieldRef<"DocumentArchiveAnnotation", 'String'>
-    readonly storageProvider: FieldRef<"DocumentArchiveAnnotation", 'AttachmentStorageProvider'>
-    readonly createdAt: FieldRef<"DocumentArchiveAnnotation", 'DateTime'>
-    readonly updatedAt: FieldRef<"DocumentArchiveAnnotation", 'DateTime'>
-  }
-    
-
-  // Custom InputTypes
-  /**
-   * DocumentArchiveAnnotation findUnique
-   */
-  export type DocumentArchiveAnnotationFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * Filter, which DocumentArchiveAnnotation to fetch.
-     */
-    where: DocumentArchiveAnnotationWhereUniqueInput
-  }
-
-  /**
-   * DocumentArchiveAnnotation findUniqueOrThrow
-   */
-  export type DocumentArchiveAnnotationFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * Filter, which DocumentArchiveAnnotation to fetch.
-     */
-    where: DocumentArchiveAnnotationWhereUniqueInput
-  }
-
-  /**
-   * DocumentArchiveAnnotation findFirst
-   */
-  export type DocumentArchiveAnnotationFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * Filter, which DocumentArchiveAnnotation to fetch.
-     */
-    where?: DocumentArchiveAnnotationWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of DocumentArchiveAnnotations to fetch.
-     */
-    orderBy?: DocumentArchiveAnnotationOrderByWithRelationInput | DocumentArchiveAnnotationOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for DocumentArchiveAnnotations.
-     */
-    cursor?: DocumentArchiveAnnotationWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` DocumentArchiveAnnotations from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` DocumentArchiveAnnotations.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of DocumentArchiveAnnotations.
-     */
-    distinct?: DocumentArchiveAnnotationScalarFieldEnum | DocumentArchiveAnnotationScalarFieldEnum[]
-  }
-
-  /**
-   * DocumentArchiveAnnotation findFirstOrThrow
-   */
-  export type DocumentArchiveAnnotationFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * Filter, which DocumentArchiveAnnotation to fetch.
-     */
-    where?: DocumentArchiveAnnotationWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of DocumentArchiveAnnotations to fetch.
-     */
-    orderBy?: DocumentArchiveAnnotationOrderByWithRelationInput | DocumentArchiveAnnotationOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for searching for DocumentArchiveAnnotations.
-     */
-    cursor?: DocumentArchiveAnnotationWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` DocumentArchiveAnnotations from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` DocumentArchiveAnnotations.
-     */
-    skip?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
-     * 
-     * Filter by unique combinations of DocumentArchiveAnnotations.
-     */
-    distinct?: DocumentArchiveAnnotationScalarFieldEnum | DocumentArchiveAnnotationScalarFieldEnum[]
-  }
-
-  /**
-   * DocumentArchiveAnnotation findMany
-   */
-  export type DocumentArchiveAnnotationFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * Filter, which DocumentArchiveAnnotations to fetch.
-     */
-    where?: DocumentArchiveAnnotationWhereInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
-     * 
-     * Determine the order of DocumentArchiveAnnotations to fetch.
-     */
-    orderBy?: DocumentArchiveAnnotationOrderByWithRelationInput | DocumentArchiveAnnotationOrderByWithRelationInput[]
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
-     * 
-     * Sets the position for listing DocumentArchiveAnnotations.
-     */
-    cursor?: DocumentArchiveAnnotationWhereUniqueInput
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Take `±n` DocumentArchiveAnnotations from the position of the cursor.
-     */
-    take?: number
-    /**
-     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
-     * 
-     * Skip the first `n` DocumentArchiveAnnotations.
-     */
-    skip?: number
-    distinct?: DocumentArchiveAnnotationScalarFieldEnum | DocumentArchiveAnnotationScalarFieldEnum[]
-  }
-
-  /**
-   * DocumentArchiveAnnotation create
-   */
-  export type DocumentArchiveAnnotationCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * The data needed to create a DocumentArchiveAnnotation.
-     */
-    data: XOR<DocumentArchiveAnnotationCreateInput, DocumentArchiveAnnotationUncheckedCreateInput>
-  }
-
-  /**
-   * DocumentArchiveAnnotation createMany
-   */
-  export type DocumentArchiveAnnotationCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to create many DocumentArchiveAnnotations.
-     */
-    data: DocumentArchiveAnnotationCreateManyInput | DocumentArchiveAnnotationCreateManyInput[]
-    skipDuplicates?: boolean
-  }
-
-  /**
-   * DocumentArchiveAnnotation createManyAndReturn
-   */
-  export type DocumentArchiveAnnotationCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelectCreateManyAndReturn<ExtArgs> | null
-    /**
-     * The data used to create many DocumentArchiveAnnotations.
-     */
-    data: DocumentArchiveAnnotationCreateManyInput | DocumentArchiveAnnotationCreateManyInput[]
-    skipDuplicates?: boolean
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationIncludeCreateManyAndReturn<ExtArgs> | null
-  }
-
-  /**
-   * DocumentArchiveAnnotation update
-   */
-  export type DocumentArchiveAnnotationUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * The data needed to update a DocumentArchiveAnnotation.
-     */
-    data: XOR<DocumentArchiveAnnotationUpdateInput, DocumentArchiveAnnotationUncheckedUpdateInput>
-    /**
-     * Choose, which DocumentArchiveAnnotation to update.
-     */
-    where: DocumentArchiveAnnotationWhereUniqueInput
-  }
-
-  /**
-   * DocumentArchiveAnnotation updateMany
-   */
-  export type DocumentArchiveAnnotationUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * The data used to update DocumentArchiveAnnotations.
-     */
-    data: XOR<DocumentArchiveAnnotationUpdateManyMutationInput, DocumentArchiveAnnotationUncheckedUpdateManyInput>
-    /**
-     * Filter which DocumentArchiveAnnotations to update
-     */
-    where?: DocumentArchiveAnnotationWhereInput
-  }
-
-  /**
-   * DocumentArchiveAnnotation upsert
-   */
-  export type DocumentArchiveAnnotationUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * The filter to search for the DocumentArchiveAnnotation to update in case it exists.
-     */
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    /**
-     * In case the DocumentArchiveAnnotation found by the `where` argument doesn't exist, create a new DocumentArchiveAnnotation with this data.
-     */
-    create: XOR<DocumentArchiveAnnotationCreateInput, DocumentArchiveAnnotationUncheckedCreateInput>
-    /**
-     * In case the DocumentArchiveAnnotation was found with the provided `where` argument, update it with this data.
-     */
-    update: XOR<DocumentArchiveAnnotationUpdateInput, DocumentArchiveAnnotationUncheckedUpdateInput>
-  }
-
-  /**
-   * DocumentArchiveAnnotation delete
-   */
-  export type DocumentArchiveAnnotationDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-    /**
-     * Filter which DocumentArchiveAnnotation to delete.
-     */
-    where: DocumentArchiveAnnotationWhereUniqueInput
-  }
-
-  /**
-   * DocumentArchiveAnnotation deleteMany
-   */
-  export type DocumentArchiveAnnotationDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Filter which DocumentArchiveAnnotations to delete
-     */
-    where?: DocumentArchiveAnnotationWhereInput
-  }
-
-  /**
-   * DocumentArchiveAnnotation without action
-   */
-  export type DocumentArchiveAnnotationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the DocumentArchiveAnnotation
-     */
-    select?: DocumentArchiveAnnotationSelect<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: DocumentArchiveAnnotationInclude<ExtArgs> | null
-  }
-
-
-  /**
    * Model AuditLog
    */
 
@@ -21442,26 +20170,6 @@ export namespace Prisma {
   export type DocumentTransmissionScalarFieldEnum = (typeof DocumentTransmissionScalarFieldEnum)[keyof typeof DocumentTransmissionScalarFieldEnum]
 
 
-  export const DocumentArchiveAnnotationScalarFieldEnum: {
-    id: 'id',
-    documentArchiveId: 'documentArchiveId',
-    authorUserId: 'authorUserId',
-    authorDirectionId: 'authorDirectionId',
-    comment: 'comment',
-    bucket: 'bucket',
-    objectKey: 'objectKey',
-    fileName: 'fileName',
-    mimeType: 'mimeType',
-    sizeBytes: 'sizeBytes',
-    checksumSha256: 'checksumSha256',
-    storageProvider: 'storageProvider',
-    createdAt: 'createdAt',
-    updatedAt: 'updatedAt'
-  };
-
-  export type DocumentArchiveAnnotationScalarFieldEnum = (typeof DocumentArchiveAnnotationScalarFieldEnum)[keyof typeof DocumentArchiveAnnotationScalarFieldEnum]
-
-
   export const AuditLogScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
@@ -21746,7 +20454,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerListRelationFilter
     sourceAnnotations?: DocumentAnnotationListRelationFilter
     recordedAnnotations?: DocumentAnnotationListRelationFilter
-    archiveAnnotations?: DocumentArchiveAnnotationListRelationFilter
     targetTransmissions?: DocumentTransmissionListRelationFilter
   }
 
@@ -21778,7 +20485,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerOrderByRelationAggregateInput
     sourceAnnotations?: DocumentAnnotationOrderByRelationAggregateInput
     recordedAnnotations?: DocumentAnnotationOrderByRelationAggregateInput
-    archiveAnnotations?: DocumentArchiveAnnotationOrderByRelationAggregateInput
     targetTransmissions?: DocumentTransmissionOrderByRelationAggregateInput
   }
 
@@ -21813,7 +20519,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerListRelationFilter
     sourceAnnotations?: DocumentAnnotationListRelationFilter
     recordedAnnotations?: DocumentAnnotationListRelationFilter
-    archiveAnnotations?: DocumentArchiveAnnotationListRelationFilter
     targetTransmissions?: DocumentTransmissionListRelationFilter
   }, "id" | "code">
 
@@ -22025,7 +20730,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerListRelationFilter
     archives?: DocumentArchiveListRelationFilter
     createdAnnotations?: DocumentAnnotationListRelationFilter
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationListRelationFilter
     createdVersions?: DocumentVersionListRelationFilter
     createdTransmissions?: DocumentTransmissionListRelationFilter
     auditLogs?: AuditLogListRelationFilter
@@ -22049,7 +20753,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerOrderByRelationAggregateInput
     archives?: DocumentArchiveOrderByRelationAggregateInput
     createdAnnotations?: DocumentAnnotationOrderByRelationAggregateInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationOrderByRelationAggregateInput
     createdVersions?: DocumentVersionOrderByRelationAggregateInput
     createdTransmissions?: DocumentTransmissionOrderByRelationAggregateInput
     auditLogs?: AuditLogOrderByRelationAggregateInput
@@ -22076,7 +20779,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerListRelationFilter
     archives?: DocumentArchiveListRelationFilter
     createdAnnotations?: DocumentAnnotationListRelationFilter
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationListRelationFilter
     createdVersions?: DocumentVersionListRelationFilter
     createdTransmissions?: DocumentTransmissionListRelationFilter
     auditLogs?: AuditLogListRelationFilter
@@ -22493,7 +21195,6 @@ export namespace Prisma {
     bureau?: XOR<DepartmentRelationFilter, DepartmentWhereInput>
     folder?: XOR<FolderRelationFilter, FolderWhereInput>
     physicalArchives?: PhysicalArchiveListRelationFilter
-    annotations?: DocumentArchiveAnnotationListRelationFilter
     archivedBy?: XOR<UserRelationFilter, UserWhereInput>
   }
 
@@ -22509,7 +21210,6 @@ export namespace Prisma {
     bureau?: DepartmentOrderByWithRelationInput
     folder?: FolderOrderByWithRelationInput
     physicalArchives?: PhysicalArchiveOrderByRelationAggregateInput
-    annotations?: DocumentArchiveAnnotationOrderByRelationAggregateInput
     archivedBy?: UserOrderByWithRelationInput
   }
 
@@ -22529,7 +21229,6 @@ export namespace Prisma {
     bureau?: XOR<DepartmentRelationFilter, DepartmentWhereInput>
     folder?: XOR<FolderRelationFilter, FolderWhereInput>
     physicalArchives?: PhysicalArchiveListRelationFilter
-    annotations?: DocumentArchiveAnnotationListRelationFilter
     archivedBy?: XOR<UserRelationFilter, UserWhereInput>
   }, "id" | "documentId_bureauId_folderId_movementType">
 
@@ -23076,114 +21775,6 @@ export namespace Prisma {
     respondedAt?: DateTimeNullableWithAggregatesFilter<"DocumentTransmission"> | Date | string | null
   }
 
-  export type DocumentArchiveAnnotationWhereInput = {
-    AND?: DocumentArchiveAnnotationWhereInput | DocumentArchiveAnnotationWhereInput[]
-    OR?: DocumentArchiveAnnotationWhereInput[]
-    NOT?: DocumentArchiveAnnotationWhereInput | DocumentArchiveAnnotationWhereInput[]
-    id?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    documentArchiveId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    authorUserId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    authorDirectionId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    comment?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    bucket?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    objectKey?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    fileName?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    mimeType?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    sizeBytes?: BigIntNullableFilter<"DocumentArchiveAnnotation"> | bigint | number | null
-    checksumSha256?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    storageProvider?: EnumAttachmentStorageProviderNullableFilter<"DocumentArchiveAnnotation"> | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFilter<"DocumentArchiveAnnotation"> | Date | string
-    updatedAt?: DateTimeFilter<"DocumentArchiveAnnotation"> | Date | string
-    documentArchive?: XOR<DocumentArchiveRelationFilter, DocumentArchiveWhereInput>
-    authorUser?: XOR<UserRelationFilter, UserWhereInput>
-    authorDirection?: XOR<DepartmentRelationFilter, DepartmentWhereInput>
-  }
-
-  export type DocumentArchiveAnnotationOrderByWithRelationInput = {
-    id?: SortOrder
-    documentArchiveId?: SortOrder
-    authorUserId?: SortOrder
-    authorDirectionId?: SortOrder
-    comment?: SortOrderInput | SortOrder
-    bucket?: SortOrderInput | SortOrder
-    objectKey?: SortOrderInput | SortOrder
-    fileName?: SortOrderInput | SortOrder
-    mimeType?: SortOrderInput | SortOrder
-    sizeBytes?: SortOrderInput | SortOrder
-    checksumSha256?: SortOrderInput | SortOrder
-    storageProvider?: SortOrderInput | SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    documentArchive?: DocumentArchiveOrderByWithRelationInput
-    authorUser?: UserOrderByWithRelationInput
-    authorDirection?: DepartmentOrderByWithRelationInput
-  }
-
-  export type DocumentArchiveAnnotationWhereUniqueInput = Prisma.AtLeast<{
-    id?: string
-    AND?: DocumentArchiveAnnotationWhereInput | DocumentArchiveAnnotationWhereInput[]
-    OR?: DocumentArchiveAnnotationWhereInput[]
-    NOT?: DocumentArchiveAnnotationWhereInput | DocumentArchiveAnnotationWhereInput[]
-    documentArchiveId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    authorUserId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    authorDirectionId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    comment?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    bucket?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    objectKey?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    fileName?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    mimeType?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    sizeBytes?: BigIntNullableFilter<"DocumentArchiveAnnotation"> | bigint | number | null
-    checksumSha256?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    storageProvider?: EnumAttachmentStorageProviderNullableFilter<"DocumentArchiveAnnotation"> | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFilter<"DocumentArchiveAnnotation"> | Date | string
-    updatedAt?: DateTimeFilter<"DocumentArchiveAnnotation"> | Date | string
-    documentArchive?: XOR<DocumentArchiveRelationFilter, DocumentArchiveWhereInput>
-    authorUser?: XOR<UserRelationFilter, UserWhereInput>
-    authorDirection?: XOR<DepartmentRelationFilter, DepartmentWhereInput>
-  }, "id">
-
-  export type DocumentArchiveAnnotationOrderByWithAggregationInput = {
-    id?: SortOrder
-    documentArchiveId?: SortOrder
-    authorUserId?: SortOrder
-    authorDirectionId?: SortOrder
-    comment?: SortOrderInput | SortOrder
-    bucket?: SortOrderInput | SortOrder
-    objectKey?: SortOrderInput | SortOrder
-    fileName?: SortOrderInput | SortOrder
-    mimeType?: SortOrderInput | SortOrder
-    sizeBytes?: SortOrderInput | SortOrder
-    checksumSha256?: SortOrderInput | SortOrder
-    storageProvider?: SortOrderInput | SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-    _count?: DocumentArchiveAnnotationCountOrderByAggregateInput
-    _avg?: DocumentArchiveAnnotationAvgOrderByAggregateInput
-    _max?: DocumentArchiveAnnotationMaxOrderByAggregateInput
-    _min?: DocumentArchiveAnnotationMinOrderByAggregateInput
-    _sum?: DocumentArchiveAnnotationSumOrderByAggregateInput
-  }
-
-  export type DocumentArchiveAnnotationScalarWhereWithAggregatesInput = {
-    AND?: DocumentArchiveAnnotationScalarWhereWithAggregatesInput | DocumentArchiveAnnotationScalarWhereWithAggregatesInput[]
-    OR?: DocumentArchiveAnnotationScalarWhereWithAggregatesInput[]
-    NOT?: DocumentArchiveAnnotationScalarWhereWithAggregatesInput | DocumentArchiveAnnotationScalarWhereWithAggregatesInput[]
-    id?: UuidWithAggregatesFilter<"DocumentArchiveAnnotation"> | string
-    documentArchiveId?: UuidWithAggregatesFilter<"DocumentArchiveAnnotation"> | string
-    authorUserId?: UuidWithAggregatesFilter<"DocumentArchiveAnnotation"> | string
-    authorDirectionId?: UuidWithAggregatesFilter<"DocumentArchiveAnnotation"> | string
-    comment?: StringNullableWithAggregatesFilter<"DocumentArchiveAnnotation"> | string | null
-    bucket?: StringNullableWithAggregatesFilter<"DocumentArchiveAnnotation"> | string | null
-    objectKey?: StringNullableWithAggregatesFilter<"DocumentArchiveAnnotation"> | string | null
-    fileName?: StringNullableWithAggregatesFilter<"DocumentArchiveAnnotation"> | string | null
-    mimeType?: StringNullableWithAggregatesFilter<"DocumentArchiveAnnotation"> | string | null
-    sizeBytes?: BigIntNullableWithAggregatesFilter<"DocumentArchiveAnnotation"> | bigint | number | null
-    checksumSha256?: StringNullableWithAggregatesFilter<"DocumentArchiveAnnotation"> | string | null
-    storageProvider?: EnumAttachmentStorageProviderNullableWithAggregatesFilter<"DocumentArchiveAnnotation"> | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeWithAggregatesFilter<"DocumentArchiveAnnotation"> | Date | string
-    updatedAt?: DateTimeWithAggregatesFilter<"DocumentArchiveAnnotation"> | Date | string
-  }
-
   export type AuditLogWhereInput = {
     AND?: AuditLogWhereInput | AuditLogWhereInput[]
     OR?: AuditLogWhereInput[]
@@ -23284,7 +21875,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -23313,7 +21903,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -23342,7 +21931,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -23371,7 +21959,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -23582,7 +22169,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
@@ -23604,7 +22190,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -23626,7 +22211,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
@@ -23648,7 +22232,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -24075,7 +22658,6 @@ export namespace Prisma {
     bureau: DepartmentCreateNestedOneWithoutBureauArchivesInput
     folder: FolderCreateNestedOneWithoutArchivesInput
     physicalArchives?: PhysicalArchiveCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationCreateNestedManyWithoutDocumentArchiveInput
     archivedBy: UserCreateNestedOneWithoutArchivesInput
   }
 
@@ -24088,7 +22670,6 @@ export namespace Prisma {
     archivedAt?: Date | string
     archivedById: string
     physicalArchives?: PhysicalArchiveUncheckedCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutDocumentArchiveInput
   }
 
   export type DocumentArchiveUpdateInput = {
@@ -24099,7 +22680,6 @@ export namespace Prisma {
     bureau?: DepartmentUpdateOneRequiredWithoutBureauArchivesNestedInput
     folder?: FolderUpdateOneRequiredWithoutArchivesNestedInput
     physicalArchives?: PhysicalArchiveUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUpdateManyWithoutDocumentArchiveNestedInput
     archivedBy?: UserUpdateOneRequiredWithoutArchivesNestedInput
   }
 
@@ -24112,7 +22692,6 @@ export namespace Prisma {
     archivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     archivedById?: StringFieldUpdateOperationsInput | string
     physicalArchives?: PhysicalArchiveUncheckedUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveNestedInput
   }
 
   export type DocumentArchiveCreateManyInput = {
@@ -24678,122 +23257,6 @@ export namespace Prisma {
     respondedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
-  export type DocumentArchiveAnnotationCreateInput = {
-    id?: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    documentArchive: DocumentArchiveCreateNestedOneWithoutAnnotationsInput
-    authorUser: UserCreateNestedOneWithoutArchiveDocumentAnnotationsInput
-    authorDirection: DepartmentCreateNestedOneWithoutArchiveAnnotationsInput
-  }
-
-  export type DocumentArchiveAnnotationUncheckedCreateInput = {
-    id?: string
-    documentArchiveId: string
-    authorUserId: string
-    authorDirectionId: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type DocumentArchiveAnnotationUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    documentArchive?: DocumentArchiveUpdateOneRequiredWithoutAnnotationsNestedInput
-    authorUser?: UserUpdateOneRequiredWithoutArchiveDocumentAnnotationsNestedInput
-    authorDirection?: DepartmentUpdateOneRequiredWithoutArchiveAnnotationsNestedInput
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    documentArchiveId?: StringFieldUpdateOperationsInput | string
-    authorUserId?: StringFieldUpdateOperationsInput | string
-    authorDirectionId?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type DocumentArchiveAnnotationCreateManyInput = {
-    id?: string
-    documentArchiveId: string
-    authorUserId: string
-    authorDirectionId: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type DocumentArchiveAnnotationUpdateManyMutationInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateManyInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    documentArchiveId?: StringFieldUpdateOperationsInput | string
-    authorUserId?: StringFieldUpdateOperationsInput | string
-    authorDirectionId?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
   export type AuditLogCreateInput = {
     id?: string
     action: string
@@ -24993,12 +23456,6 @@ export namespace Prisma {
     none?: DocumentAnnotationWhereInput
   }
 
-  export type DocumentArchiveAnnotationListRelationFilter = {
-    every?: DocumentArchiveAnnotationWhereInput
-    some?: DocumentArchiveAnnotationWhereInput
-    none?: DocumentArchiveAnnotationWhereInput
-  }
-
   export type DocumentTransmissionListRelationFilter = {
     every?: DocumentTransmissionWhereInput
     some?: DocumentTransmissionWhereInput
@@ -25043,10 +23500,6 @@ export namespace Prisma {
   }
 
   export type DocumentAnnotationOrderByRelationAggregateInput = {
-    _count?: SortOrder
-  }
-
-  export type DocumentArchiveAnnotationOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -26211,65 +24664,6 @@ export namespace Prisma {
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
-
-  export type DocumentArchiveAnnotationCountOrderByAggregateInput = {
-    id?: SortOrder
-    documentArchiveId?: SortOrder
-    authorUserId?: SortOrder
-    authorDirectionId?: SortOrder
-    comment?: SortOrder
-    bucket?: SortOrder
-    objectKey?: SortOrder
-    fileName?: SortOrder
-    mimeType?: SortOrder
-    sizeBytes?: SortOrder
-    checksumSha256?: SortOrder
-    storageProvider?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type DocumentArchiveAnnotationAvgOrderByAggregateInput = {
-    sizeBytes?: SortOrder
-  }
-
-  export type DocumentArchiveAnnotationMaxOrderByAggregateInput = {
-    id?: SortOrder
-    documentArchiveId?: SortOrder
-    authorUserId?: SortOrder
-    authorDirectionId?: SortOrder
-    comment?: SortOrder
-    bucket?: SortOrder
-    objectKey?: SortOrder
-    fileName?: SortOrder
-    mimeType?: SortOrder
-    sizeBytes?: SortOrder
-    checksumSha256?: SortOrder
-    storageProvider?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type DocumentArchiveAnnotationMinOrderByAggregateInput = {
-    id?: SortOrder
-    documentArchiveId?: SortOrder
-    authorUserId?: SortOrder
-    authorDirectionId?: SortOrder
-    comment?: SortOrder
-    bucket?: SortOrder
-    objectKey?: SortOrder
-    fileName?: SortOrder
-    mimeType?: SortOrder
-    sizeBytes?: SortOrder
-    checksumSha256?: SortOrder
-    storageProvider?: SortOrder
-    createdAt?: SortOrder
-    updatedAt?: SortOrder
-  }
-
-  export type DocumentArchiveAnnotationSumOrderByAggregateInput = {
-    sizeBytes?: SortOrder
-  }
   export type JsonNullableFilter<$PrismaModel = never> = 
     | PatchUndefined<
         Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
@@ -26475,13 +24869,6 @@ export namespace Prisma {
     connect?: DocumentAnnotationWhereUniqueInput | DocumentAnnotationWhereUniqueInput[]
   }
 
-  export type DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput> | DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput | DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyAuthorDirectionInputEnvelope
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-  }
-
   export type DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput = {
     create?: XOR<DocumentTransmissionCreateWithoutTargetDirectionInput, DocumentTransmissionUncheckedCreateWithoutTargetDirectionInput> | DocumentTransmissionCreateWithoutTargetDirectionInput[] | DocumentTransmissionUncheckedCreateWithoutTargetDirectionInput[]
     connectOrCreate?: DocumentTransmissionCreateOrConnectWithoutTargetDirectionInput | DocumentTransmissionCreateOrConnectWithoutTargetDirectionInput[]
@@ -26592,13 +24979,6 @@ export namespace Prisma {
     connectOrCreate?: DocumentAnnotationCreateOrConnectWithoutRecordedByDirectionInput | DocumentAnnotationCreateOrConnectWithoutRecordedByDirectionInput[]
     createMany?: DocumentAnnotationCreateManyRecordedByDirectionInputEnvelope
     connect?: DocumentAnnotationWhereUniqueInput | DocumentAnnotationWhereUniqueInput[]
-  }
-
-  export type DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput> | DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput | DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyAuthorDirectionInputEnvelope
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
   }
 
   export type DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput = {
@@ -26860,20 +25240,6 @@ export namespace Prisma {
     deleteMany?: DocumentAnnotationScalarWhereInput | DocumentAnnotationScalarWhereInput[]
   }
 
-  export type DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput> | DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput | DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput[]
-    upsert?: DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorDirectionInput | DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorDirectionInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyAuthorDirectionInputEnvelope
-    set?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    disconnect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    delete?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    update?: DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorDirectionInput | DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorDirectionInput[]
-    updateMany?: DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorDirectionInput | DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorDirectionInput[]
-    deleteMany?: DocumentArchiveAnnotationScalarWhereInput | DocumentArchiveAnnotationScalarWhereInput[]
-  }
-
   export type DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput = {
     create?: XOR<DocumentTransmissionCreateWithoutTargetDirectionInput, DocumentTransmissionUncheckedCreateWithoutTargetDirectionInput> | DocumentTransmissionCreateWithoutTargetDirectionInput[] | DocumentTransmissionUncheckedCreateWithoutTargetDirectionInput[]
     connectOrCreate?: DocumentTransmissionCreateOrConnectWithoutTargetDirectionInput | DocumentTransmissionCreateOrConnectWithoutTargetDirectionInput[]
@@ -27102,20 +25468,6 @@ export namespace Prisma {
     deleteMany?: DocumentAnnotationScalarWhereInput | DocumentAnnotationScalarWhereInput[]
   }
 
-  export type DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput> | DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput | DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput[]
-    upsert?: DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorDirectionInput | DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorDirectionInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyAuthorDirectionInputEnvelope
-    set?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    disconnect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    delete?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    update?: DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorDirectionInput | DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorDirectionInput[]
-    updateMany?: DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorDirectionInput | DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorDirectionInput[]
-    deleteMany?: DocumentArchiveAnnotationScalarWhereInput | DocumentArchiveAnnotationScalarWhereInput[]
-  }
-
   export type DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput = {
     create?: XOR<DocumentTransmissionCreateWithoutTargetDirectionInput, DocumentTransmissionUncheckedCreateWithoutTargetDirectionInput> | DocumentTransmissionCreateWithoutTargetDirectionInput[] | DocumentTransmissionUncheckedCreateWithoutTargetDirectionInput[]
     connectOrCreate?: DocumentTransmissionCreateOrConnectWithoutTargetDirectionInput | DocumentTransmissionCreateOrConnectWithoutTargetDirectionInput[]
@@ -27324,13 +25676,6 @@ export namespace Prisma {
     connect?: DocumentAnnotationWhereUniqueInput | DocumentAnnotationWhereUniqueInput[]
   }
 
-  export type DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutAuthorUserInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput> | DocumentArchiveAnnotationCreateWithoutAuthorUserInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput | DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyAuthorUserInputEnvelope
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-  }
-
   export type DocumentVersionCreateNestedManyWithoutCreatedByUserInput = {
     create?: XOR<DocumentVersionCreateWithoutCreatedByUserInput, DocumentVersionUncheckedCreateWithoutCreatedByUserInput> | DocumentVersionCreateWithoutCreatedByUserInput[] | DocumentVersionUncheckedCreateWithoutCreatedByUserInput[]
     connectOrCreate?: DocumentVersionCreateOrConnectWithoutCreatedByUserInput | DocumentVersionCreateOrConnectWithoutCreatedByUserInput[]
@@ -27378,13 +25723,6 @@ export namespace Prisma {
     connectOrCreate?: DocumentAnnotationCreateOrConnectWithoutCreatedByUserInput | DocumentAnnotationCreateOrConnectWithoutCreatedByUserInput[]
     createMany?: DocumentAnnotationCreateManyCreatedByUserInputEnvelope
     connect?: DocumentAnnotationWhereUniqueInput | DocumentAnnotationWhereUniqueInput[]
-  }
-
-  export type DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutAuthorUserInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput> | DocumentArchiveAnnotationCreateWithoutAuthorUserInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput | DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyAuthorUserInputEnvelope
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
   }
 
   export type DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput = {
@@ -27486,20 +25824,6 @@ export namespace Prisma {
     deleteMany?: DocumentAnnotationScalarWhereInput | DocumentAnnotationScalarWhereInput[]
   }
 
-  export type DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutAuthorUserInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput> | DocumentArchiveAnnotationCreateWithoutAuthorUserInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput | DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput[]
-    upsert?: DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorUserInput | DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorUserInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyAuthorUserInputEnvelope
-    set?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    disconnect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    delete?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    update?: DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorUserInput | DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorUserInput[]
-    updateMany?: DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorUserInput | DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorUserInput[]
-    deleteMany?: DocumentArchiveAnnotationScalarWhereInput | DocumentArchiveAnnotationScalarWhereInput[]
-  }
-
   export type DocumentVersionUpdateManyWithoutCreatedByUserNestedInput = {
     create?: XOR<DocumentVersionCreateWithoutCreatedByUserInput, DocumentVersionUncheckedCreateWithoutCreatedByUserInput> | DocumentVersionCreateWithoutCreatedByUserInput[] | DocumentVersionUncheckedCreateWithoutCreatedByUserInput[]
     connectOrCreate?: DocumentVersionCreateOrConnectWithoutCreatedByUserInput | DocumentVersionCreateOrConnectWithoutCreatedByUserInput[]
@@ -27596,20 +25920,6 @@ export namespace Prisma {
     update?: DocumentAnnotationUpdateWithWhereUniqueWithoutCreatedByUserInput | DocumentAnnotationUpdateWithWhereUniqueWithoutCreatedByUserInput[]
     updateMany?: DocumentAnnotationUpdateManyWithWhereWithoutCreatedByUserInput | DocumentAnnotationUpdateManyWithWhereWithoutCreatedByUserInput[]
     deleteMany?: DocumentAnnotationScalarWhereInput | DocumentAnnotationScalarWhereInput[]
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutAuthorUserInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput> | DocumentArchiveAnnotationCreateWithoutAuthorUserInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput | DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput[]
-    upsert?: DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorUserInput | DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorUserInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyAuthorUserInputEnvelope
-    set?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    disconnect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    delete?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    update?: DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorUserInput | DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorUserInput[]
-    updateMany?: DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorUserInput | DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorUserInput[]
-    deleteMany?: DocumentArchiveAnnotationScalarWhereInput | DocumentArchiveAnnotationScalarWhereInput[]
   }
 
   export type DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput = {
@@ -28278,13 +26588,6 @@ export namespace Prisma {
     connect?: PhysicalArchiveWhereUniqueInput | PhysicalArchiveWhereUniqueInput[]
   }
 
-  export type DocumentArchiveAnnotationCreateNestedManyWithoutDocumentArchiveInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput, DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput> | DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput | DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyDocumentArchiveInputEnvelope
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-  }
-
   export type UserCreateNestedOneWithoutArchivesInput = {
     create?: XOR<UserCreateWithoutArchivesInput, UserUncheckedCreateWithoutArchivesInput>
     connectOrCreate?: UserCreateOrConnectWithoutArchivesInput
@@ -28296,13 +26599,6 @@ export namespace Prisma {
     connectOrCreate?: PhysicalArchiveCreateOrConnectWithoutDocumentArchiveInput | PhysicalArchiveCreateOrConnectWithoutDocumentArchiveInput[]
     createMany?: PhysicalArchiveCreateManyDocumentArchiveInputEnvelope
     connect?: PhysicalArchiveWhereUniqueInput | PhysicalArchiveWhereUniqueInput[]
-  }
-
-  export type DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutDocumentArchiveInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput, DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput> | DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput | DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyDocumentArchiveInputEnvelope
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
   }
 
   export type EnumMovementTypeFieldUpdateOperationsInput = {
@@ -28347,20 +26643,6 @@ export namespace Prisma {
     deleteMany?: PhysicalArchiveScalarWhereInput | PhysicalArchiveScalarWhereInput[]
   }
 
-  export type DocumentArchiveAnnotationUpdateManyWithoutDocumentArchiveNestedInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput, DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput> | DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput | DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput[]
-    upsert?: DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutDocumentArchiveInput | DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutDocumentArchiveInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyDocumentArchiveInputEnvelope
-    set?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    disconnect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    delete?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    update?: DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutDocumentArchiveInput | DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutDocumentArchiveInput[]
-    updateMany?: DocumentArchiveAnnotationUpdateManyWithWhereWithoutDocumentArchiveInput | DocumentArchiveAnnotationUpdateManyWithWhereWithoutDocumentArchiveInput[]
-    deleteMany?: DocumentArchiveAnnotationScalarWhereInput | DocumentArchiveAnnotationScalarWhereInput[]
-  }
-
   export type UserUpdateOneRequiredWithoutArchivesNestedInput = {
     create?: XOR<UserCreateWithoutArchivesInput, UserUncheckedCreateWithoutArchivesInput>
     connectOrCreate?: UserCreateOrConnectWithoutArchivesInput
@@ -28381,20 +26663,6 @@ export namespace Prisma {
     update?: PhysicalArchiveUpdateWithWhereUniqueWithoutDocumentArchiveInput | PhysicalArchiveUpdateWithWhereUniqueWithoutDocumentArchiveInput[]
     updateMany?: PhysicalArchiveUpdateManyWithWhereWithoutDocumentArchiveInput | PhysicalArchiveUpdateManyWithWhereWithoutDocumentArchiveInput[]
     deleteMany?: PhysicalArchiveScalarWhereInput | PhysicalArchiveScalarWhereInput[]
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveNestedInput = {
-    create?: XOR<DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput, DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput> | DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput[] | DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput[]
-    connectOrCreate?: DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput | DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput[]
-    upsert?: DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutDocumentArchiveInput | DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutDocumentArchiveInput[]
-    createMany?: DocumentArchiveAnnotationCreateManyDocumentArchiveInputEnvelope
-    set?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    disconnect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    delete?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    connect?: DocumentArchiveAnnotationWhereUniqueInput | DocumentArchiveAnnotationWhereUniqueInput[]
-    update?: DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutDocumentArchiveInput | DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutDocumentArchiveInput[]
-    updateMany?: DocumentArchiveAnnotationUpdateManyWithWhereWithoutDocumentArchiveInput | DocumentArchiveAnnotationUpdateManyWithWhereWithoutDocumentArchiveInput[]
-    deleteMany?: DocumentArchiveAnnotationScalarWhereInput | DocumentArchiveAnnotationScalarWhereInput[]
   }
 
   export type DocumentArchiveCreateNestedOneWithoutPhysicalArchivesInput = {
@@ -28762,48 +27030,6 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutCreatedTransmissionsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCreatedTransmissionsInput, UserUpdateWithoutCreatedTransmissionsInput>, UserUncheckedUpdateWithoutCreatedTransmissionsInput>
-  }
-
-  export type DocumentArchiveCreateNestedOneWithoutAnnotationsInput = {
-    create?: XOR<DocumentArchiveCreateWithoutAnnotationsInput, DocumentArchiveUncheckedCreateWithoutAnnotationsInput>
-    connectOrCreate?: DocumentArchiveCreateOrConnectWithoutAnnotationsInput
-    connect?: DocumentArchiveWhereUniqueInput
-  }
-
-  export type UserCreateNestedOneWithoutArchiveDocumentAnnotationsInput = {
-    create?: XOR<UserCreateWithoutArchiveDocumentAnnotationsInput, UserUncheckedCreateWithoutArchiveDocumentAnnotationsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutArchiveDocumentAnnotationsInput
-    connect?: UserWhereUniqueInput
-  }
-
-  export type DepartmentCreateNestedOneWithoutArchiveAnnotationsInput = {
-    create?: XOR<DepartmentCreateWithoutArchiveAnnotationsInput, DepartmentUncheckedCreateWithoutArchiveAnnotationsInput>
-    connectOrCreate?: DepartmentCreateOrConnectWithoutArchiveAnnotationsInput
-    connect?: DepartmentWhereUniqueInput
-  }
-
-  export type DocumentArchiveUpdateOneRequiredWithoutAnnotationsNestedInput = {
-    create?: XOR<DocumentArchiveCreateWithoutAnnotationsInput, DocumentArchiveUncheckedCreateWithoutAnnotationsInput>
-    connectOrCreate?: DocumentArchiveCreateOrConnectWithoutAnnotationsInput
-    upsert?: DocumentArchiveUpsertWithoutAnnotationsInput
-    connect?: DocumentArchiveWhereUniqueInput
-    update?: XOR<XOR<DocumentArchiveUpdateToOneWithWhereWithoutAnnotationsInput, DocumentArchiveUpdateWithoutAnnotationsInput>, DocumentArchiveUncheckedUpdateWithoutAnnotationsInput>
-  }
-
-  export type UserUpdateOneRequiredWithoutArchiveDocumentAnnotationsNestedInput = {
-    create?: XOR<UserCreateWithoutArchiveDocumentAnnotationsInput, UserUncheckedCreateWithoutArchiveDocumentAnnotationsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutArchiveDocumentAnnotationsInput
-    upsert?: UserUpsertWithoutArchiveDocumentAnnotationsInput
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutArchiveDocumentAnnotationsInput, UserUpdateWithoutArchiveDocumentAnnotationsInput>, UserUncheckedUpdateWithoutArchiveDocumentAnnotationsInput>
-  }
-
-  export type DepartmentUpdateOneRequiredWithoutArchiveAnnotationsNestedInput = {
-    create?: XOR<DepartmentCreateWithoutArchiveAnnotationsInput, DepartmentUncheckedCreateWithoutArchiveAnnotationsInput>
-    connectOrCreate?: DepartmentCreateOrConnectWithoutArchiveAnnotationsInput
-    upsert?: DepartmentUpsertWithoutArchiveAnnotationsInput
-    connect?: DepartmentWhereUniqueInput
-    update?: XOR<XOR<DepartmentUpdateToOneWithWhereWithoutArchiveAnnotationsInput, DepartmentUpdateWithoutArchiveAnnotationsInput>, DepartmentUncheckedUpdateWithoutArchiveAnnotationsInput>
   }
 
   export type UserCreateNestedOneWithoutAuditLogsInput = {
@@ -29331,7 +27557,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29359,7 +27584,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29392,7 +27616,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29420,7 +27643,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29458,7 +27680,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29486,7 +27707,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29519,7 +27739,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29547,7 +27766,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29585,7 +27803,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29613,7 +27830,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29646,7 +27862,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29674,7 +27889,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -29703,7 +27917,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
@@ -29724,7 +27937,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -29937,7 +28149,6 @@ export namespace Prisma {
     document: DocumentCreateNestedOneWithoutArchivesInput
     folder: FolderCreateNestedOneWithoutArchivesInput
     physicalArchives?: PhysicalArchiveCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationCreateNestedManyWithoutDocumentArchiveInput
     archivedBy: UserCreateNestedOneWithoutArchivesInput
   }
 
@@ -29949,7 +28160,6 @@ export namespace Prisma {
     archivedAt?: Date | string
     archivedById: string
     physicalArchives?: PhysicalArchiveUncheckedCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutDocumentArchiveInput
   }
 
   export type DocumentArchiveCreateOrConnectWithoutBureauInput = {
@@ -30194,48 +28404,6 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput = {
-    id?: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    documentArchive: DocumentArchiveCreateNestedOneWithoutAnnotationsInput
-    authorUser: UserCreateNestedOneWithoutArchiveDocumentAnnotationsInput
-  }
-
-  export type DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput = {
-    id?: string
-    documentArchiveId: string
-    authorUserId: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type DocumentArchiveAnnotationCreateOrConnectWithoutAuthorDirectionInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    create: XOR<DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput>
-  }
-
-  export type DocumentArchiveAnnotationCreateManyAuthorDirectionInputEnvelope = {
-    data: DocumentArchiveAnnotationCreateManyAuthorDirectionInput | DocumentArchiveAnnotationCreateManyAuthorDirectionInput[]
-    skipDuplicates?: boolean
-  }
-
   export type DocumentTransmissionCreateWithoutTargetDirectionInput = {
     id?: string
     kind: $Enums.RecipientKind
@@ -30301,7 +28469,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -30329,7 +28496,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -30399,7 +28565,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -30427,7 +28592,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -30482,7 +28646,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -30510,7 +28673,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -30861,42 +29023,6 @@ export namespace Prisma {
     data: XOR<DocumentAnnotationUpdateManyMutationInput, DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionInput>
   }
 
-  export type DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorDirectionInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    update: XOR<DocumentArchiveAnnotationUpdateWithoutAuthorDirectionInput, DocumentArchiveAnnotationUncheckedUpdateWithoutAuthorDirectionInput>
-    create: XOR<DocumentArchiveAnnotationCreateWithoutAuthorDirectionInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorDirectionInput>
-  }
-
-  export type DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorDirectionInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    data: XOR<DocumentArchiveAnnotationUpdateWithoutAuthorDirectionInput, DocumentArchiveAnnotationUncheckedUpdateWithoutAuthorDirectionInput>
-  }
-
-  export type DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorDirectionInput = {
-    where: DocumentArchiveAnnotationScalarWhereInput
-    data: XOR<DocumentArchiveAnnotationUpdateManyMutationInput, DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionInput>
-  }
-
-  export type DocumentArchiveAnnotationScalarWhereInput = {
-    AND?: DocumentArchiveAnnotationScalarWhereInput | DocumentArchiveAnnotationScalarWhereInput[]
-    OR?: DocumentArchiveAnnotationScalarWhereInput[]
-    NOT?: DocumentArchiveAnnotationScalarWhereInput | DocumentArchiveAnnotationScalarWhereInput[]
-    id?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    documentArchiveId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    authorUserId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    authorDirectionId?: UuidFilter<"DocumentArchiveAnnotation"> | string
-    comment?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    bucket?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    objectKey?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    fileName?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    mimeType?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    sizeBytes?: BigIntNullableFilter<"DocumentArchiveAnnotation"> | bigint | number | null
-    checksumSha256?: StringNullableFilter<"DocumentArchiveAnnotation"> | string | null
-    storageProvider?: EnumAttachmentStorageProviderNullableFilter<"DocumentArchiveAnnotation"> | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFilter<"DocumentArchiveAnnotation"> | Date | string
-    updatedAt?: DateTimeFilter<"DocumentArchiveAnnotation"> | Date | string
-  }
-
   export type DocumentTransmissionUpsertWithWhereUniqueWithoutTargetDirectionInput = {
     where: DocumentTransmissionWhereUniqueInput
     update: XOR<DocumentTransmissionUpdateWithoutTargetDirectionInput, DocumentTransmissionUncheckedUpdateWithoutTargetDirectionInput>
@@ -30942,7 +29068,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
@@ -30963,7 +29088,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -31218,7 +29342,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -31246,7 +29369,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -31353,7 +29475,6 @@ export namespace Prisma {
     bureau: DepartmentCreateNestedOneWithoutBureauArchivesInput
     folder: FolderCreateNestedOneWithoutArchivesInput
     physicalArchives?: PhysicalArchiveCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationCreateNestedManyWithoutDocumentArchiveInput
   }
 
   export type DocumentArchiveUncheckedCreateWithoutArchivedByInput = {
@@ -31364,7 +29485,6 @@ export namespace Prisma {
     movementType: $Enums.MovementType
     archivedAt?: Date | string
     physicalArchives?: PhysicalArchiveUncheckedCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutDocumentArchiveInput
   }
 
   export type DocumentArchiveCreateOrConnectWithoutArchivedByInput = {
@@ -31422,48 +29542,6 @@ export namespace Prisma {
 
   export type DocumentAnnotationCreateManyCreatedByUserInputEnvelope = {
     data: DocumentAnnotationCreateManyCreatedByUserInput | DocumentAnnotationCreateManyCreatedByUserInput[]
-    skipDuplicates?: boolean
-  }
-
-  export type DocumentArchiveAnnotationCreateWithoutAuthorUserInput = {
-    id?: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    documentArchive: DocumentArchiveCreateNestedOneWithoutAnnotationsInput
-    authorDirection: DepartmentCreateNestedOneWithoutArchiveAnnotationsInput
-  }
-
-  export type DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput = {
-    id?: string
-    documentArchiveId: string
-    authorDirectionId: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type DocumentArchiveAnnotationCreateOrConnectWithoutAuthorUserInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    create: XOR<DocumentArchiveAnnotationCreateWithoutAuthorUserInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput>
-  }
-
-  export type DocumentArchiveAnnotationCreateManyAuthorUserInputEnvelope = {
-    data: DocumentArchiveAnnotationCreateManyAuthorUserInput | DocumentArchiveAnnotationCreateManyAuthorUserInput[]
     skipDuplicates?: boolean
   }
 
@@ -31627,7 +29705,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -31655,7 +29732,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -31721,22 +29797,6 @@ export namespace Prisma {
   export type DocumentAnnotationUpdateManyWithWhereWithoutCreatedByUserInput = {
     where: DocumentAnnotationScalarWhereInput
     data: XOR<DocumentAnnotationUpdateManyMutationInput, DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserInput>
-  }
-
-  export type DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutAuthorUserInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    update: XOR<DocumentArchiveAnnotationUpdateWithoutAuthorUserInput, DocumentArchiveAnnotationUncheckedUpdateWithoutAuthorUserInput>
-    create: XOR<DocumentArchiveAnnotationCreateWithoutAuthorUserInput, DocumentArchiveAnnotationUncheckedCreateWithoutAuthorUserInput>
-  }
-
-  export type DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutAuthorUserInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    data: XOR<DocumentArchiveAnnotationUpdateWithoutAuthorUserInput, DocumentArchiveAnnotationUncheckedUpdateWithoutAuthorUserInput>
-  }
-
-  export type DocumentArchiveAnnotationUpdateManyWithWhereWithoutAuthorUserInput = {
-    where: DocumentArchiveAnnotationScalarWhereInput
-    data: XOR<DocumentArchiveAnnotationUpdateManyMutationInput, DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserInput>
   }
 
   export type DocumentVersionUpsertWithWhereUniqueWithoutCreatedByUserInput = {
@@ -31840,7 +29900,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -31868,7 +29927,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -31892,7 +29950,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
@@ -31913,7 +29970,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -31987,7 +30043,6 @@ export namespace Prisma {
     bureau: DepartmentCreateNestedOneWithoutBureauArchivesInput
     folder: FolderCreateNestedOneWithoutArchivesInput
     physicalArchives?: PhysicalArchiveCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationCreateNestedManyWithoutDocumentArchiveInput
     archivedBy: UserCreateNestedOneWithoutArchivesInput
   }
 
@@ -31999,7 +30054,6 @@ export namespace Prisma {
     archivedAt?: Date | string
     archivedById: string
     physicalArchives?: PhysicalArchiveUncheckedCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutDocumentArchiveInput
   }
 
   export type DocumentArchiveCreateOrConnectWithoutDocumentInput = {
@@ -32247,7 +30301,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -32275,7 +30328,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -32305,7 +30357,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
@@ -32326,7 +30377,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -32545,7 +30595,6 @@ export namespace Prisma {
     documents?: DocumentCreateNestedManyWithoutAuthorInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
@@ -32566,7 +30615,6 @@ export namespace Prisma {
     documents?: DocumentUncheckedCreateNestedManyWithoutAuthorInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -32601,7 +30649,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveCreateNestedManyWithoutPartnerDirectionInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -32629,7 +30676,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUncheckedCreateNestedManyWithoutPartnerDirectionInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -32723,7 +30769,6 @@ export namespace Prisma {
     documents?: DocumentUpdateManyWithoutAuthorNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
@@ -32744,7 +30789,6 @@ export namespace Prisma {
     documents?: DocumentUncheckedUpdateManyWithoutAuthorNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -32785,7 +30829,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUpdateManyWithoutPartnerDirectionNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -32813,7 +30856,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUncheckedUpdateManyWithoutPartnerDirectionNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -32894,7 +30936,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -32922,7 +30963,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33025,7 +31065,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33053,7 +31092,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33081,7 +31119,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33109,7 +31146,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33142,7 +31178,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33170,7 +31205,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33203,7 +31237,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33231,7 +31264,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33247,7 +31279,6 @@ export namespace Prisma {
     document: DocumentCreateNestedOneWithoutArchivesInput
     bureau: DepartmentCreateNestedOneWithoutBureauArchivesInput
     physicalArchives?: PhysicalArchiveCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationCreateNestedManyWithoutDocumentArchiveInput
     archivedBy: UserCreateNestedOneWithoutArchivesInput
   }
 
@@ -33259,7 +31290,6 @@ export namespace Prisma {
     archivedAt?: Date | string
     archivedById: string
     physicalArchives?: PhysicalArchiveUncheckedCreateNestedManyWithoutDocumentArchiveInput
-    annotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutDocumentArchiveInput
   }
 
   export type DocumentArchiveCreateOrConnectWithoutFolderInput = {
@@ -33359,7 +31389,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33387,7 +31416,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33426,7 +31454,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33454,7 +31481,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33493,7 +31519,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33521,7 +31546,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33634,7 +31658,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33662,7 +31685,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -33754,48 +31776,6 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput = {
-    id?: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    authorUser: UserCreateNestedOneWithoutArchiveDocumentAnnotationsInput
-    authorDirection: DepartmentCreateNestedOneWithoutArchiveAnnotationsInput
-  }
-
-  export type DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput = {
-    id?: string
-    authorUserId: string
-    authorDirectionId: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type DocumentArchiveAnnotationCreateOrConnectWithoutDocumentArchiveInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    create: XOR<DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput, DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput>
-  }
-
-  export type DocumentArchiveAnnotationCreateManyDocumentArchiveInputEnvelope = {
-    data: DocumentArchiveAnnotationCreateManyDocumentArchiveInput | DocumentArchiveAnnotationCreateManyDocumentArchiveInput[]
-    skipDuplicates?: boolean
-  }
-
   export type UserCreateWithoutArchivesInput = {
     id?: string
     keycloakId: string
@@ -33811,7 +31791,6 @@ export namespace Prisma {
     documents?: DocumentCreateNestedManyWithoutAuthorInput
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
@@ -33832,7 +31811,6 @@ export namespace Prisma {
     documents?: DocumentUncheckedCreateNestedManyWithoutAuthorInput
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -33937,7 +31915,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -33965,7 +31942,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -34022,22 +31998,6 @@ export namespace Prisma {
     data: XOR<PhysicalArchiveUpdateManyMutationInput, PhysicalArchiveUncheckedUpdateManyWithoutDocumentArchiveInput>
   }
 
-  export type DocumentArchiveAnnotationUpsertWithWhereUniqueWithoutDocumentArchiveInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    update: XOR<DocumentArchiveAnnotationUpdateWithoutDocumentArchiveInput, DocumentArchiveAnnotationUncheckedUpdateWithoutDocumentArchiveInput>
-    create: XOR<DocumentArchiveAnnotationCreateWithoutDocumentArchiveInput, DocumentArchiveAnnotationUncheckedCreateWithoutDocumentArchiveInput>
-  }
-
-  export type DocumentArchiveAnnotationUpdateWithWhereUniqueWithoutDocumentArchiveInput = {
-    where: DocumentArchiveAnnotationWhereUniqueInput
-    data: XOR<DocumentArchiveAnnotationUpdateWithoutDocumentArchiveInput, DocumentArchiveAnnotationUncheckedUpdateWithoutDocumentArchiveInput>
-  }
-
-  export type DocumentArchiveAnnotationUpdateManyWithWhereWithoutDocumentArchiveInput = {
-    where: DocumentArchiveAnnotationScalarWhereInput
-    data: XOR<DocumentArchiveAnnotationUpdateManyMutationInput, DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveInput>
-  }
-
   export type UserUpsertWithoutArchivesInput = {
     update: XOR<UserUpdateWithoutArchivesInput, UserUncheckedUpdateWithoutArchivesInput>
     create: XOR<UserCreateWithoutArchivesInput, UserUncheckedCreateWithoutArchivesInput>
@@ -34064,7 +32024,6 @@ export namespace Prisma {
     documents?: DocumentUpdateManyWithoutAuthorNestedInput
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
@@ -34085,7 +32044,6 @@ export namespace Prisma {
     documents?: DocumentUncheckedUpdateManyWithoutAuthorNestedInput
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -34098,7 +32056,6 @@ export namespace Prisma {
     document: DocumentCreateNestedOneWithoutArchivesInput
     bureau: DepartmentCreateNestedOneWithoutBureauArchivesInput
     folder: FolderCreateNestedOneWithoutArchivesInput
-    annotations?: DocumentArchiveAnnotationCreateNestedManyWithoutDocumentArchiveInput
     archivedBy: UserCreateNestedOneWithoutArchivesInput
   }
 
@@ -34110,7 +32067,6 @@ export namespace Prisma {
     movementType: $Enums.MovementType
     archivedAt?: Date | string
     archivedById: string
-    annotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutDocumentArchiveInput
   }
 
   export type DocumentArchiveCreateOrConnectWithoutPhysicalArchivesInput = {
@@ -34195,7 +32151,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -34223,7 +32178,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -34256,7 +32210,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -34284,7 +32237,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -34342,7 +32294,6 @@ export namespace Prisma {
     document?: DocumentUpdateOneRequiredWithoutArchivesNestedInput
     bureau?: DepartmentUpdateOneRequiredWithoutBureauArchivesNestedInput
     folder?: FolderUpdateOneRequiredWithoutArchivesNestedInput
-    annotations?: DocumentArchiveAnnotationUpdateManyWithoutDocumentArchiveNestedInput
     archivedBy?: UserUpdateOneRequiredWithoutArchivesNestedInput
   }
 
@@ -34354,7 +32305,6 @@ export namespace Prisma {
     movementType?: EnumMovementTypeFieldUpdateOperationsInput | $Enums.MovementType
     archivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     archivedById?: StringFieldUpdateOperationsInput | string
-    annotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveNestedInput
   }
 
   export type DocumentUpsertWithoutPhysicalArchivesInput = {
@@ -34451,7 +32401,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -34479,7 +32428,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -34518,7 +32466,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -34546,7 +32493,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -34768,7 +32714,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
@@ -34789,7 +32734,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
@@ -34963,7 +32907,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
@@ -34984,7 +32927,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
@@ -35127,7 +33069,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveCreateNestedManyWithoutPartnerDirectionInput
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -35155,7 +33096,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUncheckedCreateNestedManyWithoutPartnerDirectionInput
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -35188,7 +33128,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveCreateNestedManyWithoutPartnerDirectionInput
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -35216,7 +33155,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUncheckedCreateNestedManyWithoutPartnerDirectionInput
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
     targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
   }
 
@@ -35240,7 +33178,6 @@ export namespace Prisma {
     documents?: DocumentCreateNestedManyWithoutAuthorInput
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
@@ -35261,7 +33198,6 @@ export namespace Prisma {
     documents?: DocumentUncheckedCreateNestedManyWithoutAuthorInput
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
@@ -35401,7 +33337,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUpdateManyWithoutPartnerDirectionNestedInput
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -35429,7 +33364,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUncheckedUpdateManyWithoutPartnerDirectionNestedInput
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -35468,7 +33402,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUpdateManyWithoutPartnerDirectionNestedInput
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -35496,7 +33429,6 @@ export namespace Prisma {
     physicalArchivePartners?: PhysicalArchiveUncheckedUpdateManyWithoutPartnerDirectionNestedInput
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -35526,7 +33458,6 @@ export namespace Prisma {
     documents?: DocumentUpdateManyWithoutAuthorNestedInput
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
@@ -35547,7 +33478,6 @@ export namespace Prisma {
     documents?: DocumentUncheckedUpdateManyWithoutAuthorNestedInput
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -35660,7 +33590,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorDirectionInput
   }
 
   export type DepartmentUncheckedCreateWithoutTargetTransmissionsInput = {
@@ -35688,7 +33617,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
     sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
     recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorDirectionInput
   }
 
   export type DepartmentCreateOrConnectWithoutTargetTransmissionsInput = {
@@ -35712,7 +33640,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
@@ -35733,7 +33660,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
@@ -35873,7 +33799,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
   }
 
   export type DepartmentUncheckedUpdateWithoutTargetTransmissionsInput = {
@@ -35901,7 +33826,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
   }
 
   export type UserUpsertWithoutCreatedTransmissionsInput = {
@@ -35931,7 +33855,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
@@ -35952,297 +33875,8 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  }
-
-  export type DocumentArchiveCreateWithoutAnnotationsInput = {
-    id?: string
-    movementType: $Enums.MovementType
-    archivedAt?: Date | string
-    document: DocumentCreateNestedOneWithoutArchivesInput
-    bureau: DepartmentCreateNestedOneWithoutBureauArchivesInput
-    folder: FolderCreateNestedOneWithoutArchivesInput
-    physicalArchives?: PhysicalArchiveCreateNestedManyWithoutDocumentArchiveInput
-    archivedBy: UserCreateNestedOneWithoutArchivesInput
-  }
-
-  export type DocumentArchiveUncheckedCreateWithoutAnnotationsInput = {
-    id?: string
-    documentId: string
-    bureauId: string
-    folderId: string
-    movementType: $Enums.MovementType
-    archivedAt?: Date | string
-    archivedById: string
-    physicalArchives?: PhysicalArchiveUncheckedCreateNestedManyWithoutDocumentArchiveInput
-  }
-
-  export type DocumentArchiveCreateOrConnectWithoutAnnotationsInput = {
-    where: DocumentArchiveWhereUniqueInput
-    create: XOR<DocumentArchiveCreateWithoutAnnotationsInput, DocumentArchiveUncheckedCreateWithoutAnnotationsInput>
-  }
-
-  export type UserCreateWithoutArchiveDocumentAnnotationsInput = {
-    id?: string
-    keycloakId: string
-    matricule: string
-    email: string
-    nom: string
-    prenom: string
-    isActive?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    role: RoleCreateNestedOneWithoutUsersInput
-    department?: DepartmentCreateNestedOneWithoutUsersInput
-    documents?: DocumentCreateNestedManyWithoutAuthorInput
-    documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
-    archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
-    createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
-    createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
-    auditLogs?: AuditLogCreateNestedManyWithoutUserInput
-  }
-
-  export type UserUncheckedCreateWithoutArchiveDocumentAnnotationsInput = {
-    id?: string
-    keycloakId: string
-    matricule: string
-    email: string
-    nom: string
-    prenom: string
-    roleId: string
-    departmentId?: string | null
-    isActive?: boolean
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    documents?: DocumentUncheckedCreateNestedManyWithoutAuthorInput
-    documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
-    archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
-    createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
-    createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
-    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
-  }
-
-  export type UserCreateOrConnectWithoutArchiveDocumentAnnotationsInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutArchiveDocumentAnnotationsInput, UserUncheckedCreateWithoutArchiveDocumentAnnotationsInput>
-  }
-
-  export type DepartmentCreateWithoutArchiveAnnotationsInput = {
-    id?: string
-    code: string
-    designation: string
-    type: $Enums.DepartmentType
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    parent?: DepartmentCreateNestedOneWithoutChildrenInput
-    children?: DepartmentCreateNestedManyWithoutParentInput
-    direction?: DepartmentCreateNestedOneWithoutDirectionChildrenInput
-    directionChildren?: DepartmentCreateNestedManyWithoutDirectionInput
-    service?: DepartmentCreateNestedOneWithoutServiceChildrenInput
-    serviceChildren?: DepartmentCreateNestedManyWithoutServiceInput
-    users?: UserCreateNestedManyWithoutDepartmentInput
-    documents?: DocumentCreateNestedManyWithoutEmitterDirectionInput
-    recipients?: DocumentRecipientCreateNestedManyWithoutDirectionInput
-    folders?: FolderCreateNestedManyWithoutOwnerDirectionInput
-    bureauFolders?: FolderCreateNestedManyWithoutBureauInput
-    partnerFolders?: FolderCreateNestedManyWithoutPartnerDirectionInput
-    bureauArchives?: DocumentArchiveCreateNestedManyWithoutBureauInput
-    physicalArchives?: PhysicalArchiveCreateNestedManyWithoutDirectionInput
-    physicalArchivePartners?: PhysicalArchiveCreateNestedManyWithoutPartnerDirectionInput
-    documentSigners?: DocumentSignerCreateNestedManyWithoutDepartmentInput
-    sourceAnnotations?: DocumentAnnotationCreateNestedManyWithoutSourceDirectionInput
-    recordedAnnotations?: DocumentAnnotationCreateNestedManyWithoutRecordedByDirectionInput
-    targetTransmissions?: DocumentTransmissionCreateNestedManyWithoutTargetDirectionInput
-  }
-
-  export type DepartmentUncheckedCreateWithoutArchiveAnnotationsInput = {
-    id?: string
-    code: string
-    designation: string
-    type: $Enums.DepartmentType
-    parentId?: string | null
-    directionId?: string | null
-    serviceId?: string | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    children?: DepartmentUncheckedCreateNestedManyWithoutParentInput
-    directionChildren?: DepartmentUncheckedCreateNestedManyWithoutDirectionInput
-    serviceChildren?: DepartmentUncheckedCreateNestedManyWithoutServiceInput
-    users?: UserUncheckedCreateNestedManyWithoutDepartmentInput
-    documents?: DocumentUncheckedCreateNestedManyWithoutEmitterDirectionInput
-    recipients?: DocumentRecipientUncheckedCreateNestedManyWithoutDirectionInput
-    folders?: FolderUncheckedCreateNestedManyWithoutOwnerDirectionInput
-    bureauFolders?: FolderUncheckedCreateNestedManyWithoutBureauInput
-    partnerFolders?: FolderUncheckedCreateNestedManyWithoutPartnerDirectionInput
-    bureauArchives?: DocumentArchiveUncheckedCreateNestedManyWithoutBureauInput
-    physicalArchives?: PhysicalArchiveUncheckedCreateNestedManyWithoutDirectionInput
-    physicalArchivePartners?: PhysicalArchiveUncheckedCreateNestedManyWithoutPartnerDirectionInput
-    documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutDepartmentInput
-    sourceAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutSourceDirectionInput
-    recordedAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutRecordedByDirectionInput
-    targetTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutTargetDirectionInput
-  }
-
-  export type DepartmentCreateOrConnectWithoutArchiveAnnotationsInput = {
-    where: DepartmentWhereUniqueInput
-    create: XOR<DepartmentCreateWithoutArchiveAnnotationsInput, DepartmentUncheckedCreateWithoutArchiveAnnotationsInput>
-  }
-
-  export type DocumentArchiveUpsertWithoutAnnotationsInput = {
-    update: XOR<DocumentArchiveUpdateWithoutAnnotationsInput, DocumentArchiveUncheckedUpdateWithoutAnnotationsInput>
-    create: XOR<DocumentArchiveCreateWithoutAnnotationsInput, DocumentArchiveUncheckedCreateWithoutAnnotationsInput>
-    where?: DocumentArchiveWhereInput
-  }
-
-  export type DocumentArchiveUpdateToOneWithWhereWithoutAnnotationsInput = {
-    where?: DocumentArchiveWhereInput
-    data: XOR<DocumentArchiveUpdateWithoutAnnotationsInput, DocumentArchiveUncheckedUpdateWithoutAnnotationsInput>
-  }
-
-  export type DocumentArchiveUpdateWithoutAnnotationsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    movementType?: EnumMovementTypeFieldUpdateOperationsInput | $Enums.MovementType
-    archivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    document?: DocumentUpdateOneRequiredWithoutArchivesNestedInput
-    bureau?: DepartmentUpdateOneRequiredWithoutBureauArchivesNestedInput
-    folder?: FolderUpdateOneRequiredWithoutArchivesNestedInput
-    physicalArchives?: PhysicalArchiveUpdateManyWithoutDocumentArchiveNestedInput
-    archivedBy?: UserUpdateOneRequiredWithoutArchivesNestedInput
-  }
-
-  export type DocumentArchiveUncheckedUpdateWithoutAnnotationsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    documentId?: StringFieldUpdateOperationsInput | string
-    bureauId?: StringFieldUpdateOperationsInput | string
-    folderId?: StringFieldUpdateOperationsInput | string
-    movementType?: EnumMovementTypeFieldUpdateOperationsInput | $Enums.MovementType
-    archivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    archivedById?: StringFieldUpdateOperationsInput | string
-    physicalArchives?: PhysicalArchiveUncheckedUpdateManyWithoutDocumentArchiveNestedInput
-  }
-
-  export type UserUpsertWithoutArchiveDocumentAnnotationsInput = {
-    update: XOR<UserUpdateWithoutArchiveDocumentAnnotationsInput, UserUncheckedUpdateWithoutArchiveDocumentAnnotationsInput>
-    create: XOR<UserCreateWithoutArchiveDocumentAnnotationsInput, UserUncheckedCreateWithoutArchiveDocumentAnnotationsInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutArchiveDocumentAnnotationsInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutArchiveDocumentAnnotationsInput, UserUncheckedUpdateWithoutArchiveDocumentAnnotationsInput>
-  }
-
-  export type UserUpdateWithoutArchiveDocumentAnnotationsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    keycloakId?: StringFieldUpdateOperationsInput | string
-    matricule?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    nom?: StringFieldUpdateOperationsInput | string
-    prenom?: StringFieldUpdateOperationsInput | string
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    role?: RoleUpdateOneRequiredWithoutUsersNestedInput
-    department?: DepartmentUpdateOneWithoutUsersNestedInput
-    documents?: DocumentUpdateManyWithoutAuthorNestedInput
-    documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
-    archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
-    createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
-    createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
-    auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutArchiveDocumentAnnotationsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    keycloakId?: StringFieldUpdateOperationsInput | string
-    matricule?: StringFieldUpdateOperationsInput | string
-    email?: StringFieldUpdateOperationsInput | string
-    nom?: StringFieldUpdateOperationsInput | string
-    prenom?: StringFieldUpdateOperationsInput | string
-    roleId?: StringFieldUpdateOperationsInput | string
-    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
-    isActive?: BoolFieldUpdateOperationsInput | boolean
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    documents?: DocumentUncheckedUpdateManyWithoutAuthorNestedInput
-    documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
-    archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
-    createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
-    auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
-  }
-
-  export type DepartmentUpsertWithoutArchiveAnnotationsInput = {
-    update: XOR<DepartmentUpdateWithoutArchiveAnnotationsInput, DepartmentUncheckedUpdateWithoutArchiveAnnotationsInput>
-    create: XOR<DepartmentCreateWithoutArchiveAnnotationsInput, DepartmentUncheckedCreateWithoutArchiveAnnotationsInput>
-    where?: DepartmentWhereInput
-  }
-
-  export type DepartmentUpdateToOneWithWhereWithoutArchiveAnnotationsInput = {
-    where?: DepartmentWhereInput
-    data: XOR<DepartmentUpdateWithoutArchiveAnnotationsInput, DepartmentUncheckedUpdateWithoutArchiveAnnotationsInput>
-  }
-
-  export type DepartmentUpdateWithoutArchiveAnnotationsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    code?: StringFieldUpdateOperationsInput | string
-    designation?: StringFieldUpdateOperationsInput | string
-    type?: EnumDepartmentTypeFieldUpdateOperationsInput | $Enums.DepartmentType
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    parent?: DepartmentUpdateOneWithoutChildrenNestedInput
-    children?: DepartmentUpdateManyWithoutParentNestedInput
-    direction?: DepartmentUpdateOneWithoutDirectionChildrenNestedInput
-    directionChildren?: DepartmentUpdateManyWithoutDirectionNestedInput
-    service?: DepartmentUpdateOneWithoutServiceChildrenNestedInput
-    serviceChildren?: DepartmentUpdateManyWithoutServiceNestedInput
-    users?: UserUpdateManyWithoutDepartmentNestedInput
-    documents?: DocumentUpdateManyWithoutEmitterDirectionNestedInput
-    recipients?: DocumentRecipientUpdateManyWithoutDirectionNestedInput
-    folders?: FolderUpdateManyWithoutOwnerDirectionNestedInput
-    bureauFolders?: FolderUpdateManyWithoutBureauNestedInput
-    partnerFolders?: FolderUpdateManyWithoutPartnerDirectionNestedInput
-    bureauArchives?: DocumentArchiveUpdateManyWithoutBureauNestedInput
-    physicalArchives?: PhysicalArchiveUpdateManyWithoutDirectionNestedInput
-    physicalArchivePartners?: PhysicalArchiveUpdateManyWithoutPartnerDirectionNestedInput
-    documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
-    sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
-    recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
-  }
-
-  export type DepartmentUncheckedUpdateWithoutArchiveAnnotationsInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    code?: StringFieldUpdateOperationsInput | string
-    designation?: StringFieldUpdateOperationsInput | string
-    type?: EnumDepartmentTypeFieldUpdateOperationsInput | $Enums.DepartmentType
-    parentId?: NullableStringFieldUpdateOperationsInput | string | null
-    directionId?: NullableStringFieldUpdateOperationsInput | string | null
-    serviceId?: NullableStringFieldUpdateOperationsInput | string | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    children?: DepartmentUncheckedUpdateManyWithoutParentNestedInput
-    directionChildren?: DepartmentUncheckedUpdateManyWithoutDirectionNestedInput
-    serviceChildren?: DepartmentUncheckedUpdateManyWithoutServiceNestedInput
-    users?: UserUncheckedUpdateManyWithoutDepartmentNestedInput
-    documents?: DocumentUncheckedUpdateManyWithoutEmitterDirectionNestedInput
-    recipients?: DocumentRecipientUncheckedUpdateManyWithoutDirectionNestedInput
-    folders?: FolderUncheckedUpdateManyWithoutOwnerDirectionNestedInput
-    bureauFolders?: FolderUncheckedUpdateManyWithoutBureauNestedInput
-    partnerFolders?: FolderUncheckedUpdateManyWithoutPartnerDirectionNestedInput
-    bureauArchives?: DocumentArchiveUncheckedUpdateManyWithoutBureauNestedInput
-    physicalArchives?: PhysicalArchiveUncheckedUpdateManyWithoutDirectionNestedInput
-    physicalArchivePartners?: PhysicalArchiveUncheckedUpdateManyWithoutPartnerDirectionNestedInput
-    documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
-    sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
-    recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
   export type UserCreateWithoutAuditLogsInput = {
@@ -36261,7 +33895,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
   }
@@ -36282,7 +33915,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedCreateNestedManyWithoutAuthorUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
   }
@@ -36319,7 +33951,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
   }
@@ -36340,7 +33971,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
   }
@@ -36547,22 +34177,6 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
-  export type DocumentArchiveAnnotationCreateManyAuthorDirectionInput = {
-    id?: string
-    documentArchiveId: string
-    authorUserId: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
   export type DocumentTransmissionCreateManyTargetDirectionInput = {
     id?: string
     documentId: string
@@ -36597,7 +34211,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -36625,7 +34238,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -36664,7 +34276,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -36692,7 +34303,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -36731,7 +34341,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -36759,7 +34368,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutDepartmentNestedInput
     sourceAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutSourceDirectionNestedInput
     recordedAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutRecordedByDirectionNestedInput
-    archiveAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionNestedInput
     targetTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutTargetDirectionNestedInput
   }
 
@@ -36789,7 +34397,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
@@ -36810,7 +34417,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -37032,7 +34638,6 @@ export namespace Prisma {
     document?: DocumentUpdateOneRequiredWithoutArchivesNestedInput
     folder?: FolderUpdateOneRequiredWithoutArchivesNestedInput
     physicalArchives?: PhysicalArchiveUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUpdateManyWithoutDocumentArchiveNestedInput
     archivedBy?: UserUpdateOneRequiredWithoutArchivesNestedInput
   }
 
@@ -37044,7 +34649,6 @@ export namespace Prisma {
     archivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     archivedById?: StringFieldUpdateOperationsInput | string
     physicalArchives?: PhysicalArchiveUncheckedUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveNestedInput
   }
 
   export type DocumentArchiveUncheckedUpdateManyWithoutBureauInput = {
@@ -37329,54 +34933,6 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type DocumentArchiveAnnotationUpdateWithoutAuthorDirectionInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    documentArchive?: DocumentArchiveUpdateOneRequiredWithoutAnnotationsNestedInput
-    authorUser?: UserUpdateOneRequiredWithoutArchiveDocumentAnnotationsNestedInput
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateWithoutAuthorDirectionInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    documentArchiveId?: StringFieldUpdateOperationsInput | string
-    authorUserId?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorDirectionInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    documentArchiveId?: StringFieldUpdateOperationsInput | string
-    authorUserId?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
   export type DocumentTransmissionUpdateWithoutTargetDirectionInput = {
     id?: StringFieldUpdateOperationsInput | string
     kind?: EnumRecipientKindFieldUpdateOperationsInput | $Enums.RecipientKind
@@ -37439,7 +34995,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
@@ -37460,7 +35015,6 @@ export namespace Prisma {
     documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
-    archiveDocumentAnnotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
@@ -37553,22 +35107,6 @@ export namespace Prisma {
     content: string
     objectKey?: string | null
     bucket?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
-  export type DocumentArchiveAnnotationCreateManyAuthorUserInput = {
-    id?: string
-    documentArchiveId: string
-    authorDirectionId: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
     fileName?: string | null
     mimeType?: string | null
     sizeBytes?: bigint | number | null
@@ -37714,7 +35252,6 @@ export namespace Prisma {
     bureau?: DepartmentUpdateOneRequiredWithoutBureauArchivesNestedInput
     folder?: FolderUpdateOneRequiredWithoutArchivesNestedInput
     physicalArchives?: PhysicalArchiveUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUpdateManyWithoutDocumentArchiveNestedInput
   }
 
   export type DocumentArchiveUncheckedUpdateWithoutArchivedByInput = {
@@ -37725,7 +35262,6 @@ export namespace Prisma {
     movementType?: EnumMovementTypeFieldUpdateOperationsInput | $Enums.MovementType
     archivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     physicalArchives?: PhysicalArchiveUncheckedUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveNestedInput
   }
 
   export type DocumentArchiveUncheckedUpdateManyWithoutArchivedByInput = {
@@ -37785,54 +35321,6 @@ export namespace Prisma {
     content?: StringFieldUpdateOperationsInput | string
     objectKey?: NullableStringFieldUpdateOperationsInput | string | null
     bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type DocumentArchiveAnnotationUpdateWithoutAuthorUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    documentArchive?: DocumentArchiveUpdateOneRequiredWithoutAnnotationsNestedInput
-    authorDirection?: DepartmentUpdateOneRequiredWithoutArchiveAnnotationsNestedInput
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateWithoutAuthorUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    documentArchiveId?: StringFieldUpdateOperationsInput | string
-    authorDirectionId?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateManyWithoutAuthorUserInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    documentArchiveId?: StringFieldUpdateOperationsInput | string
-    authorDirectionId?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
     fileName?: NullableStringFieldUpdateOperationsInput | string | null
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
@@ -38100,7 +35588,6 @@ export namespace Prisma {
     bureau?: DepartmentUpdateOneRequiredWithoutBureauArchivesNestedInput
     folder?: FolderUpdateOneRequiredWithoutArchivesNestedInput
     physicalArchives?: PhysicalArchiveUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUpdateManyWithoutDocumentArchiveNestedInput
     archivedBy?: UserUpdateOneRequiredWithoutArchivesNestedInput
   }
 
@@ -38112,7 +35599,6 @@ export namespace Prisma {
     archivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     archivedById?: StringFieldUpdateOperationsInput | string
     physicalArchives?: PhysicalArchiveUncheckedUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveNestedInput
   }
 
   export type DocumentArchiveUncheckedUpdateManyWithoutDocumentInput = {
@@ -38384,7 +35870,6 @@ export namespace Prisma {
     document?: DocumentUpdateOneRequiredWithoutArchivesNestedInput
     bureau?: DepartmentUpdateOneRequiredWithoutBureauArchivesNestedInput
     physicalArchives?: PhysicalArchiveUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUpdateManyWithoutDocumentArchiveNestedInput
     archivedBy?: UserUpdateOneRequiredWithoutArchivesNestedInput
   }
 
@@ -38396,7 +35881,6 @@ export namespace Prisma {
     archivedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     archivedById?: StringFieldUpdateOperationsInput | string
     physicalArchives?: PhysicalArchiveUncheckedUpdateManyWithoutDocumentArchiveNestedInput
-    annotations?: DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveNestedInput
   }
 
   export type DocumentArchiveUncheckedUpdateManyWithoutFolderInput = {
@@ -38492,22 +35976,6 @@ export namespace Prisma {
     updatedAt?: Date | string
   }
 
-  export type DocumentArchiveAnnotationCreateManyDocumentArchiveInput = {
-    id?: string
-    authorUserId: string
-    authorDirectionId: string
-    comment?: string | null
-    bucket?: string | null
-    objectKey?: string | null
-    fileName?: string | null
-    mimeType?: string | null
-    sizeBytes?: bigint | number | null
-    checksumSha256?: string | null
-    storageProvider?: $Enums.AttachmentStorageProvider | null
-    createdAt?: Date | string
-    updatedAt?: Date | string
-  }
-
   export type PhysicalArchiveUpdateWithoutDocumentArchiveInput = {
     id?: StringFieldUpdateOperationsInput | string
     year?: IntFieldUpdateOperationsInput | number
@@ -38567,54 +36035,6 @@ export namespace Prisma {
     dossier?: StringFieldUpdateOperationsInput | string
     boiteArchive?: StringFieldUpdateOperationsInput | string
     classementKey?: StringFieldUpdateOperationsInput | string
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type DocumentArchiveAnnotationUpdateWithoutDocumentArchiveInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    authorUser?: UserUpdateOneRequiredWithoutArchiveDocumentAnnotationsNestedInput
-    authorDirection?: DepartmentUpdateOneRequiredWithoutArchiveAnnotationsNestedInput
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateWithoutDocumentArchiveInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    authorUserId?: StringFieldUpdateOperationsInput | string
-    authorDirectionId?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-  }
-
-  export type DocumentArchiveAnnotationUncheckedUpdateManyWithoutDocumentArchiveInput = {
-    id?: StringFieldUpdateOperationsInput | string
-    authorUserId?: StringFieldUpdateOperationsInput | string
-    authorDirectionId?: StringFieldUpdateOperationsInput | string
-    comment?: NullableStringFieldUpdateOperationsInput | string | null
-    bucket?: NullableStringFieldUpdateOperationsInput | string | null
-    objectKey?: NullableStringFieldUpdateOperationsInput | string | null
-    fileName?: NullableStringFieldUpdateOperationsInput | string | null
-    mimeType?: NullableStringFieldUpdateOperationsInput | string | null
-    sizeBytes?: NullableBigIntFieldUpdateOperationsInput | bigint | number | null
-    checksumSha256?: NullableStringFieldUpdateOperationsInput | string | null
-    storageProvider?: NullableEnumAttachmentStorageProviderFieldUpdateOperationsInput | $Enums.AttachmentStorageProvider | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -38832,10 +36252,6 @@ export namespace Prisma {
      * @deprecated Use DocumentTransmissionDefaultArgs instead
      */
     export type DocumentTransmissionArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = DocumentTransmissionDefaultArgs<ExtArgs>
-    /**
-     * @deprecated Use DocumentArchiveAnnotationDefaultArgs instead
-     */
-    export type DocumentArchiveAnnotationArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = DocumentArchiveAnnotationDefaultArgs<ExtArgs>
     /**
      * @deprecated Use AuditLogDefaultArgs instead
      */

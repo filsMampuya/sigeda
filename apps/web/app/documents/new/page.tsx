@@ -9,7 +9,7 @@ export default async function NewDocumentPage() {
     getServices(),
     getBureaux(),
     getCurrentUser(),
-    getUsers()
+    getUsers(new URLSearchParams({ page: "1", pageSize: "500" }))
   ]);
 
   return (
@@ -24,7 +24,7 @@ export default async function NewDocumentPage() {
         directions={directions ?? []}
         services={services ?? []}
         bureaux={bureaux ?? []}
-        users={users ?? []}
+        users={users?.items ?? []}
         currentUser={currentUser?.user ?? null}
       />
     </div>

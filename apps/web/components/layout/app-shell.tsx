@@ -15,12 +15,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--background)]">
+    <div className="flex min-h-screen overflow-x-hidden bg-[var(--background)]">
       <Sidebar />
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden">
         <Topbar />
-        <main className="flex-1 p-5 lg:p-6">
-          <div className="mx-auto w-full max-w-[1680px]">{children}</div>
+        <main className="min-w-0 flex-1 overflow-x-hidden p-5 lg:p-6">
+          <div className="mx-auto w-full max-w-[1680px] min-w-0">{children}</div>
         </main>
       </div>
     </div>

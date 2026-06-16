@@ -7,6 +7,8 @@ import type {
   Department,
   Departement,
   DocumentAnnotationRecord,
+  DocumentAnnotationReport,
+  DocumentArchiveDetails,
   DocumentArchiveListItem,
   DocumentAttachment,
   DocumentEntity,
@@ -135,8 +137,8 @@ export function getCurrentUser() {
   return fetchOnPremiseApi<{ user: AuthenticatedUser | null }>("/auth/me");
 }
 
-export function getUsers() {
-  return getMappedUsers();
+export function getUsers(searchParams?: URLSearchParams) {
+  return getMappedUsers(searchParams);
 }
 
 export function getDocuments(searchParams?: URLSearchParams) {
@@ -150,10 +152,12 @@ export function searchDocuments(searchParams?: URLSearchParams) {
 }
 
 export function getRecentDocuments(searchParams?: URLSearchParams) {
-  return getMappedDocuments().then((documents) => {
-    const sorted = [...(documents ?? [])].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
-    return paginateDocuments(sorted, searchParams);
-  });
+  const params = new URLSearchParams(searchParams?.toString() ?? "");
+  params.set("sortBy", params.get("sortBy") ?? "updatedAt");
+  params.set("sortDir", params.get("sortDir") ?? "desc");
+  params.set("page", params.get("page") ?? "1");
+  params.set("pageSize", params.get("pageSize") ?? "10");
+  return searchDocuments(params);
 }
 
 export function getDocumentById(id: string) {
@@ -172,6 +176,14 @@ export function getDocumentArchivesWithFilters(searchParams?: URLSearchParams) {
   const query = searchParams?.toString();
   const path = query ? `/document-archives?${query}` : "/document-archives";
   return fetchOnPremiseApi<PaginatedResult<DocumentArchiveListItem>>(path);
+}
+
+export function getDocumentArchiveById(id: string) {
+  return fetchOnPremiseApi<DocumentArchiveDetails>(`/document-archives/${id}`);
+}
+
+export function classifyDocumentArchive(id: string) {
+  return postOnPremiseApi<Record<string, never>, DocumentArchiveDetails>(`/document-archives/${id}/classify`, {});
 }
 
 export function getArchiveFolders(searchParams?: URLSearchParams) {
@@ -332,6 +344,12 @@ export function createDocumentAnnotation(
   return postOnPremiseApi<typeof input, DocumentEntity>(`/documents/${documentId}/annotations`, input);
 }
 
+export function getDocumentAnnotationReport(searchParams?: URLSearchParams) {
+  const query = searchParams?.toString();
+  const path = query ? `/search/documents/annotations/report?${query}` : "/search/documents/annotations/report";
+  return fetchOnPremiseApi<DocumentAnnotationReport>(path);
+}
+
 export function createDocumentVersion(
   documentId: string,
   input: {
@@ -425,10 +443,12 @@ async function getMappedDepartments(types?: Department["type"][]) {
     .map((department) => mapDepartmentToLegacy(department, departments));
 }
 
-async function getMappedUsers() {
+async function getMappedUsers(searchParams?: URLSearchParams) {
+  const query = searchParams?.toString();
+  const path = query ? `/users?${query}` : "/users";
   const [users, departments] = await Promise.all([
     fetchOnPremiseApi<
-      Array<{
+      PaginatedResult<{
         id: string;
         email: string;
         matricule: string;
@@ -440,7 +460,7 @@ async function getMappedUsers() {
         role: { code: string; name: string };
         department: Department | null;
       }>
-    >("/users"),
+    >(path),
     fetchOnPremiseApi<Department[]>("/departments")
   ]);
 
@@ -448,7 +468,10 @@ async function getMappedUsers() {
     return null;
   }
 
-  return users.map((user) => mapOnPremiseUserToLegacy(user, departments ?? []));
+  return {
+    ...users,
+    items: users.items.map((user) => mapOnPremiseUserToLegacy(user, departments ?? []))
+  };
 }
 
 async function getMappedDocuments() {
@@ -588,9 +611,20 @@ type OnPremiseDocument = {
     id: string;
     bureauId: string;
     folderId: string;
+    folder?: {
+      ownerDirectionId?: string;
+      ownerDirection?: {
+        code?: string;
+        designation?: string;
+      };
+      partnerDirectionId?: string;
+    };
     movementType: "ENTREE" | "SORTIE";
     archivedAt: string;
   }>;
+  canClassify?: boolean;
+  currentDirectionMovement?: "ENTREE" | "SORTIE";
+  currentDirectionArchivedAt?: string;
   version?: number;
   versionsHistory?: DocumentVersionRecord[];
   annotations?: DocumentAnnotationRecord[];
@@ -639,6 +673,10 @@ function mapOnPremiseDocumentToLegacy(document: OnPremiseDocument | null): Docum
       id: archive.id,
       bureauId: archive.bureauId,
       folderId: archive.folderId,
+      ownerDirectionId: archive.folder?.ownerDirectionId,
+      ownerDirectionCode: archive.folder?.ownerDirection?.code,
+      ownerDirectionName: archive.folder?.ownerDirection?.designation,
+      partnerDirectionId: archive.folder?.partnerDirectionId,
       movementType: archive.movementType,
       archivedAt: archive.archivedAt
     })) ?? [];
@@ -684,6 +722,9 @@ function mapOnPremiseDocumentToLegacy(document: OnPremiseDocument | null): Docum
     version: document.version ?? document.versionsHistory?.[document.versionsHistory.length - 1]?.version ?? 1,
     attachments,
     archiveFolders,
+    canClassify: document.canClassify,
+    currentDirectionMovement: document.currentDirectionMovement,
+    currentDirectionArchivedAt: document.currentDirectionArchivedAt,
     annotations: document.annotations,
     versionsHistory: document.versionsHistory,
     transmissions: document.transmissions,
@@ -693,8 +734,8 @@ function mapOnPremiseDocumentToLegacy(document: OnPremiseDocument | null): Docum
     respondedDirectionIds: document.respondedDirectionIds,
     respondedDirectionNames: document.respondedDirectionNames,
     bureauId: primaryArchive?.bureauId,
-    movementType: primaryArchive?.movementType,
-    archivedAt: primaryArchive?.archivedAt,
+    movementType: document.currentDirectionMovement ?? primaryArchive?.movementType,
+    archivedAt: document.currentDirectionArchivedAt ?? primaryArchive?.archivedAt,
     fileName: primaryAttachment?.name,
     urlFileName: primaryAttachment?.fileUrl,
     fileUrl: primaryAttachment?.fileUrl,

@@ -86,7 +86,7 @@ export class DocumentsService {
     return documents.map((document) => serializeDocument(document));
   }
 
-  async get(id: string) {
+  async get(id: string, principal?: AuthenticatedPrincipal) {
     const document = await this.getDocumentRecord(id);
 
     if (!document) {
@@ -95,7 +95,9 @@ export class DocumentsService {
 
     const validationEvents = await this.getValidationTimelineEvents(document.id, getLatestVersion(document)?.version ?? 1);
 
-    return serializeDocument(document, true, validationEvents);
+    const currentUser = principal ? await this.resolveAuthenticatedAuthor(principal) : null;
+
+    return serializeDocument(document, true, validationEvents, currentUser);
   }
 
   async getHistory(id: string) {
@@ -186,7 +188,12 @@ export class DocumentsService {
     });
   }
 
-  async createAnnotation(documentId: string, input: CreateDocumentAnnotationDto, principal: AuthenticatedPrincipal) {
+  async createAnnotation(
+    documentId: string,
+    input: CreateDocumentAnnotationDto,
+    file: Express.Multer.File | undefined,
+    principal: AuthenticatedPrincipal
+  ) {
     const author = await this.resolveAuthenticatedAuthor(principal);
     const document = await this.getDocumentRecord(documentId);
 
@@ -224,6 +231,19 @@ export class DocumentsService {
       throw new BadRequestException("La direction source de l'observation n'est pas liee a ce document.");
     }
 
+    const comment = input.content?.trim() || null;
+
+    if (!comment && !file) {
+      throw new BadRequestException("Une annotation doit contenir un commentaire ou un fichier.");
+    }
+
+    const uploadedAttachment = file
+      ? await this.attachments.uploadDocumentAnnotationAttachment({
+          documentId: document.id,
+          file
+        })
+      : null;
+
     const annotationId = randomUUID();
     const createdAt = new Date();
 
@@ -236,8 +256,15 @@ export class DocumentsService {
           sourceDirectionId: input.sourceDirectionId,
           recordedByDirectionId,
           createdByUserId: author.id,
-          content: input.content.trim(),
+          content: comment ?? "",
           status: AnnotationStatus.PENDING,
+          bucket: uploadedAttachment?.bucket,
+          objectKey: uploadedAttachment?.objectKey,
+          fileName: uploadedAttachment?.fileName,
+          mimeType: uploadedAttachment?.mimeType,
+          sizeBytes: uploadedAttachment?.sizeBytes,
+          checksumSha256: uploadedAttachment?.checksumSha256,
+          storageProvider: uploadedAttachment ? "MINIO" : undefined,
           createdAt,
           updatedAt: createdAt
         }
@@ -258,7 +285,7 @@ export class DocumentsService {
       await tx.auditLog.create({
         data: {
           userId: author.id,
-          action: "CREATE_DOCUMENT_ANNOTATION",
+          action: uploadedAttachment ? "UPLOAD_DOCUMENT_ANNOTATION_FILE" : "CREATE_DOCUMENT_ANNOTATION",
           entityType: "DOCUMENT_ANNOTATION",
           entityId: annotationId,
           metadata: {
@@ -268,6 +295,7 @@ export class DocumentsService {
             documentVersionNumber: targetVersion.version,
             sourceDirectionId: input.sourceDirectionId,
             recordedByDirectionId,
+            hasFile: Boolean(uploadedAttachment),
             userName: [author.nom, author.prenom].filter(Boolean).join(" ").trim() || author.email,
             email: author.email
           }
@@ -275,7 +303,7 @@ export class DocumentsService {
       });
     });
 
-    return this.get(documentId);
+    return this.get(documentId, principal);
   }
 
   async createVersion(documentId: string, input: CreateDocumentVersionDto, principal: AuthenticatedPrincipal) {
@@ -477,7 +505,7 @@ export class DocumentsService {
       });
     });
 
-    return this.get(document.id);
+    return this.get(document.id, principal);
   }
 
   async finalize(documentId: string, principal: AuthenticatedPrincipal) {
@@ -496,7 +524,7 @@ export class DocumentsService {
     }
 
     if (document.status === "VALIDE") {
-      return this.get(document.id);
+      return this.get(document.id, principal);
     }
 
     if (document.status === "ARCHIVE") {
@@ -536,7 +564,35 @@ export class DocumentsService {
       });
     });
 
-    return this.get(document.id);
+    return this.get(document.id, principal);
+  }
+
+  async classify(documentId: string, principal: AuthenticatedPrincipal) {
+    await this.archives.classifyDocument(documentId, principal);
+
+    return this.get(documentId, principal);
+  }
+
+  async getDocumentAnnotationAccessPayload(
+    documentId: string,
+    annotationId: string,
+    principal: AuthenticatedPrincipal,
+    request: RequestLike,
+    disposition: "view" | "download" | undefined
+  ) {
+    const document = await this.getDocumentRecord(documentId);
+
+    if (!document) {
+      throw new NotFoundException("Document not found.");
+    }
+
+    const annotationExists = document.annotations.some((annotation: any) => annotation.id === annotationId);
+
+    if (!annotationExists) {
+      throw new NotFoundException("Annotation introuvable.");
+    }
+
+    return this.attachments.getDocumentAnnotationSecureAccessPayload(annotationId, principal, request, disposition);
   }
 
   private async persistDocument(input: {
@@ -782,7 +838,11 @@ export class DocumentsService {
       }
     });
 
-    return this.get(documentId);
+    return this.get(documentId, {
+      sub: input.author.keycloakId ?? "",
+      email: input.author.email,
+      roles: [input.author.role.code]
+    });
   }
 
   private async resolveAuthenticatedAuthor(principal: AuthenticatedPrincipal) {
@@ -828,7 +888,21 @@ export class DocumentsService {
         emitterDirection: true,
         author: true,
         recipients: { include: { direction: true } },
-        archives: true,
+        archives: {
+          include: {
+            folder: {
+              include: {
+                ownerDirection: {
+                  select: {
+                    id: true,
+                    code: true,
+                    designation: true
+                  }
+                }
+              }
+            }
+          }
+        },
         attachments: true,
         signers: {
           orderBy: [{ signingOrder: "asc" }, { createdAt: "asc" }]
@@ -1093,7 +1167,7 @@ function resolveSignerScope(authorScope: EmitterScope, emitterDirectionId: strin
   };
 }
 
-function serializeDocument(document: any, includeLifecycle = false, validationEvents: any[] = []) {
+function serializeDocument(document: any, includeLifecycle = false, validationEvents: any[] = [], currentUser?: AuthorWithScope | null) {
   const serializedSigners =
     document.signers?.map((signer: any) => ({
       userId: signer.userId ?? undefined,
@@ -1106,6 +1180,27 @@ function serializeDocument(document: any, includeLifecycle = false, validationEv
 
   const lifecycle = includeLifecycle ? buildLifecyclePayload(document, validationEvents) : null;
   const latestVersion = getLatestVersion(document);
+
+  const currentScope = currentUser ? resolveEmitterScope(currentUser) : null;
+  const currentDirectionId = currentScope?.directionId ?? null;
+  const targetDirectionIds = [
+    ...document.recipients.filter((recipient: any) => recipient.kind === "RECEIVER").map((recipient: any) => recipient.directionId),
+    ...document.recipients.filter((recipient: any) => recipient.kind === "COPY").map((recipient: any) => recipient.directionId)
+  ];
+  const currentDirectionArchives =
+    currentDirectionId
+      ? (document.archives ?? []).filter((archive: any) => archive.folder?.ownerDirectionId === currentDirectionId)
+      : [];
+  const currentDirectionMovement =
+    currentDirectionId === document.emitterDirectionId
+      ? "SORTIE"
+      : currentDirectionId && targetDirectionIds.includes(currentDirectionId)
+        ? "ENTREE"
+        : undefined;
+  const currentDirectionArchivedAt = currentDirectionArchives
+    .map((archive: any) => archive.archivedAt?.toISOString?.() ?? archive.archivedAt)
+    .filter(Boolean)
+    .sort((left: string, right: string) => Date.parse(right) - Date.parse(left))[0];
 
   return {
     ...document,
@@ -1123,7 +1218,10 @@ function serializeDocument(document: any, includeLifecycle = false, validationEv
     pendingResponseDirectionIds: lifecycle?.pendingResponseDirectionIds,
     pendingResponseDirectionNames: lifecycle?.pendingResponseDirectionNames,
     respondedDirectionIds: lifecycle?.respondedDirectionIds,
-    respondedDirectionNames: lifecycle?.respondedDirectionNames
+    respondedDirectionNames: lifecycle?.respondedDirectionNames,
+    canClassify: Boolean(currentDirectionId && currentDirectionMovement && currentDirectionArchives.length === 0),
+    currentDirectionMovement,
+    currentDirectionArchivedAt
   };
 }
 
@@ -1162,6 +1260,16 @@ function buildLifecyclePayload(document: any, validationEvents: any[] = []) {
         undefined,
       status: annotation.status,
       content: annotation.content,
+      attachment:
+        annotation.objectKey && annotation.fileName
+          ? {
+              name: annotation.fileName,
+              filePath: annotation.objectKey,
+              mimeType: annotation.mimeType ?? undefined,
+              sizeBytes: annotation.sizeBytes ? Number(annotation.sizeBytes) : undefined,
+              fileUrl: `/documents/${annotation.documentId}/annotations/${annotation.id}/access`
+            }
+          : undefined,
       createdAt: annotation.createdAt.toISOString(),
       updatedAt: annotation.updatedAt.toISOString()
     })) ?? [];
@@ -1378,6 +1486,14 @@ function getStringArray(value: unknown) {
 
   return [];
 }
+
+type RequestLike = {
+  headers: Record<string, string | string[] | undefined> & {
+    "user-agent"?: string;
+    "x-forwarded-for"?: string;
+  };
+  ip?: string;
+};
 
 function getSignerArray(value: unknown): CreateDocumentInput["signers"] {
   if (Array.isArray(value)) {

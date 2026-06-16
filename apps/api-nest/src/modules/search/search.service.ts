@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { type Department, type DepartmentType, type DocumentStatus, type User } from "@sigeda/database";
-import type { ConfidentialityLevel, DocumentEntity, PaginatedResult } from "@sigeda/shared/types";
+import type { ConfidentialityLevel, DocumentAnnotationReport, DocumentEntity, PaginatedResult } from "@sigeda/shared/types";
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AuthenticatedPrincipal } from "../auth/auth.types.js";
 import { resolveDepartmentScope } from "../../shared/department-scope.js";
@@ -54,6 +54,12 @@ type SearchableDocument = {
   versions: Array<{
     id: string;
     version: number;
+  }>;
+  annotations: Array<{
+    id: string;
+    sourceDirectionId: string;
+    createdAt: Date;
+    sourceDirection: Department;
   }>;
   archives: Array<{
     id: string;
@@ -124,25 +130,88 @@ export class SearchService {
     query: SearchDocumentsQueryDto,
     principal: AuthenticatedPrincipal
   ): Promise<PaginatedResult<DocumentEntity>> {
-    const filters = parseFilters(query);
+    const { documents, filters } = await this.buildSearchContext(query, principal);
+    const items = sortDocuments(documents.map(mapSearchDocument), filters.sortBy, filters.sortDir);
     const page = Math.max(query.page ?? 1, 1);
     const pageSize = Math.max(query.pageSize ?? 10, 1);
+    const total = items.length;
+    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+    const start = (page - 1) * pageSize;
 
-    const user = await this.prisma.user.findUnique({
-      where: { keycloakId: principal.sub },
-      include: {
-        role: true,
-        department: {
-          include: {
-            parent: {
-              include: {
-                parent: true
-              }
+    return {
+      items: items.slice(start, start + pageSize),
+      total,
+      page,
+      pageSize,
+      totalPages
+    };
+  }
+
+  async getDocumentAnnotationReport(
+    query: SearchDocumentsQueryDto,
+    principal: AuthenticatedPrincipal
+  ): Promise<DocumentAnnotationReport> {
+    const { documents, filters } = await this.buildSearchContext(query, principal);
+    const topEmitterDirections = rankDirections(
+      documents
+        .filter((document) => getMatchingAnnotations(document, filters).length > 0)
+        .map((document) => ({
+          id: document.emitterDirection.id,
+          code: document.emitterDirection.code,
+          designation: document.emitterDirection.designation
+        }))
+    );
+    const topAnnotatingDirections = rankDirections(
+      documents.flatMap((document) =>
+        getMatchingAnnotations(document, filters).map((annotation) => ({
+          id: annotation.sourceDirection.id,
+          code: annotation.sourceDirection.code,
+          designation: annotation.sourceDirection.designation
+        }))
+      )
+    );
+
+    return {
+      totalDocuments: documents.length,
+      annotatedDocuments: documents.filter((document) => getMatchingAnnotations(document, filters).length > 0).length,
+      unannotatedDocuments: documents.filter((document) => getMatchingAnnotations(document, filters).length === 0).length,
+      topEmitterDirections,
+      topAnnotatingDirections
+    };
+  }
+
+  private async buildSearchContext(query: SearchDocumentsQueryDto, principal: AuthenticatedPrincipal) {
+    const filters = parseFilters(query);
+
+    const include = {
+      role: true,
+      department: {
+        include: {
+          parent: {
+            include: {
+              parent: true
             }
           }
         }
       }
-    });
+    } as const;
+
+    const user =
+      (await this.prisma.user.findUnique({
+        where: { keycloakId: principal.sub },
+        include
+      })) ??
+      (principal.email
+        ? await this.prisma.user.findFirst({
+            where: {
+              email: {
+                equals: principal.email.trim().toLowerCase(),
+                mode: "insensitive"
+              }
+            },
+            include
+          })
+        : null);
 
     const documents = (await this.prisma.document.findMany({
       where: {
@@ -255,6 +324,11 @@ export class SearchService {
           },
           take: 1
         },
+        annotations: {
+          include: {
+            sourceDirection: true
+          }
+        },
         archives: {
           include: {
             folder: {
@@ -273,18 +347,8 @@ export class SearchService {
 
     const scoped = documents.filter((document) => canAccessDocument(document, user));
     const filtered = scoped.filter((document) => matchesDerivedFilters(document, filters));
-    const items = sortDocuments(filtered.map(mapSearchDocument), filters.sortBy, filters.sortDir);
-    const total = items.length;
-    const totalPages = Math.max(Math.ceil(total / pageSize), 1);
-    const start = (page - 1) * pageSize;
 
-    return {
-      items: items.slice(start, start + pageSize),
-      total,
-      page,
-      pageSize,
-      totalPages
-    };
+    return { documents: filtered, filters };
   }
 }
 
@@ -309,6 +373,10 @@ function parseFilters(query: SearchDocumentsQueryDto) {
     movementType: normalizeMovementType(query.movementType),
     confidentialityLevel: normalizeConfidentialityLevel(query.confidentialityLevel),
     createdDate: normalizeString(query.createdDate),
+    annotationDirectionId: normalizeString(query.annotationDirectionId),
+    annotationState: query.annotationState,
+    annotationDateFrom: normalizeString(query.annotationDateFrom),
+    annotationDateTo: normalizeString(query.annotationDateTo),
     dateField: query.dateField ?? "updatedAt",
     periodPreset: query.periodPreset,
     dateFrom: normalizeString(query.dateFrom),
@@ -347,13 +415,79 @@ function matchesDerivedFilters(
   const archiveBureauIds = uniqueStrings(document.archives.map((archive) => archive.bureauId));
   const period = resolveDateRange(filters.periodPreset, filters.dateFrom, filters.dateTo);
   const targetDate = filters.dateField === "createdAt" ? document.createdAt.toISOString() : document.updatedAt.toISOString();
+  const matchingAnnotations = getMatchingAnnotations(document, filters);
 
   return (
     (!filters.serviceId || authorScope.serviceId === filters.serviceId) &&
     (!filters.bureauId || archiveBureauIds.includes(filters.bureauId)) &&
     (!filters.createdDate || matchesCreatedDate(document.createdAt, filters.createdDate)) &&
+    matchesAnnotationState(matchingAnnotations, filters) &&
     matchesDateRange(targetDate, period)
   );
+}
+
+function getMatchingAnnotations(
+  document: SearchableDocument,
+  filters: ReturnType<typeof parseFilters>
+) {
+  const annotationPeriod = resolveDateRange("custom", filters.annotationDateFrom, filters.annotationDateTo);
+
+  return document.annotations.filter((annotation) => {
+    return (
+      (!filters.annotationDirectionId || annotation.sourceDirectionId === filters.annotationDirectionId) &&
+      matchesDateRange(annotation.createdAt.toISOString(), annotationPeriod)
+    );
+  });
+}
+
+function matchesAnnotationState(
+  matchingAnnotations: SearchableDocument["annotations"],
+  filters: Pick<
+    ReturnType<typeof parseFilters>,
+    "annotationState" | "annotationDirectionId" | "annotationDateFrom" | "annotationDateTo"
+  >
+) {
+  if (filters.annotationState === "with") {
+    return matchingAnnotations.length > 0;
+  }
+
+  if (filters.annotationState === "without") {
+    return matchingAnnotations.length === 0;
+  }
+
+  if (filters.annotationDirectionId || filters.annotationDateFrom || filters.annotationDateTo) {
+    return matchingAnnotations.length > 0;
+  }
+
+  return true;
+}
+
+function rankDirections(
+  directions: Array<{
+    id: string;
+    code: string;
+    designation: string;
+  }>
+) {
+  const counts = new Map<string, { directionId: string; code: string; name: string; count: number }>();
+
+  for (const direction of directions) {
+    const current = counts.get(direction.id);
+
+    if (current) {
+      current.count += 1;
+      continue;
+    }
+
+    counts.set(direction.id, {
+      directionId: direction.id,
+      code: direction.code,
+      name: direction.designation,
+      count: 1
+    });
+  }
+
+  return Array.from(counts.values()).sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "fr"));
 }
 
 function mapSearchDocument(document: SearchableDocument): DocumentEntity {

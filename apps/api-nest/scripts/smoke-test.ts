@@ -17,6 +17,14 @@ type User = {
   matricule: string;
 };
 
+type PaginatedResult<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 type UserCreationResponse = {
   user: User;
   defaultPassword: string;
@@ -185,7 +193,7 @@ async function main() {
   console.log("GET /health:", health);
 
   const departments = await api<Department[]>("/departments", token);
-  const users = await api<User[]>("/users", token);
+  const users = await api<PaginatedResult<User>>("/users?page=1&pageSize=50", token);
   const hierarchy = await api<unknown>("/departments/hierarchy", token);
   await api<unknown[]>("/documents", token);
   await api<unknown[]>("/folders", token);
@@ -196,13 +204,13 @@ async function main() {
   await api<unknown>("/search/index-plan", token);
 
   console.log(`Seed departments: ${departments.length}`);
-  console.log(`Seed users: ${users.length}`);
+  console.log(`Seed users: ${users.total}`);
   console.log("Hierarchy:", Array.isArray(hierarchy) ? `${hierarchy.length} root node(s)` : "ok");
 
   const emitterDirection = departments.find((item) => item.code === "DIR_FIN" && item.type === "DIRECTION");
   const receiverDirection = departments.find((item) => item.code === "DG" && item.type === "DIRECTION_GENERALE");
   const bureau = departments.find((item) => item.code === "B_CADRE" && item.type === "BUREAU");
-  const admin = users.find((item) => item.email === username) ?? users[0];
+  const admin = users.items.find((item) => item.email === username) ?? users.items[0];
 
   if (!emitterDirection || !receiverDirection || !bureau || !admin) {
     throw new Error("Pilot seed is incomplete. Run npm.cmd run db:seed before the smoke test.");

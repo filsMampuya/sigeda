@@ -20,4 +20,9 @@ export class SearchController {
   documents(@Query() query: SearchDocumentsQueryDto, @CurrentUser() principal: AuthenticatedPrincipal) {
     return this.search.searchDocuments(query, principal);
   }
+
+  @Get("documents/annotations/report")
+  documentAnnotationReport(@Query() query: SearchDocumentsQueryDto, @CurrentUser() principal: AuthenticatedPrincipal) {
+    return this.search.getDocumentAnnotationReport(query, principal);
+  }
 }

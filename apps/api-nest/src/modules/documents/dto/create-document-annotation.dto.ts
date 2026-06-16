@@ -13,6 +13,7 @@ export class CreateDocumentAnnotationDto {
   documentVersionId?: string;
 
   @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
+  @IsOptional()
   @IsString()
   @MaxLength(4000)
   content!: string;

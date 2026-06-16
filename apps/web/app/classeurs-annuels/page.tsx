@@ -77,7 +77,7 @@ export default async function ArchiveFoldersPage({ searchParams }: ArchiveFolder
   );
 
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <PageHeader
         eyebrow="Classeurs annuels"
         title="Structure annuelle des classeurs"

@@ -47,6 +47,9 @@ function normalizeAuditAction(action: string) {
     action === "VIEW_FILE" ||
     action === "DOWNLOAD_FILE" ||
     action === "ARCHIVE_DOCUMENT" ||
+    action === "CLASSIFY_DOCUMENT_ARCHIVE" ||
+    action === "CREATE_ARCHIVE_ANNOTATION" ||
+    action === "UPLOAD_ARCHIVE_ANNOTATION_FILE" ||
     action === "VALIDATE_DOCUMENT" ||
     action === "REJECT_DOCUMENT" ||
     action === "LOGIN" ||

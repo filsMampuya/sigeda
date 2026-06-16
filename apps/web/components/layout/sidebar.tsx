@@ -2,11 +2,55 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
-import { navigationItems } from "@/lib/navigation";
+import { navigationItems, type NavigationRole } from "@/lib/navigation";
+
+type SessionUser = {
+  role?: NavigationRole | null;
+};
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [user, setUser] = useState<SessionUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isActive = true;
+
+    void fetch("/api/auth/me", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          return null;
+        }
+
+        const payload = (await response.json()) as { user?: SessionUser | null };
+        return payload.user ?? null;
+      })
+      .then((nextUser) => {
+        if (isActive) {
+          setUser(nextUser);
+        }
+      })
+      .finally(() => {
+        if (isActive) {
+          setIsLoading(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const scopedNavigationItems = useMemo(() => {
+    if (isLoading) {
+      return navigationItems.filter((item) => !item.roles);
+    }
+
+    const role = user?.role ?? null;
+    return navigationItems.filter((item) => !item.roles || (role ? item.roles.includes(role) : false));
+  }, [isLoading, user?.role]);
 
   return (
     <aside className="hidden w-76 flex-col border-r border-[#1c3955] bg-[var(--sidebar)] px-5 py-5 text-[var(--sidebar-foreground)] shadow-[inset_-1px_0_0_rgba(255,255,255,0.04)] lg:flex">
@@ -17,7 +61,7 @@ export function Sidebar() {
         <div className="mt-4 h-px w-full bg-[#d9b96b]/20" />
       </div>
       <nav className="mt-6 space-y-1.5">
-        {navigationItems.map((item) => (
+        {scopedNavigationItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}

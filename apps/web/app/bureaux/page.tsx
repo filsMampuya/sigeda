@@ -14,7 +14,7 @@ export default async function BureauxPage({ searchParams }: BureauxPageProps) {
     getDirections(),
     getServices(),
     getBureaux(),
-    getUsers()
+    getUsers(new URLSearchParams({ page: "1", pageSize: "500" }))
   ]);
   const page = Math.max(1, Number.parseInt(searchParams?.page ?? "1", 10) || 1);
   const pageSize = Math.max(1, Number.parseInt(searchParams?.pageSize ?? "10", 10) || 10);
@@ -30,7 +30,7 @@ export default async function BureauxPage({ searchParams }: BureauxPageProps) {
         bureaux={bureaux ?? []}
         services={services ?? []}
         directions={directions ?? []}
-        users={users ?? []}
+        users={users?.items ?? []}
         page={page}
         pageSize={pageSize}
       />

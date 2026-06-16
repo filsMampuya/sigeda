@@ -28,6 +28,10 @@ type DocumentSearchFiltersProps = {
   signerName?: string;
   signerNameOperator?: CriterionOperator;
   confidentialityLevel?: string;
+  annotationDirectionId?: string;
+  annotationState?: "with" | "without";
+  annotationDateFrom?: string;
+  annotationDateTo?: string;
   createdDate?: string;
   dateField?: "createdAt" | "updatedAt";
   periodPreset?: "today" | "week" | "month" | "quarter" | "year" | "previousYear" | "custom";
@@ -96,6 +100,10 @@ export function DocumentSearchFilters({
   signerName,
   signerNameOperator,
   confidentialityLevel,
+  annotationDirectionId,
+  annotationState,
+  annotationDateFrom,
+  annotationDateTo,
   createdDate,
   dateField,
   periodPreset,
@@ -115,6 +123,10 @@ export function DocumentSearchFilters({
   const [selectedPeriodPreset, setSelectedPeriodPreset] = useState(periodPreset ?? "");
   const [selectedDateFrom, setSelectedDateFrom] = useState(dateFrom ?? "");
   const [selectedDateTo, setSelectedDateTo] = useState(dateTo ?? "");
+  const [selectedAnnotationDirectionId, setSelectedAnnotationDirectionId] = useState(annotationDirectionId ?? "");
+  const [selectedAnnotationState, setSelectedAnnotationState] = useState(annotationState ?? "");
+  const [selectedAnnotationDateFrom, setSelectedAnnotationDateFrom] = useState(annotationDateFrom ?? "");
+  const [selectedAnnotationDateTo, setSelectedAnnotationDateTo] = useState(annotationDateTo ?? "");
   const [criteria, setCriteria] = useState<Criterion[]>(() =>
     buildInitialCriteria({
       reference,
@@ -149,6 +161,10 @@ export function DocumentSearchFilters({
     setOrDelete(params, "periodPreset", selectedPeriodPreset);
     setOrDelete(params, "dateFrom", selectedDateFrom);
     setOrDelete(params, "dateTo", selectedDateTo);
+    setOrDelete(params, "annotationDirectionId", selectedAnnotationDirectionId);
+    setOrDelete(params, "annotationState", selectedAnnotationState);
+    setOrDelete(params, "annotationDateFrom", selectedAnnotationDateFrom);
+    setOrDelete(params, "annotationDateTo", selectedAnnotationDateTo);
     params.delete("directionId");
 
     for (const key of supportedCriteriaFields) {
@@ -184,6 +200,10 @@ export function DocumentSearchFilters({
     setSelectedPeriodPreset("");
     setSelectedDateFrom("");
     setSelectedDateTo("");
+    setSelectedAnnotationDirectionId("");
+    setSelectedAnnotationState("");
+    setSelectedAnnotationDateFrom("");
+    setSelectedAnnotationDateTo("");
     setCriteria([]);
     startTransition(() => {
       router.replace(pathname);
@@ -332,6 +352,47 @@ export function DocumentSearchFilters({
                 />
               </>
             ) : null}
+          </div>
+        </div>
+
+        <div className="space-y-3 rounded-[20px] border border-slate-200 bg-white p-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Annotations</p>
+            <p className="text-sm text-slate-600">
+              Cible les documents annotes par direction et les documents attendus sans retour d&apos;annotation.
+            </p>
+          </div>
+          <div className="grid gap-3 xl:grid-cols-4">
+            <SearchableSelect
+              value={selectedAnnotationDirectionId}
+              onValueChange={setSelectedAnnotationDirectionId}
+              placeholder="Direction annotatrice"
+              options={directions.map((direction) => ({
+                value: direction.id,
+                label: formatStructureLabel(direction.code, direction.designation)
+              }))}
+            />
+            <select
+              value={selectedAnnotationState}
+              onChange={(event) => setSelectedAnnotationState(event.target.value as "with" | "without" | "")}
+              className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-slate-500"
+            >
+              <option value="">Tous les documents</option>
+              <option value="with">Avec annotation</option>
+              <option value="without">Sans annotation</option>
+            </select>
+            <input
+              type="date"
+              value={selectedAnnotationDateFrom}
+              onChange={(event) => setSelectedAnnotationDateFrom(event.target.value)}
+              className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-slate-500"
+            />
+            <input
+              type="date"
+              value={selectedAnnotationDateTo}
+              onChange={(event) => setSelectedAnnotationDateTo(event.target.value)}
+              className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-slate-500"
+            />
           </div>
         </div>
 

@@ -16,17 +16,31 @@ export async function POST(request: Request, { params }: RouteContext) {
     return NextResponse.json({ message: "Non authentifie." }, { status: 401 });
   }
 
-  const payload = await request.json().catch(() => null);
+  const contentType = request.headers.get("content-type") ?? "";
+  let response: Response;
 
-  const response = await fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/annotations`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${authToken}`
-    },
-    body: JSON.stringify(payload),
-    cache: "no-store"
-  });
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData();
+    response = await fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/annotations`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${authToken}`
+      },
+      body: formData,
+      cache: "no-store"
+    });
+  } else {
+    const payload = await request.json().catch(() => null);
+    response = await fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/annotations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store"
+    });
+  }
 
   const text = await response.text();
 

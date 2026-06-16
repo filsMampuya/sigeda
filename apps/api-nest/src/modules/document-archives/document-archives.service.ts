@@ -1,6 +1,10 @@
-import { Injectable } from "@nestjs/common";
-import { MovementType, type Department, type DocumentArchive, type User } from "@sigeda/database";
-import type { DocumentArchiveListItem, PaginatedResult } from "@sigeda/shared/types";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { FolderStatus, MovementType, type Department, type DocumentArchive, type User } from "@sigeda/database";
+import type {
+  DocumentArchiveDetails,
+  DocumentArchiveListItem,
+  PaginatedResult
+} from "@sigeda/shared/types";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { FoldersService } from "../folders/folders.service.js";
 import { DepartmentsService } from "../departments/departments.service.js";
@@ -8,11 +12,19 @@ import type { AuthenticatedPrincipal } from "../auth/auth.types.js";
 import { resolveDepartmentScope } from "../../shared/department-scope.js";
 import type { ListDocumentArchivesQueryDto } from "./dto/list-document-archives-query.dto.js";
 
+type DepartmentNode = Parameters<typeof resolveDepartmentScope>[0];
+
+type ScopedUser = User & {
+  role: { code: string; name: string };
+  department: DepartmentNode;
+};
+
 type ArchiveWithRelations = DocumentArchive & {
-  document: {
+    document: {
     id: string;
     reference: string;
     referenceNumber: number;
+    year: number;
     title: string;
     subject: string | null;
     type: string;
@@ -22,11 +34,15 @@ type ArchiveWithRelations = DocumentArchive & {
     updatedAt: Date;
     emitterDirectionId: string;
     emitterDirection: Department;
-    recipients: Array<{
-      kind: "RECEIVER" | "COPY";
-      direction: Department;
-    }>;
-  };
+      recipients: Array<{
+        kind: "RECEIVER" | "COPY";
+        direction: Department;
+      }>;
+      annotations: Array<{
+        sourceDirectionId: string;
+        createdAt: Date;
+      }>;
+    };
   folder: {
     id: string;
     status: "ACTIVE" | "ARCHIVED";
@@ -34,6 +50,7 @@ type ArchiveWithRelations = DocumentArchive & {
     partnerDirectionId: string;
     ownerDirection: Department;
   };
+  bureau: Department;
 };
 
 type ArchiveSortField =
@@ -45,6 +62,7 @@ type ArchiveSortField =
   | "year"
   | "archivedAt"
   | "updatedAt";
+
 type SortDirection = "asc" | "desc";
 
 @Injectable()
@@ -56,49 +74,260 @@ export class DocumentArchivesService {
   ) {}
 
   async list(query: ListDocumentArchivesQueryDto, principal: AuthenticatedPrincipal): Promise<PaginatedResult<DocumentArchiveListItem>> {
-    const [archives, user] = await Promise.all([
-      this.prisma.documentArchive.findMany({
-        include: {
-          document: {
-            include: {
-              emitterDirection: true,
-              recipients: {
-                include: {
-                  direction: true
-                }
-              }
-            }
-          },
-          folder: {
-            include: {
-              ownerDirection: true
-            }
-          }
-        },
-        orderBy: [{ document: { updatedAt: "desc" } }, { archivedAt: "desc" }]
-      }),
-      this.prisma.user.findUnique({
-        where: { keycloakId: principal.sub },
-        include: {
-          role: true,
-          department: {
-            include: {
-              parent: {
-                include: {
-                  parent: true
-                }
-              }
-            }
-          }
-        }
-      })
-    ]);
+    const [archives, user] = await Promise.all([this.loadArchives(), this.resolvePrincipalUser(principal)]);
 
-    const scopedArchives = scopeArchives(archives, user);
-    const mapped = scopedArchives.map(mapArchive);
+    const scopedArchives = archives.filter((archive) => canAccessArchive(archive, user));
+    const mapped = decorateArchiveFlags(
+      scopedArchives.map(mapArchive),
+      user,
+      buildArchivedDocumentIdsForDirection(archives, user)
+    );
     const filters = parseArchiveQuery(query);
     const filtered = sortArchives(applyArchiveFilters(mapped, query), filters.sortBy, filters.sortDir);
+
     return paginate(filtered, query);
+  }
+
+  async get(id: string, principal: AuthenticatedPrincipal): Promise<DocumentArchiveDetails> {
+    const [archive, user] = await Promise.all([
+      this.loadArchiveById(id),
+      this.resolvePrincipalUser(principal)
+    ]);
+
+    if (!archive) {
+      throw new NotFoundException("Archive documentaire introuvable.");
+    }
+
+    if (!canAccessArchive(archive, user)) {
+      throw new NotFoundException("Archive documentaire introuvable.");
+    }
+
+    const siblingArchives = await this.prisma.documentArchive.findMany({
+      where: {
+        documentId: archive.documentId
+      },
+      include: archiveInclude
+    });
+
+    const mappedArchive = decorateArchiveFlags(
+      [mapArchive(archive)],
+      user,
+      buildArchivedDocumentIdsForDirection(siblingArchives, user)
+    )[0];
+
+    return {
+      ...mappedArchive,
+      bureauCode: archive.bureau.code,
+      bureauName: archive.bureau.designation,
+      folderLabel: buildFolderLabel(archive.folder.ownerDirection.code, archive.folder.partnerDirectionId, archive.folder.id)
+    };
+  }
+
+  async classify(id: string, principal: AuthenticatedPrincipal) {
+    const [archive, user] = await Promise.all([this.loadArchiveById(id), this.resolvePrincipalUser(principal)]);
+
+    if (!archive) {
+      throw new NotFoundException("Archive documentaire introuvable.");
+    }
+
+    if (!canAccessArchive(archive, user)) {
+      throw new ForbiddenException("Vous n'etes pas autorise a classer ce document.");
+    }
+
+    const scope = resolveDepartmentScope(user.department);
+    const currentDirectionId = scope.directionId;
+
+    if (!currentDirectionId) {
+      throw new BadRequestException("La direction du compte connecte est introuvable.");
+    }
+
+    if (!scope.bureauId) {
+      throw new BadRequestException(
+        "Aucun bureau n'est rattache a votre compte. Le classement automatique ne peut pas etre determine."
+      );
+    }
+
+    if (currentDirectionId === archive.document.emitterDirectionId) {
+      throw new BadRequestException(
+        "Cette archive emettrice est deja geree par le classement automatique initial."
+      );
+    }
+
+    const targetPartnerDirectionId = archive.document.emitterDirectionId;
+    const movementType: MovementType = MovementType.ENTREE;
+
+    try {
+      const targetFolder = await this.folders.findActiveForArchiving({
+        year: archive.document.year,
+        bureauId: scope.bureauId,
+        partnerDirectionId: targetPartnerDirectionId
+      });
+
+      const classifiedArchive = await this.prisma.documentArchive.upsert({
+        where: {
+          documentId_bureauId_folderId_movementType: {
+            documentId: archive.documentId,
+            bureauId: scope.bureauId,
+            folderId: targetFolder.id,
+            movementType
+          }
+        },
+        update: {
+          archivedById: user.id
+        },
+        create: {
+          documentId: archive.documentId,
+          bureauId: scope.bureauId,
+          folderId: targetFolder.id,
+          movementType,
+          archivedById: user.id
+        }
+      });
+
+      await this.prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: "CLASSIFY_DOCUMENT_ARCHIVE",
+          entityType: "DOCUMENT_ARCHIVE",
+          entityId: classifiedArchive.id,
+          metadata: {
+            description: `Archivage automatique du document ${archive.document.reference} dans le classeur ${targetFolder.id}`,
+            documentId: archive.documentId,
+            documentReference: archive.document.reference,
+            sourceArchiveId: archive.id,
+            targetBureauId: scope.bureauId,
+            targetFolderId: targetFolder.id,
+            partnerDirectionId: targetPartnerDirectionId,
+            archiveMode: "AUTOMATIC",
+            userName: buildUserName(user),
+            email: user.email
+          }
+        }
+      });
+
+      return this.get(classifiedArchive.id, principal);
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw new ConflictException(
+          "Aucun classeur actif correspondant n'a ete trouve dans votre bureau. Veuillez contacter votre responsable ou creer le classeur approprie."
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  async classifyDocument(documentId: string, principal: AuthenticatedPrincipal) {
+    const [document, user] = await Promise.all([
+      this.prisma.document.findUnique({
+        where: { id: documentId },
+        include: {
+          emitterDirection: true,
+          recipients: true
+        }
+      }),
+      this.resolvePrincipalUser(principal)
+    ]);
+
+    if (!document) {
+      throw new NotFoundException("Document introuvable.");
+    }
+
+    const scope = resolveDepartmentScope(user.department);
+    const currentDirectionId = scope.directionId;
+
+    if (!currentDirectionId) {
+      throw new BadRequestException("La direction du compte connecte est introuvable.");
+    }
+
+    if (!scope.bureauId) {
+      throw new BadRequestException("Aucun bureau n'est rattache a votre compte. Le classement automatique ne peut pas etre determine.");
+    }
+
+    const receiverDirectionIds = document.recipients.filter((recipient) => recipient.kind === "RECEIVER").map((recipient) => recipient.directionId);
+    const copyDirectionIds = document.recipients.filter((recipient) => recipient.kind === "COPY").map((recipient) => recipient.directionId);
+
+    const isEmitterDirection = currentDirectionId === document.emitterDirectionId;
+    const isRecipientDirection = [...receiverDirectionIds, ...copyDirectionIds].includes(currentDirectionId);
+
+    if (!isEmitterDirection && !isRecipientDirection) {
+      throw new ForbiddenException("Vous n'etes pas autorise a classer ce document depuis votre direction.");
+    }
+
+    const movementType: MovementType = isEmitterDirection ? MovementType.SORTIE : MovementType.ENTREE;
+    const partnerDirectionIds = isEmitterDirection
+      ? Array.from(new Set([...receiverDirectionIds, ...copyDirectionIds].filter(Boolean)))
+      : [document.emitterDirectionId];
+
+    if (!partnerDirectionIds.length) {
+      throw new BadRequestException("Aucune direction partenaire n'a ete determinee pour le classement.");
+    }
+
+    try {
+      const archives = [] as DocumentArchive[];
+
+      for (const partnerDirectionId of partnerDirectionIds) {
+        const targetFolder = await this.folders.findActiveForArchiving({
+          year: document.year,
+          bureauId: scope.bureauId,
+          partnerDirectionId
+        });
+
+        const classifiedArchive = await this.prisma.documentArchive.upsert({
+          where: {
+            documentId_bureauId_folderId_movementType: {
+              documentId: document.id,
+              bureauId: scope.bureauId,
+              folderId: targetFolder.id,
+              movementType
+            }
+          },
+          update: {
+            archivedById: user.id
+          },
+          create: {
+            documentId: document.id,
+            bureauId: scope.bureauId,
+            folderId: targetFolder.id,
+            movementType,
+            archivedById: user.id
+          }
+        });
+
+        archives.push(classifiedArchive);
+
+        await this.prisma.auditLog.create({
+          data: {
+            userId: user.id,
+            action: "CLASSIFY_DOCUMENT_ARCHIVE",
+            entityType: "DOCUMENT_ARCHIVE",
+            entityId: classifiedArchive.id,
+            metadata: {
+              description: `Classement du document ${document.reference} dans le classeur ${targetFolder.id}`,
+              documentId: document.id,
+              documentReference: document.reference,
+              targetBureauId: scope.bureauId,
+              targetFolderId: targetFolder.id,
+              partnerDirectionId,
+              movementType,
+              archiveMode: "DOCUMENT_CLASSIFICATION",
+              userName: buildUserName(user),
+              email: user.email
+            }
+          }
+        });
+      }
+
+      return archives;
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw new ConflictException(
+          "Aucun classeur actif correspondant n'a ete trouve dans votre bureau. Veuillez contacter votre responsable ou creer le classeur approprie."
+        );
+      }
+
+      throw error;
+    }
   }
 
   async syncForCreatedDocument(input: {
@@ -163,7 +392,84 @@ export class DocumentArchivesService {
 
     return archives;
   }
+
+  private async loadArchives() {
+    return this.prisma.documentArchive.findMany({
+      include: archiveInclude,
+      orderBy: [{ document: { updatedAt: "desc" } }, { archivedAt: "desc" }]
+    }) as Promise<ArchiveWithRelations[]>;
+  }
+
+  private async loadArchiveById(id: string) {
+    return (this.prisma.documentArchive.findUnique({
+      where: { id },
+      include: archiveInclude
+    }) as Promise<ArchiveWithRelations | null>);
+  }
+
+  private async resolvePrincipalUser(principal: AuthenticatedPrincipal) {
+    const include = {
+      role: true,
+      department: {
+        include: {
+          parent: {
+            include: {
+              parent: true
+            }
+          }
+        }
+      }
+    } as const;
+
+    const user =
+      (await this.prisma.user.findUnique({
+        where: { keycloakId: principal.sub },
+        include
+      })) ??
+      (principal.email
+        ? await this.prisma.user.findFirst({
+            where: {
+              email: {
+                equals: principal.email.trim().toLowerCase(),
+                mode: "insensitive"
+              }
+            },
+            include
+          })
+        : null);
+
+    if (!user) {
+      throw new NotFoundException("Utilisateur authentifie introuvable.");
+    }
+
+    return user as ScopedUser;
+  }
 }
+
+const archiveInclude = {
+  document: {
+    include: {
+      emitterDirection: true,
+      recipients: {
+        include: {
+          direction: true
+        }
+      },
+      annotations: {
+        select: {
+          sourceDirectionId: true,
+          createdAt: true
+        }
+      }
+    }
+  },
+  folder: {
+    include: {
+      ownerDirection: true
+    }
+  },
+  bureau: true
+} as const;
 
 function mapArchive(archive: ArchiveWithRelations): DocumentArchiveListItem {
   const partnerDirections =
@@ -175,11 +481,11 @@ function mapArchive(archive: ArchiveWithRelations): DocumentArchiveListItem {
 
   return {
     id: archive.id,
-    year: archive.document.createdAt.getUTCFullYear(),
+    year: archive.document.year,
     documentId: archive.documentId,
     ownerDirectionId: archive.folder.ownerDirectionId,
     directionId: archive.folder.ownerDirectionId,
-    serviceId: undefined,
+    serviceId: archive.bureau.serviceId ?? undefined,
     bureauId: archive.bureauId,
     folderId: archive.folderId,
     movementType: archive.movementType,
@@ -187,6 +493,7 @@ function mapArchive(archive: ArchiveWithRelations): DocumentArchiveListItem {
     updatedAt: archive.document.updatedAt.toISOString(),
     archivedBy: archive.archivedById,
     archiveFolderId: archive.folderId,
+    annotationCount: archive.document.annotations.length,
     documentReference: archive.document.reference,
     documentTitle: archive.document.title || archive.document.subject || archive.document.reference,
     referenceNumber: archive.document.referenceNumber,
@@ -194,51 +501,112 @@ function mapArchive(archive: ArchiveWithRelations): DocumentArchiveListItem {
     emitterDirectionName: archive.document.emitterDirection.designation,
     currentDirectionCode: archive.folder.ownerDirection.code,
     currentDirectionName: archive.folder.ownerDirection.designation,
+    bureauCode: archive.bureau.code,
+    bureauName: archive.bureau.designation,
     folderStatus: archive.folder.status,
     partnerDirectionIds: partnerDirections.map((direction) => direction.id),
     partnerDirectionCodes: partnerDirections.map((direction) => direction.code),
     partnerDirectionNames: partnerDirections.map((direction) => direction.designation),
     documentCreatedAt: archive.document.createdAt.toISOString(),
     documentStatus: archive.document.status as DocumentArchiveListItem["documentStatus"],
-    confidentialityLevel: (archive.document.confidentiality ?? undefined) as DocumentArchiveListItem["confidentialityLevel"]
+    confidentialityLevel: archive.document.confidentiality as DocumentArchiveListItem["confidentialityLevel"],
+    hasAnnotations: archive.document.annotations.length > 0,
+    annotationDirectionIds: Array.from(new Set(archive.document.annotations.map((annotation) => annotation.sourceDirectionId))),
+    latestAnnotationAt: archive.document.annotations[archive.document.annotations.length - 1]?.createdAt.toISOString()
   };
 }
 
-function scopeArchives(archives: ArchiveWithRelations[], user: (User & { role: { code: string }; department: DepartmentNode }) | null) {
+function decorateArchiveFlags(
+  archives: DocumentArchiveListItem[],
+  user: ScopedUser | null,
+  directionArchivedDocumentIds?: Set<string>
+) {
+  const scope = user ? resolveDepartmentScope(user.department) : null;
+  const currentDirectionId = scope?.directionId ?? null;
+  const currentBureauId = scope?.bureauId ?? null;
+
+  if (!currentDirectionId || !currentBureauId) {
+    return archives.map((archive) => ({
+      ...archive,
+      canArchive: false
+    }));
+  }
+
+  const archivedDocumentIds =
+    directionArchivedDocumentIds ??
+    new Set(
+      archives
+        .filter((archive) => archive.ownerDirectionId === currentDirectionId && Boolean(archive.folderId))
+        .map((archive) => archive.documentId)
+    );
+
+  return archives.map((archive) => ({
+    ...archive,
+    canArchive: archive.ownerDirectionId !== currentDirectionId && !archivedDocumentIds.has(archive.documentId)
+  }));
+}
+
+function buildArchivedDocumentIdsForDirection(archives: ArchiveWithRelations[], user: ScopedUser | null) {
+  const scope = user ? resolveDepartmentScope(user.department) : null;
+  const currentDirectionId = scope?.directionId ?? null;
+
+  if (!currentDirectionId) {
+    return new Set<string>();
+  }
+
+  return new Set(
+    archives
+      .filter((archive) => archive.folder.ownerDirectionId === currentDirectionId && Boolean(archive.folderId))
+      .map((archive) => archive.documentId)
+  );
+}
+
+function canAccessArchive(archive: ArchiveWithRelations, user: ScopedUser | null) {
   if (!user || ["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(user.role.code)) {
-    return archives;
+    return true;
   }
 
   const scope = resolveDepartmentScope(user.department);
 
   if (!scope.directionId) {
-    return [];
+    return false;
   }
 
   if (user.role.code === "DIRECTEUR") {
-    return archives.filter((archive) => archive.folder.ownerDirectionId === scope.directionId);
+    return archive.bureau.directionId === scope.directionId;
   }
 
   if (user.role.code === "MANAGER") {
-    return archives.filter((archive) => archive.bureauId === scope.bureauId || archive.folder.ownerDirectionId === scope.directionId);
+    return Boolean(scope.serviceId && archive.bureau.serviceId === scope.serviceId);
   }
 
   if (user.role.code === "AGENT") {
-    return archives.filter((archive) => archive.bureauId === scope.bureauId);
+    return Boolean(scope.bureauId && archive.bureauId === scope.bureauId);
   }
 
-  return archives.filter((archive) => archive.folder.ownerDirectionId === scope.directionId);
+  return archive.bureau.directionId === scope.directionId;
 }
 
-type DepartmentNode = Parameters<typeof resolveDepartmentScope>[0];
+function buildUserName(user: ScopedUser) {
+  return [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email;
+}
+
+function buildFolderLabel(ownerDirectionCode: string | undefined, partnerDirectionId: string, folderId: string) {
+  return [ownerDirectionCode, partnerDirectionId, folderId].filter(Boolean).join(" / ");
+}
 
 function applyArchiveFilters(archives: DocumentArchiveListItem[], query: ListDocumentArchivesQueryDto) {
   const searchTerm = query.q?.trim().toLowerCase() ?? "";
   const year = query.year;
   const directionId = query.directionId;
+  const serviceId = query.serviceId;
+  const bureauId = query.bureauId;
   const partnerDirectionId = query.partnerDirectionId;
+  const annotationDirectionId = query.annotationDirectionId;
+  const annotationState = query.annotationState;
   const section = query.section;
   const period = resolveDateRange(query.periodPreset, query.dateFrom, query.dateTo);
+  const annotationPeriod = resolveDateRange("custom", query.annotationDateFrom, query.annotationDateTo);
   const dateField = query.dateField ?? "updatedAt";
 
   return archives.filter((archive) => {
@@ -247,12 +615,18 @@ function applyArchiveFilters(archives: DocumentArchiveListItem[], query: ListDoc
         archive.documentReference.toLowerCase().includes(searchTerm) ||
         archive.documentTitle.toLowerCase().includes(searchTerm) ||
         (archive.currentDirectionName ?? "").toLowerCase().includes(searchTerm) ||
+        (archive.bureauName ?? "").toLowerCase().includes(searchTerm) ||
         archive.partnerDirectionNames.some((value) => value.toLowerCase().includes(searchTerm))) &&
       (!year || archive.year === year) &&
-      (!directionId || archive.ownerDirectionId === directionId) &&
+      (!directionId || archive.ownerDirectionId === directionId || archive.directionId === directionId) &&
+      (!serviceId || archive.serviceId === serviceId) &&
+      (!bureauId || archive.bureauId === bureauId) &&
       (!partnerDirectionId || archive.partnerDirectionIds.includes(partnerDirectionId)) &&
+      (!annotationDirectionId || archive.annotationDirectionIds?.includes(annotationDirectionId)) &&
+      (!annotationState || (annotationState === "with" ? Boolean(archive.hasAnnotations) : !archive.hasAnnotations)) &&
       (!section || archive.movementType === section) &&
-      matchesDateRange(dateField === "archivedAt" ? archive.archivedAt : archive.updatedAt, period)
+      matchesDateRange(dateField === "archivedAt" ? archive.archivedAt : archive.updatedAt, period) &&
+      (!annotationPeriod || (Boolean(archive.latestAnnotationAt) && matchesDateRange(archive.latestAnnotationAt, annotationPeriod)))
     );
   });
 }

@@ -1,6 +1,6 @@
 import { SectionIntro } from "@/components/organization/section-intro";
 import { UsersPanel } from "@/components/organization/users-panel";
-import { getBureaux, getUsers } from "@/lib/api";
+import { getBureaux, getCurrentUser, getUsers } from "@/lib/api";
 
 type AdminUsersPageProps = {
   searchParams?: {
@@ -10,9 +10,13 @@ type AdminUsersPageProps = {
 };
 
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
-  const [users, bureaux] = await Promise.all([getUsers(), getBureaux()]);
-  const page = Number(searchParams?.page ?? "1");
-  const pageSize = Number(searchParams?.pageSize ?? "10");
+  const page = Math.max(1, Number.parseInt(searchParams?.page ?? "1", 10) || 1);
+  const pageSize = Math.max(1, Number.parseInt(searchParams?.pageSize ?? "10", 10) || 10);
+  const [users, bureaux, currentUser] = await Promise.all([
+    getUsers(new URLSearchParams({ page: String(page), pageSize: String(pageSize) })),
+    getBureaux(),
+    getCurrentUser()
+  ]);
 
   return (
     <div className="space-y-6">
@@ -22,10 +26,13 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         description="Comptes utilisateurs et rattachement organisationnel."
       />
       <UsersPanel
-        users={users ?? []}
+        users={users?.items ?? []}
         bureaux={(bureaux ?? []).filter((item) => item.type === "Bureau")}
-        page={Number.isFinite(page) ? page : 1}
-        pageSize={Number.isFinite(pageSize) ? pageSize : 10}
+        page={users?.page ?? page}
+        pageSize={users?.pageSize ?? pageSize}
+        total={users?.total ?? 0}
+        totalPages={users?.totalPages ?? 1}
+        canCreate={currentUser?.user?.role === "ADMIN"}
       />
     </div>
   );

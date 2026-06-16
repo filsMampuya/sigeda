@@ -101,6 +101,25 @@ export class SearchDocumentsQueryDto {
   @IsString()
   createdDate?: string;
 
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  annotationDirectionId?: string;
+
+  @IsOptional()
+  @IsEnum(["with", "without"] as const)
+  annotationState?: "with" | "without";
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  annotationDateFrom?: string;
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  annotationDateTo?: string;
+
   @IsOptional()
   @IsEnum(["createdAt", "updatedAt"] as const)
   dateField?: "createdAt" | "updatedAt";

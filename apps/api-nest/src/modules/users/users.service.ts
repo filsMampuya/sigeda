@@ -1,7 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import type { PaginatedResult } from "@sigeda/shared/types";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { resolveDepartmentScope } from "../../shared/department-scope.js";
+import type { AuthenticatedPrincipal } from "../auth/auth.types.js";
+import type { ListUsersQueryDto } from "./dto/list-users-query.dto.js";
 
 type CreateUserInput = {
   matricule: string;
@@ -16,14 +19,51 @@ type CreateUserInput = {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list() {
-    return this.prisma.user.findMany({ include: { role: true, department: true }, orderBy: { matricule: "asc" } });
+  async list(query: ListUsersQueryDto, principal: AuthenticatedPrincipal) {
+    const [users, principalUser] = await Promise.all([
+      this.prisma.user.findMany({
+        include: {
+          role: true,
+          department: {
+            include: {
+              parent: {
+                include: {
+                  parent: true
+                }
+              }
+            }
+          }
+        },
+        orderBy: { matricule: "asc" }
+      }),
+      this.resolvePrincipalUser(principal)
+    ]);
+
+    const scopedUsers = users.filter((user) => canAccessUserRecord(user, principalUser));
+    return paginate(scopedUsers, query);
   }
 
-  async get(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id }, include: { role: true, department: true } });
+  async get(id: string, principal: AuthenticatedPrincipal) {
+    const [user, principalUser] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id },
+        include: {
+          role: true,
+          department: {
+            include: {
+              parent: {
+                include: {
+                  parent: true
+                }
+              }
+            }
+          }
+        }
+      }),
+      this.resolvePrincipalUser(principal)
+    ]);
 
-    if (!user) {
+    if (!user || !canAccessUserRecord(user, principalUser)) {
       throw new NotFoundException("User not found.");
     }
 
@@ -221,6 +261,99 @@ export class UsersService {
 
     return payload.access_token;
   }
+
+  private async resolvePrincipalUser(principal: AuthenticatedPrincipal) {
+    return (
+      (await this.prisma.user.findUnique({
+        where: { keycloakId: principal.sub },
+        include: {
+          role: true,
+          department: {
+            include: {
+              parent: {
+                include: {
+                  parent: true
+                }
+              }
+            }
+          }
+        }
+      })) ??
+      (principal.email
+        ? await this.prisma.user.findFirst({
+            where: {
+              email: {
+                equals: principal.email.trim().toLowerCase(),
+                mode: "insensitive"
+              }
+            },
+            include: {
+              role: true,
+              department: {
+                include: {
+                  parent: {
+                    include: {
+                      parent: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+        : null)
+    );
+  }
+}
+
+type UserWithScope = Awaited<ReturnType<UsersService["resolvePrincipalUser"]>>;
+
+function canAccessUserRecord(
+  targetUser: {
+    id: string;
+    department: Parameters<typeof resolveDepartmentScope>[0];
+  },
+  principalUser: UserWithScope
+) {
+  if (!principalUser) {
+    return false;
+  }
+
+  if (["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(principalUser.role.code)) {
+    return true;
+  }
+
+  if (!targetUser.department) {
+    return false;
+  }
+
+  const principalScope = resolveDepartmentScope(principalUser.department);
+  const targetScope = resolveDepartmentScope(targetUser.department);
+
+  if (principalUser.role.code === "DIRECTEUR") {
+    return Boolean(principalScope.directionId && principalScope.directionId === targetScope.directionId);
+  }
+
+  if (principalUser.role.code === "MANAGER") {
+    return Boolean(principalScope.serviceId && principalScope.serviceId === targetScope.serviceId);
+  }
+
+  return Boolean(principalScope.bureauId && principalScope.bureauId === targetScope.bureauId);
+}
+
+function paginate<T>(items: T[], query: ListUsersQueryDto): PaginatedResult<T> {
+  const page = Math.max(query.page ?? 1, 1);
+  const pageSize = Math.max(query.pageSize ?? 10, 1);
+  const total = items.length;
+  const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+  const start = (page - 1) * pageSize;
+
+  return {
+    items: items.slice(start, start + pageSize),
+    total,
+    page,
+    pageSize,
+    totalPages
+  };
 }
 
 function generateDevelopmentPassword() {

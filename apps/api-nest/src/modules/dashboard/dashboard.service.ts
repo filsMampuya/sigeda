@@ -7,22 +7,35 @@ import { resolveDepartmentScope } from "../../shared/department-scope.js";
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getStats(principal: { sub: string }) {
-    const user = await this.prisma.user.findUnique({
-      where: { keycloakId: principal.sub },
-      include: {
-        role: true,
-        department: {
-          include: {
-            parent: {
-              include: {
-                parent: true
-              }
+  async getStats(principal: { sub: string; email?: string }) {
+    const include = {
+      role: true,
+      department: {
+        include: {
+          parent: {
+            include: {
+              parent: true
             }
           }
         }
       }
-    });
+    } as const;
+    const user =
+      (await this.prisma.user.findUnique({
+        where: { keycloakId: principal.sub },
+        include
+      })) ??
+      (principal.email
+        ? await this.prisma.user.findFirst({
+            where: {
+              email: {
+                equals: principal.email.trim().toLowerCase(),
+                mode: "insensitive"
+              }
+            },
+            include
+          })
+        : null);
     const scopedUser = user ? toAuthenticatedUser(user) : null;
 
     const documents = await this.prisma.document.findMany({
@@ -188,11 +201,15 @@ function scopeDocuments<T extends { author: { department: DepartmentNode } }>(do
     return documents;
   }
 
-  if (!user.directionId) {
-    return [];
+  if (user.role === "DIRECTEUR") {
+    return documents.filter((document) => resolveDepartmentScope(document.author.department).directionId === user.directionId);
   }
 
-  return documents.filter((document) => resolveDepartmentScope(document.author.department).directionId === user.directionId);
+  if (user.role === "ARCHIVISTE") {
+    return documents.filter((document) => resolveDepartmentScope(document.author.department).serviceId === user.serviceId);
+  }
+
+  return documents.filter((document) => resolveDepartmentScope(document.author.department).bureauId === user.bureauId);
 }
 
 function toAuthenticatedUser(user: {
@@ -247,6 +264,9 @@ function normalizeAuditAction(action: string): AuditLog["action"] {
     action === "VIEW_FILE" ||
     action === "DOWNLOAD_FILE" ||
     action === "ARCHIVE_DOCUMENT" ||
+    action === "CLASSIFY_DOCUMENT_ARCHIVE" ||
+    action === "CREATE_ARCHIVE_ANNOTATION" ||
+    action === "UPLOAD_ARCHIVE_ANNOTATION_FILE" ||
     action === "VALIDATE_DOCUMENT" ||
     action === "REJECT_DOCUMENT" ||
     action === "LOGIN" ||

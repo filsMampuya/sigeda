@@ -26,12 +26,18 @@ export function UsersPanel({
   users,
   bureaux,
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  total = 0,
+  totalPages = 1,
+  canCreate = false
 }: {
   users: User[];
   bureaux: Departement[];
   page?: number;
   pageSize?: number;
+  total?: number;
+  totalPages?: number;
+  canCreate?: boolean;
 }) {
   const [state, formAction] = useFormState(createUserAction, initialCreateUserActionState);
   const [selectedRole, setSelectedRole] = useState<string>("");
@@ -42,13 +48,7 @@ export function UsersPanel({
 
     return bureaux.filter((bureau) => bureau.parents[0] === "DG" && bureau.parents.length <= 2);
   }, [bureaux, selectedRole]);
-  const total = users.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, totalPages);
-  const paginatedUsers = useMemo(
-    () => users.slice((safePage - 1) * pageSize, safePage * pageSize),
-    [pageSize, safePage, users]
-  );
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1.48fr)_minmax(460px,1fr)]">
@@ -74,7 +74,7 @@ export function UsersPanel({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {paginatedUsers.map((user) => (
+              {users.map((user) => (
                 <tr key={user.id} className="hover:bg-slate-50/80">
                   <td className="px-5 py-3.5">
                     <LongText
@@ -109,94 +109,108 @@ export function UsersPanel({
       </Card>
 
       <Card className="space-y-4 p-5">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-brand-navy">Nouvel utilisateur</h2>
-          <p className="text-sm text-slate-600">Compte, profil et bureau de rattachement.</p>
-        </div>
-        <form action={formAction} className="space-y-4">
-          <div className="grid gap-3 md:grid-cols-2">
-            <FormField label="Nom" required>
-              <input name="nom" className={inputClassName} placeholder="Nom" required />
-            </FormField>
-            <FormField label="Postnom" required>
-              <input name="postnom" className={inputClassName} placeholder="Postnom" required />
-            </FormField>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <FormField label="Adresse email" required>
-              <input name="email" type="email" className={inputClassName} placeholder="prenom.nom@bcc.cd" required />
-            </FormField>
-            <FormField label="Matricule" required>
-              <input name="matricule" className={inputClassName} placeholder="Ex. BCC-002541" required />
-            </FormField>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <FormField label="Profil" required>
-              <select
-                name="profile"
-                className={inputClassName}
-                required
-                defaultValue=""
-                onChange={(event) => setSelectedRole(event.target.value ? JSON.parse(event.target.value).code : "")}
-              >
-                <option value="" disabled>
-                  Selectionner un profil
-                </option>
-                {onPremiseRoles.map((role) => (
-                  <option
-                    key={role}
-                    value={JSON.stringify({
-                      code: role,
-                      designation: formatRoleLabel(role)
-                    })}
-                  >
-                    {formatRoleLabel(role)}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-            <FormField label="Bureau de rattachement" required>
-              <select
-                name="bureau"
-                className={inputClassName}
-                required
-                defaultValue=""
-              >
-                <option value="" disabled>
-                  {selectedRole === "DIRECTEUR_GENERAL"
-                    ? "Selectionner un bureau relevant de la Direction generale"
-                    : "Selectionner un bureau"}
-                </option>
-                {availableBureaux.map((bureau) => (
-                  <option
-                    key={bureau.id}
-                    value={JSON.stringify({
-                      code: bureau.code,
-                      designation: bureau.designation
-                    })}
-                  >
-                    {formatStructureLabel(bureau.code, bureau.designation)}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          </div>
-          {selectedRole === "DIRECTEUR_GENERAL" ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              Le profil Direction generale ne peut etre rattache qu&apos;a une structure relevant de la Direction generale.
+        {canCreate ? (
+          <>
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-brand-navy">Nouvel utilisateur</h2>
+              <p className="text-sm text-slate-600">Compte, profil et bureau de rattachement.</p>
             </div>
-          ) : null}
-          {state.status === "success" ? (
-            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-              <p>{state.message}</p>
-              {state.defaultPassword ? (
-                <p className="mt-1 font-medium">Mot de passe initial: {state.defaultPassword}</p>
+            <form action={formAction} className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <FormField label="Nom" required>
+                  <input name="nom" className={inputClassName} placeholder="Nom" required />
+                </FormField>
+                <FormField label="Postnom" required>
+                  <input name="postnom" className={inputClassName} placeholder="Postnom" required />
+                </FormField>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <FormField label="Adresse email" required>
+                  <input name="email" type="email" className={inputClassName} placeholder="prenom.nom@bcc.cd" required />
+                </FormField>
+                <FormField label="Matricule" required>
+                  <input name="matricule" className={inputClassName} placeholder="Ex. BCC-002541" required />
+                </FormField>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <FormField label="Profil" required>
+                  <select
+                    name="profile"
+                    className={inputClassName}
+                    required
+                    defaultValue=""
+                    onChange={(event) => setSelectedRole(event.target.value ? JSON.parse(event.target.value).code : "")}
+                  >
+                    <option value="" disabled>
+                      Selectionner un profil
+                    </option>
+                    {onPremiseRoles.map((role) => (
+                      <option
+                        key={role}
+                        value={JSON.stringify({
+                          code: role,
+                          designation: formatRoleLabel(role)
+                        })}
+                      >
+                        {formatRoleLabel(role)}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Bureau de rattachement" required>
+                  <select
+                    name="bureau"
+                    className={inputClassName}
+                    required
+                    defaultValue=""
+                  >
+                    <option value="" disabled>
+                      {selectedRole === "DIRECTEUR_GENERAL"
+                        ? "Selectionner un bureau relevant de la Direction generale"
+                        : "Selectionner un bureau"}
+                    </option>
+                    {availableBureaux.map((bureau) => (
+                      <option
+                        key={bureau.id}
+                        value={JSON.stringify({
+                          code: bureau.code,
+                          designation: bureau.designation
+                        })}
+                      >
+                        {formatStructureLabel(bureau.code, bureau.designation)}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </div>
+              {selectedRole === "DIRECTEUR_GENERAL" ? (
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                  Le profil Direction generale ne peut etre rattache qu&apos;a une structure relevant de la Direction generale.
+                </div>
               ) : null}
+              {state.status === "success" ? (
+                <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                  <p>{state.message}</p>
+                  {state.defaultPassword ? (
+                    <p className="mt-1 font-medium">Mot de passe initial: {state.defaultPassword}</p>
+                  ) : null}
+                </div>
+              ) : null}
+              {state.status === "error" ? <p className="text-sm text-red-700">{state.message}</p> : null}
+              <SubmitButton label="Ajouter l'utilisateur" />
+            </form>
+          </>
+        ) : (
+          <>
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold text-brand-navy">Administration protegee</h2>
+              <p className="text-sm text-slate-600">La creation de comptes utilisateurs est reservee aux administrateurs.</p>
             </div>
-          ) : null}
-          {state.status === "error" ? <p className="text-sm text-red-700">{state.message}</p> : null}
-          <SubmitButton label="Ajouter l'utilisateur" />
-        </form>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+              Vous pouvez consulter uniquement les utilisateurs relevant de votre perimetre autorise.
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );

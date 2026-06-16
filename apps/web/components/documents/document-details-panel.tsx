@@ -1,7 +1,8 @@
 import Link from "next/link";
-import type { AuthenticatedUser, Departement, DocumentEntity } from "@sigeda/shared/types";
+import type { Departement, DocumentEntity } from "@sigeda/shared/types";
 
 import { DocumentCollaborationPanel } from "@/components/documents/document-collaboration-panel";
+import { DocumentClassifyButton } from "@/components/documents/document-classify-button";
 import { DocumentFileActions } from "@/components/documents/document-file-actions";
 import { BackButton } from "@/components/ui/back-button";
 import { Card } from "@/components/ui/card";
@@ -9,11 +10,9 @@ import { LongText } from "@/components/ui/long-text";
 import { formatShortDate, formatStructureLabel } from "@/lib/format";
 
 export function DocumentDetailsPanel({
-  currentUser,
   directions,
   document
 }: {
-  currentUser: AuthenticatedUser | null;
   directions: Departement[];
   document: DocumentEntity | null;
 }) {
@@ -29,98 +28,103 @@ export function DocumentDetailsPanel({
   }
 
   const primaryArchive = document.archiveFolders?.[0];
+  const attachmentCount = document.attachments.length;
+  const primaryAttachment = document.attachments[0];
+  const annotationAttachmentCount = document.annotations?.filter((annotation) => Boolean(annotation.attachment)).length ?? 0;
 
   return (
     <div className="space-y-6">
-      <Card className="space-y-4 border-[color:var(--border)]">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="min-w-0">
-            <div className="mb-3 flex items-center gap-3">
+      <Card className="space-y-5 border-[color:var(--border)]">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div className="min-w-0 flex-1">
+            <div className="mb-3 flex flex-wrap items-center gap-3">
               <BackButton fallbackHref="/documents" label="Retour aux documents" />
               <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
                 Fiche documentaire
               </span>
             </div>
-            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">{document.numeroReference}</p>
-            <h3 className="mt-2 text-2xl font-semibold text-brand-navy">
-              {document.title ?? document.fileName ?? "Document"}
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-navy">{document.numeroReference}</p>
+            <h3 className="mt-2 text-2xl font-semibold leading-tight text-slate-950">
+              {document.subject ?? document.title ?? document.fileName ?? "Document"}
             </h3>
+            <p className="mt-3 max-w-4xl text-sm text-slate-600">
+              {formatStructureLabel(document.direction.code, document.direction.designation, document.directionId)}
+            </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+          <div className="flex flex-wrap justify-end gap-2">
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">
+              {document.currentDirectionMovement ?? document.movementType ?? "-"}
+            </span>
+            <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700">
               {document.status ?? "-"}
             </span>
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
               {document.confidentialityLevel ?? "-"}
             </span>
           </div>
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 border-t border-[color:var(--border)] pt-4">
           <Link
             href="/documents"
             className="inline-flex h-10 items-center rounded-xl border border-[color:var(--border)] px-4 text-sm font-medium text-slate-700"
           >
             Liste des documents
           </Link>
-          <Link
-            href={`/archives-documentaires?q=${encodeURIComponent(document.numeroReference)}`}
+          {document.canClassify ? (
+            <DocumentClassifyButton documentId={document.id} reference={document.numeroReference} />
+          ) : null}
+          <a
+            href="#document-annotations"
             className="inline-flex h-10 items-center rounded-xl border border-[color:var(--border)] px-4 text-sm font-medium text-slate-700"
           >
-            Archives documentaires
-          </Link>
-          {primaryArchive ? (
-            <Link
-              href={`/classeurs-annuels/${primaryArchive.folderId}`}
-              className="inline-flex h-10 items-center rounded-xl border border-[color:var(--border)] px-4 text-sm font-medium text-slate-700"
-            >
-              Classeur annuel
-            </Link>
-          ) : null}
+            Annotations
+          </a>
         </div>
-        {document.subject ? <LongText value={document.subject} label="Objet du document" className="text-sm text-slate-700" /> : null}
-        {document.description ? (
-          <LongText value={document.description} label="Description du document" className="text-sm text-slate-500" />
-        ) : null}
-      </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
         <Card className="border-[color:var(--border)]">
-          <div className="border-b border-[color:var(--border)] pb-3">
-            <h4 className="text-lg font-semibold text-brand-navy">Vue metier</h4>
-          </div>
-          <dl className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+          <dl className="grid gap-4 text-sm text-slate-700 md:grid-cols-2 xl:grid-cols-4">
             <div>
-              <dt className="font-medium text-slate-900">Direction emettrice</dt>
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Direction emettrice</dt>
               <dd>{formatStructureLabel(document.direction.code, document.direction.designation, document.directionId)}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Annee</dt>
-              <dd>{document.year}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-900">Code reference</dt>
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Destinataires</dt>
               <dd>
-                <LongText value={document.referenceCode} label="Code reference" />
+                <LongText
+                  value={document.receiverDirectionNames?.join(", ") || document.receiverDirectionIds.join(", ") || "-"}
+                  label="Directions destinataires"
+                />
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Numero annuel</dt>
-              <dd>{document.referenceNumber}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-900">Type</dt>
-              <dd>{document.type}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-900">Creation</dt>
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Creation</dt>
               <dd>{formatShortDate(document.createdAt)}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Classement</dt>
-              <dd>{document.movementType ?? "-"}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Mouvement</dt>
+              <dd>{document.currentDirectionMovement ?? document.movementType ?? "-"}</dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Signataires</dt>
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Confidentialite</dt>
+              <dd>{document.confidentialityLevel ?? "-"}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Classe le</dt>
+              <dd>{formatShortDate(document.currentDirectionArchivedAt ?? document.archivedAt)}</dd>
+            </div>
+            <div className="md:col-span-2">
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Copies</dt>
+              <dd>
+                <LongText
+                  value={
+                    document.copyDirectionNames?.join(", ") || document.copyDirectionIds.join(", ") || "-"
+                  }
+                  label="Directions en copie"
+                />
+              </dd>
+            </div>
+            <div className="md:col-span-2">
+              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Signataires</dt>
               <dd>
                 <LongText
                   value={
@@ -136,31 +140,34 @@ export function DocumentDetailsPanel({
                 />
               </dd>
             </div>
+          </dl>
+        </Card>
+      </Card>
+
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <Card className="border-[color:var(--border)]">
+          <div className="border-b border-[color:var(--border)] pb-3">
+            <h4 className="text-lg font-semibold text-brand-navy">Bloc documentaire</h4>
+          </div>
+          <dl className="mt-4 grid gap-3 text-sm text-slate-600">
             <div>
-              <dt className="font-medium text-slate-900">Version</dt>
-              <dd>{document.version}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-900">Destinataires</dt>
+              <dt className="font-medium text-slate-900">Fichier principal</dt>
               <dd>
                 <LongText
-                  value={document.receiverDirectionNames?.join(", ") || document.receiverDirectionIds.join(", ") || "-"}
-                  label="Directions destinataires"
+                  value={primaryAttachment?.name ?? document.fileName ?? document.originalFileName ?? "-"}
+                  label="Fichier principal"
                 />
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Copies</dt>
+              <dt className="font-medium text-slate-900">Actions documentaires</dt>
               <dd>
-                <LongText
-                  value={document.copyDirectionNames?.join(", ") || document.copyDirectionIds.join(", ") || "-"}
-                  label="Directions en copie"
-                />
+                <DocumentFileActions attachmentId={primaryAttachment?.id} />
               </dd>
             </div>
             <div>
-              <dt className="font-medium text-slate-900">Archive le</dt>
-              <dd>{formatShortDate(document.archivedAt)}</dd>
+              <dt className="font-medium text-slate-900">Pieces jointes</dt>
+              <dd>{attachmentCount > 0 ? `${attachmentCount} fichier(s)` : "Aucune piece jointe"}</dd>
             </div>
             <div>
               <dt className="font-medium text-slate-900">Classeur</dt>
@@ -170,23 +177,22 @@ export function DocumentDetailsPanel({
                     href={`/classeurs-annuels/${primaryArchive.folderId}`}
                     className="font-medium text-brand-navy hover:underline"
                   >
-                    Ouvrir le classeur
+                    Ouvrir le classeur annuel
                   </Link>
                 ) : (
                   "-"
                 )}
               </dd>
             </div>
-            <div className="md:col-span-2">
-              <dt className="font-medium text-slate-900">Resume</dt>
+            <div>
+              <dt className="font-medium text-slate-900">Archives</dt>
               <dd>
-                <LongText value={document.summary ?? "-"} label="Resume documentaire" />
-              </dd>
-            </div>
-            <div className="md:col-span-2">
-              <dt className="font-medium text-slate-900">Mots-cles</dt>
-              <dd>
-                <LongText value={document.keywords.join(", ") || "-"} label="Mots-cles" />
+                <Link
+                  href={`/archives-documentaires?q=${encodeURIComponent(document.numeroReference)}`}
+                  className="font-medium text-brand-navy hover:underline"
+                >
+                  Consulter les archives documentaires
+                </Link>
               </dd>
             </div>
           </dl>
@@ -194,53 +200,141 @@ export function DocumentDetailsPanel({
 
         <Card className="border-[color:var(--border)]">
           <div className="border-b border-[color:var(--border)] pb-3">
-            <h4 className="text-lg font-semibold text-brand-navy">Numerisation</h4>
+            <h4 className="text-lg font-semibold text-brand-navy">Annotations</h4>
           </div>
-          <dl className="mt-4 grid gap-3 text-sm text-slate-600">
-            <div>
-              <dt className="font-medium text-slate-900">Type de fichier</dt>
-              <dd>{document.fileKind ?? "-"}</dd>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nombre</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{document.annotations?.length ?? 0}</p>
             </div>
-            <div>
-              <dt className="font-medium text-slate-900">Nom original</dt>
-              <dd>
-                <LongText value={document.fileName ?? document.originalFileName ?? "-"} label="Nom original du fichier" />
-              </dd>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pieces jointes</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{annotationAttachmentCount}</p>
             </div>
-            <div>
-              <dt className="font-medium text-slate-900">Stockage</dt>
-              <dd>{document.storageProvider ?? "-"}</dd>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 sm:col-span-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Derniere annotation</p>
+              <p className="mt-2 text-sm font-medium text-slate-900">
+                {document.annotations?.length
+                  ? formatShortDate(
+                      [...document.annotations].sort(
+                        (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)
+                      )[0]!.createdAt
+                    )
+                  : "Aucune annotation"}
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {document.annotations?.length
+                  ? ([...document.annotations].sort(
+                      (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)
+                    )[0]!.sourceDirectionName ??
+                    [...document.annotations].sort(
+                      (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)
+                    )[0]!.sourceDirectionCode ??
+                    "Direction non renseignee")
+                  : "Le rapport d'annotations reste replie tant qu'aucune consultation n'est demandee."}
+              </p>
             </div>
-            <div>
-              <dt className="font-medium text-slate-900">Statut numerisation</dt>
-              <dd>{document.digitizationStatus ?? "-"}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-900">OCR</dt>
-              <dd>{document.ocrStatus ?? "-"}</dd>
-            </div>
-            <div>
-              <dt className="font-medium text-slate-900">Fichier</dt>
-              <dd>
-                <DocumentFileActions attachmentId={document.attachments[0]?.id} />
-              </dd>
-            </div>
-          </dl>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <a
+              href="#document-annotations"
+              className="inline-flex h-10 items-center rounded-xl border border-[color:var(--border)] px-4 text-sm font-medium text-slate-700"
+            >
+              Voir le rapport des annotations
+            </a>
+          </div>
         </Card>
       </div>
 
-      {document.ocrText ? (
-        <Card className="border-[color:var(--border)]">
-          <div className="border-b border-[color:var(--border)] pb-3">
-            <h4 className="text-lg font-semibold text-brand-navy">Texte OCR</h4>
+      <details className="group rounded-2xl border border-[color:var(--border)] bg-white">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4">
+          <div>
+            <p className="text-sm font-semibold text-brand-navy">Informations secondaires</p>
+            <p className="text-sm text-slate-500">Metadonnees documentaires, numerisation et OCR.</p>
           </div>
-          <pre className="mt-4 whitespace-pre-wrap rounded-md bg-slate-50 p-4 text-sm text-slate-700">
-            {document.ocrText}
-          </pre>
-        </Card>
-      ) : null}
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 group-open:hidden">Ouvrir</span>
+          <span className="hidden text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 group-open:block">Fermer</span>
+        </summary>
+        <div className="border-t border-[color:var(--border)] px-6 py-5">
+          <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+            <dl className="grid gap-3 text-sm text-slate-600 md:grid-cols-2">
+              <div>
+                <dt className="font-medium text-slate-900">Annee</dt>
+                <dd>{document.year}</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-900">Type</dt>
+                <dd>{document.type}</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-900">Code reference</dt>
+                <dd>
+                  <LongText value={document.referenceCode} label="Code reference" />
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-900">Numero annuel</dt>
+                <dd>{document.referenceNumber}</dd>
+              </div>
+              <div className="md:col-span-2">
+                <dt className="font-medium text-slate-900">Resume</dt>
+                <dd>
+                  <LongText value={document.summary ?? "-"} label="Resume documentaire" />
+                </dd>
+              </div>
+              <div className="md:col-span-2">
+                <dt className="font-medium text-slate-900">Mots-cles</dt>
+                <dd>
+                  <LongText value={document.keywords.join(", ") || "-"} label="Mots-cles" />
+                </dd>
+              </div>
+              {document.description ? (
+                <div className="md:col-span-2">
+                  <dt className="font-medium text-slate-900">Description</dt>
+                  <dd>
+                    <LongText value={document.description} label="Description du document" />
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
 
-      <DocumentCollaborationPanel currentUser={currentUser} directions={directions} document={document} />
+            <dl className="grid gap-3 text-sm text-slate-600">
+              <div>
+                <dt className="font-medium text-slate-900">Type de fichier</dt>
+                <dd>{document.fileKind ?? "-"}</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-900">Nom original</dt>
+                <dd>
+                  <LongText value={document.fileName ?? document.originalFileName ?? "-"} label="Nom original du fichier" />
+                </dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-900">Stockage</dt>
+                <dd>{document.storageProvider ?? "-"}</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-900">Statut numerisation</dt>
+                <dd>{document.digitizationStatus ?? "-"}</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-slate-900">OCR</dt>
+                <dd>{document.ocrStatus ?? "-"}</dd>
+              </div>
+              {document.ocrText ? (
+                <div>
+                  <dt className="font-medium text-slate-900">Apercu OCR</dt>
+                  <dd>
+                    <LongText value={document.ocrText} label="Texte OCR du document" className="text-slate-600" />
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+          </div>
+        </div>
+      </details>
+
+      <DocumentCollaborationPanel directions={directions} document={document} />
     </div>
   );
 }

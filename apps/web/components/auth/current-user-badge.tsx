@@ -61,9 +61,7 @@ export function CurrentUserBadge() {
       className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 shadow-[0_1px_0_rgba(15,23,42,0.04)] transition hover:border-slate-300 hover:bg-slate-50"
     >
       <div className="font-medium text-slate-900">{label}</div>
-      <div className="text-[11px] uppercase tracking-[0.14em] text-slate-500">
-        {user.role} · {scope}
-      </div>
+      <div className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{`${user.role} | ${scope}`}</div>
     </Link>
   );
 }

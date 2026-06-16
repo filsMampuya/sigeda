@@ -198,6 +198,14 @@ export interface DocumentAttachment {
   mimeType?: string;
 }
 
+export interface ArchiveAnnotationAttachment {
+  name: string;
+  fileUrl?: string;
+  filePath?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+}
+
 export interface DocumentSigner {
   userId?: string;
   fullName: string;
@@ -233,8 +241,24 @@ export interface DocumentAnnotationRecord {
   createdByUserName?: string;
   status: AnnotationStatus;
   content: string;
+  attachment?: ArchiveAnnotationAttachment;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DocumentAnnotationReportMetric {
+  directionId: string;
+  code?: string;
+  name?: string;
+  count: number;
+}
+
+export interface DocumentAnnotationReport {
+  totalDocuments: number;
+  annotatedDocuments: number;
+  unannotatedDocuments: number;
+  topEmitterDirections: DocumentAnnotationReportMetric[];
+  topAnnotatingDirections: DocumentAnnotationReportMetric[];
 }
 
 export interface DocumentTransmissionRecord {
@@ -338,9 +362,16 @@ export interface DocumentEntity {
     id: string;
     bureauId: string;
     folderId: string;
+    ownerDirectionId?: string;
+    ownerDirectionCode?: string;
+    ownerDirectionName?: string;
+    partnerDirectionId?: string;
     movementType: MovementType;
     archivedAt: string;
   }>;
+  canClassify?: boolean;
+  currentDirectionMovement?: MovementType;
+  currentDirectionArchivedAt?: string;
   annotations?: DocumentAnnotationRecord[];
   versionsHistory?: DocumentVersionRecord[];
   transmissions?: DocumentTransmissionRecord[];
@@ -368,6 +399,7 @@ export interface DocumentArchive {
   updatedAt?: string;
   archivedBy: string;
   archiveFolderId?: string;
+  annotationCount?: number;
 }
 
 export interface DocumentArchiveListItem extends DocumentArchive {
@@ -378,6 +410,8 @@ export interface DocumentArchiveListItem extends DocumentArchive {
   emitterDirectionName?: string;
   currentDirectionCode?: string;
   currentDirectionName?: string;
+  bureauCode?: string;
+  bureauName?: string;
   folderStatus?: ArchiveFolderStatus;
   partnerDirectionIds: string[];
   partnerDirectionCodes: string[];
@@ -385,6 +419,16 @@ export interface DocumentArchiveListItem extends DocumentArchive {
   documentCreatedAt: string;
   documentStatus?: DocumentStatus;
   confidentialityLevel?: ConfidentialityLevel;
+  hasAnnotations?: boolean;
+  annotationDirectionIds?: string[];
+  latestAnnotationAt?: string;
+  canArchive?: boolean;
+}
+
+export interface DocumentArchiveDetails extends DocumentArchiveListItem {
+  folderLabel?: string;
+  bureauCode?: string;
+  bureauName?: string;
 }
 
 export interface ArchiveFolder {

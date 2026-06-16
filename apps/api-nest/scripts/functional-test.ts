@@ -20,6 +20,14 @@ type UserRecord = {
   matricule: string;
 };
 
+type PaginatedResult<T> = {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 type UserCreationResponse = {
   user: UserRecord;
   defaultPassword: string;
@@ -212,7 +220,8 @@ async function main() {
   console.log("Admin authentication: ok");
 
   const departments = await api<Department[]>("/departments", adminToken);
-  const users = await api<UserRecord[]>("/users", adminToken);
+  const users = await api<PaginatedResult<UserRecord>>("/users?page=1&pageSize=50", adminToken);
+  console.log("Scoped users:", { total: users.total, page: users.page, pageSize: users.pageSize });
 
   const dg = departments.find((item) => item.code === "DG" && item.type === "DIRECTION_GENERALE");
   if (!dg) {

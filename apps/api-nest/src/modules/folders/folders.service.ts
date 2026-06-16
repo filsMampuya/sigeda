@@ -69,21 +69,7 @@ export class FoldersService {
         },
         orderBy: [{ updatedAt: "desc" }, { year: "desc" }, { createdAt: "desc" }]
       }),
-      this.prisma.user.findUnique({
-        where: { keycloakId: principal.sub },
-        include: {
-          role: true,
-          department: {
-            include: {
-              parent: {
-                include: {
-                  parent: true
-                }
-              }
-            }
-          }
-        }
-      }),
+      this.resolvePrincipalUser(principal),
       this.prisma.department.findMany()
     ]);
 
@@ -120,21 +106,7 @@ export class FoldersService {
           }
         }
       }),
-      this.prisma.user.findUnique({
-        where: { keycloakId: principal.sub },
-        include: {
-          role: true,
-          department: {
-            include: {
-              parent: {
-                include: {
-                  parent: true
-                }
-              }
-            }
-          }
-        }
-      }),
+      this.resolvePrincipalUser(principal),
       this.prisma.department.findMany()
     ]);
 
@@ -182,20 +154,7 @@ export class FoldersService {
   }
 
   async createManual(principal: AuthenticatedPrincipal, input: { year: number; partnerDirectionId: string }) {
-    const currentUser = await this.prisma.user.findUnique({
-      where: { keycloakId: principal.sub },
-      include: {
-        department: {
-          include: {
-            parent: {
-              include: {
-                parent: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const currentUser = await this.resolvePrincipalUser(principal, false);
     const scope = resolveDepartmentScope(currentUser?.department ?? null);
 
     if (!scope.bureauId || !scope.directionId) {
@@ -268,6 +227,39 @@ export class FoldersService {
         status: status === "ARCHIVED" ? FolderStatus.ARCHIVED : FolderStatus.ACTIVE
       }
     });
+  }
+
+  private async resolvePrincipalUser(principal: AuthenticatedPrincipal, includeRole = true) {
+    const include = {
+      ...(includeRole ? { role: true } : {}),
+      department: {
+        include: {
+          parent: {
+            include: {
+              parent: true
+            }
+          }
+        }
+      }
+    } as const;
+
+    return (
+      (await this.prisma.user.findUnique({
+        where: { keycloakId: principal.sub },
+        include
+      })) ??
+      (principal.email
+        ? await this.prisma.user.findFirst({
+            where: {
+              email: {
+                equals: principal.email.trim().toLowerCase(),
+                mode: "insensitive"
+              }
+            },
+            include
+          })
+        : null)
+    );
   }
 }
 

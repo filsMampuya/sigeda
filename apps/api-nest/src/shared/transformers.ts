@@ -5,6 +5,10 @@ export function trimString(value: unknown) {
 }
 
 export function optionalTrimmedString(value: unknown) {
+  if (Array.isArray(value)) {
+    return optionalTrimmedString(value[0]);
+  }
+
   if (typeof value !== "string") {
     return value;
   }

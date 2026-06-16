@@ -52,6 +52,50 @@ type AttachmentRecord = {
   };
 };
 
+type ArchiveAnnotationRecord = {
+  id: string;
+  documentArchiveId: string;
+  bucket: string | null;
+  objectKey: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  documentArchive: {
+    id: string;
+    bureauId: string;
+    folder: {
+      ownerDirectionId: string;
+    };
+    document: {
+      emitterDirectionId: string;
+      recipients: Array<{
+        directionId: string;
+      }>;
+    };
+  };
+};
+
+type DocumentAnnotationRecord = {
+  id: string;
+  documentId: string;
+  bucket: string | null;
+  objectKey: string | null;
+  fileName: string | null;
+  mimeType: string | null;
+  document: {
+    id: string;
+    emitterDirectionId: string;
+    recipients: Array<{
+      directionId: string;
+    }>;
+    archives: Array<{
+      bureauId: string;
+      folder: {
+        ownerDirectionId: string;
+      };
+    }>;
+  };
+};
+
 @Injectable()
 export class AttachmentsService {
   private readonly client: Client;
@@ -120,6 +164,56 @@ export class AttachmentsService {
     };
   }
 
+  async uploadArchiveAnnotationAttachment(input: {
+    archiveId: string;
+    file: Express.Multer.File;
+  }) {
+    await this.ensureBucket();
+
+    const bucket = process.env.MINIO_BUCKET ?? "sigeda-documents";
+    const objectKey = buildArchiveAnnotationObjectKey(input.archiveId, input.file.originalname);
+    const checksumSha256 = this.computeChecksum(input.file.buffer);
+
+    await this.client.putObject(bucket, objectKey, input.file.buffer, input.file.size, {
+      "Content-Type": input.file.mimetype,
+      "X-Amz-Meta-Checksum-Sha256": checksumSha256
+    });
+
+    return {
+      bucket,
+      objectKey,
+      fileName: input.file.originalname,
+      mimeType: input.file.mimetype,
+      sizeBytes: BigInt(input.file.size),
+      checksumSha256
+    };
+  }
+
+  async uploadDocumentAnnotationAttachment(input: {
+    documentId: string;
+    file: Express.Multer.File;
+  }) {
+    await this.ensureBucket();
+
+    const bucket = process.env.MINIO_BUCKET ?? "sigeda-documents";
+    const objectKey = buildDocumentAnnotationObjectKey(input.documentId, input.file.originalname);
+    const checksumSha256 = this.computeChecksum(input.file.buffer);
+
+    await this.client.putObject(bucket, objectKey, input.file.buffer, input.file.size, {
+      "Content-Type": input.file.mimetype,
+      "X-Amz-Meta-Checksum-Sha256": checksumSha256
+    });
+
+    return {
+      bucket,
+      objectKey,
+      fileName: input.file.originalname,
+      mimeType: input.file.mimetype,
+      sizeBytes: BigInt(input.file.size),
+      checksumSha256
+    };
+  }
+
   async getSecureAccessPayload(
     id: string,
     principal: AuthenticatedPrincipal,
@@ -184,6 +278,112 @@ export class AttachmentsService {
     };
   }
 
+  async getArchiveAnnotationSecureAccessPayload(
+    annotationId: string,
+    principal: AuthenticatedPrincipal,
+    request: RequestLike,
+    disposition: "view" | "download" | undefined
+  ) {
+    const accessMode = disposition === "download" ? "download" : "view";
+    const { annotation, user } = await this.resolveAccessibleArchiveAnnotation(annotationId, principal);
+
+    if (!annotation.bucket || !annotation.objectKey || !annotation.fileName || !annotation.mimeType) {
+      throw new NotFoundException("Aucun fichier n'est associe a cette annotation.");
+    }
+
+    await this.ensureBucket();
+
+    try {
+      const url = await this.publicClient.presignedGetObject(annotation.bucket, annotation.objectKey, 300, {
+        "response-content-disposition": `${accessMode === "download" ? "attachment" : "inline"}; filename="${sanitizeDispositionFileName(
+          annotation.fileName
+        )}"`,
+        "response-content-type": annotation.mimeType
+      });
+
+      await this.prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: accessMode === "download" ? "DOWNLOAD_FILE" : "VIEW_FILE",
+          entityType: "DOCUMENT_ARCHIVE_ANNOTATION",
+          entityId: annotation.id,
+          ipAddress: extractIpAddress(request),
+          userAgent: request.headers["user-agent"] ?? null,
+          metadata: {
+            description:
+              accessMode === "download"
+                ? `Telechargement du fichier ${annotation.fileName}`
+                : `Consultation du fichier ${annotation.fileName}`,
+            userName: buildUserName(user),
+            email: user.email,
+            documentArchiveId: annotation.documentArchiveId,
+            fileName: annotation.fileName
+          }
+        }
+      });
+
+      return {
+        url,
+        expiresIn: 300
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(`Unable to create secure archive annotation URL: ${String(error)}`);
+    }
+  }
+
+  async getDocumentAnnotationSecureAccessPayload(
+    annotationId: string,
+    principal: AuthenticatedPrincipal,
+    request: RequestLike,
+    disposition: "view" | "download" | undefined
+  ) {
+    const accessMode = disposition === "download" ? "download" : "view";
+    const { annotation, user } = await this.resolveAccessibleDocumentAnnotation(annotationId, principal);
+
+    if (!annotation.bucket || !annotation.objectKey || !annotation.fileName || !annotation.mimeType) {
+      throw new NotFoundException("Aucun fichier n'est associe a cette annotation.");
+    }
+
+    await this.ensureBucket();
+
+    try {
+      const url = await this.publicClient.presignedGetObject(annotation.bucket, annotation.objectKey, 300, {
+        "response-content-disposition": `${accessMode === "download" ? "attachment" : "inline"}; filename="${sanitizeDispositionFileName(
+          annotation.fileName
+        )}"`,
+        "response-content-type": annotation.mimeType
+      });
+
+      await this.prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: accessMode === "download" ? "DOWNLOAD_FILE" : "VIEW_FILE",
+          entityType: "DOCUMENT_ANNOTATION",
+          entityId: annotation.id,
+          ipAddress: extractIpAddress(request),
+          userAgent: request.headers["user-agent"] ?? null,
+          metadata: {
+            description:
+              accessMode === "download"
+                ? `Telechargement du fichier ${annotation.fileName}`
+                : `Consultation du fichier ${annotation.fileName}`,
+            userName: buildUserName(user),
+            email: user.email,
+            documentId: annotation.documentId,
+            fileName: annotation.fileName
+          }
+        }
+      });
+
+      return {
+        url,
+        expiresIn: 300
+      };
+    } catch (error) {
+      throw new InternalServerErrorException(`Unable to create secure document annotation URL: ${String(error)}`);
+    }
+  }
+
   private async resolveAccessibleAttachment(id: string, principal: AuthenticatedPrincipal) {
     const [attachment, user] = await Promise.all([
       this.prisma.attachment.findUnique({
@@ -231,6 +431,102 @@ export class AttachmentsService {
 
     return {
       attachment,
+      user
+    };
+  }
+
+  private async resolveAccessibleArchiveAnnotation(id: string, principal: AuthenticatedPrincipal) {
+    const [annotation, user] = await Promise.all([
+      this.prisma.documentArchiveAnnotation.findUnique({
+        where: { id },
+        include: {
+          documentArchive: {
+            include: {
+              folder: {
+                select: {
+                  ownerDirectionId: true
+                }
+              },
+              document: {
+                select: {
+                  emitterDirectionId: true,
+                  recipients: {
+                    select: {
+                      directionId: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }) as Promise<ArchiveAnnotationRecord | null>,
+      this.findUserByPrincipal(principal)
+    ]);
+
+    if (!annotation) {
+      throw new NotFoundException("Annotation introuvable.");
+    }
+
+    if (!user) {
+      throw new ForbiddenException("Utilisateur authentifie introuvable.");
+    }
+
+    if (!canAccessArchiveAnnotation(user, annotation)) {
+      throw new ForbiddenException("Vous n'etes pas autorise a consulter ce fichier.");
+    }
+
+    return {
+      annotation,
+      user
+    };
+  }
+
+  private async resolveAccessibleDocumentAnnotation(id: string, principal: AuthenticatedPrincipal) {
+    const [annotation, user] = await Promise.all([
+      this.prisma.documentAnnotation.findUnique({
+        where: { id },
+        include: {
+          document: {
+            select: {
+              id: true,
+              emitterDirectionId: true,
+              recipients: {
+                select: {
+                  directionId: true
+                }
+              },
+              archives: {
+                select: {
+                  bureauId: true,
+                  folder: {
+                    select: {
+                      ownerDirectionId: true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }) as Promise<DocumentAnnotationRecord | null>,
+      this.findUserByPrincipal(principal)
+    ]);
+
+    if (!annotation) {
+      throw new NotFoundException("Annotation introuvable.");
+    }
+
+    if (!user) {
+      throw new ForbiddenException("Utilisateur authentifie introuvable.");
+    }
+
+    if (!canAccessDocumentAnnotation(user, annotation)) {
+      throw new ForbiddenException("Vous n'etes pas autorise a consulter ce fichier.");
+    }
+
+    return {
+      annotation,
       user
     };
   }
@@ -343,6 +639,25 @@ function canAccessDocumentAttachment(user: ScopedUser, attachment: AttachmentRec
   return Boolean(userScope.bureauId && archiveBureauIds.includes(userScope.bureauId));
 }
 
+function canAccessArchiveAnnotation(user: ScopedUser, annotation: ArchiveAnnotationRecord) {
+  if (["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(user.role.code)) {
+    return true;
+  }
+
+  const userScope = resolveDepartmentScope(user.department);
+
+  if (!userScope.directionId) {
+    return false;
+  }
+
+  return (
+    annotation.documentArchive.folder.ownerDirectionId === userScope.directionId ||
+    annotation.documentArchive.document.emitterDirectionId === userScope.directionId ||
+    annotation.documentArchive.document.recipients.some((recipient) => recipient.directionId === userScope.directionId) ||
+    annotation.documentArchive.bureauId === userScope.bureauId
+  );
+}
+
 function buildUserName(user: ScopedUser) {
   return [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email;
 }
@@ -369,8 +684,36 @@ function buildObjectKey(documentId: string, originalFileName: string) {
   return `documents/${documentId}/${randomUUID()}-${sanitizeFileName(originalFileName)}`;
 }
 
+function buildArchiveAnnotationObjectKey(archiveId: string, originalFileName: string) {
+  return `archive-annotations/${archiveId}/${randomUUID()}-${sanitizeFileName(originalFileName)}`;
+}
+
+function buildDocumentAnnotationObjectKey(documentId: string, originalFileName: string) {
+  return `document-annotations/${documentId}/${randomUUID()}-${sanitizeFileName(originalFileName)}`;
+}
+
 function uniqueStrings(values: Array<string | null | undefined>) {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value))));
+}
+
+function canAccessDocumentAnnotation(user: ScopedUser, annotation: DocumentAnnotationRecord) {
+  if (["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(user.role.code)) {
+    return true;
+  }
+
+  const userScope = resolveDepartmentScope(user.department);
+
+  if (!userScope.directionId) {
+    return false;
+  }
+
+  return (
+    annotation.document.emitterDirectionId === userScope.directionId ||
+    annotation.document.recipients.some((recipient) => recipient.directionId === userScope.directionId) ||
+    annotation.document.archives.some(
+      (archive) => archive.folder.ownerDirectionId === userScope.directionId || archive.bureauId === userScope.bureauId
+    )
+  );
 }
 
 type RequestLike = {

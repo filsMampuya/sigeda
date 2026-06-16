@@ -36,7 +36,26 @@ export class ListDocumentArchivesQueryDto {
   @Transform(({ value }: TransformFnParams) => trimString(value))
   @IsOptional()
   @IsString()
+  serviceId?: string;
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  bureauId?: string;
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
   partnerDirectionId?: string;
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  annotationDirectionId?: string;
+
+  @IsOptional()
+  @IsEnum(["with", "without"] as const)
+  annotationState?: "with" | "without";
 
   @IsOptional()
   @IsEnum(["ENTREE", "SORTIE"] as const)
@@ -67,4 +86,14 @@ export class ListDocumentArchivesQueryDto {
   @IsOptional()
   @IsString()
   dateTo?: string;
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  annotationDateFrom?: string;
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  annotationDateTo?: string;
 }

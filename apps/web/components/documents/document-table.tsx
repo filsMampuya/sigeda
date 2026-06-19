@@ -29,6 +29,7 @@ type ColumnId =
   | "title"
   | "type"
   | "direction"
+  | "receivers"
   | "movementType"
   | "status"
   | "confidentiality"
@@ -39,6 +40,7 @@ const allColumns: Array<{ id: ColumnId; label: string }> = [
   { id: "title", label: "Objet / Titre" },
   { id: "type", label: "Type" },
   { id: "direction", label: "Direction emettrice" },
+  { id: "receivers", label: "Directions destinataires" },
   { id: "movementType", label: "Mouvement" },
   { id: "status", label: "Statut" },
   { id: "confidentiality", label: "Confidentialite" },
@@ -50,6 +52,7 @@ const defaultVisibleColumns: ColumnId[] = [
   "title",
   "type",
   "direction",
+  "receivers",
   "movementType",
   "status",
   "createdAt"
@@ -119,6 +122,7 @@ export function DocumentTable({
         row.subject,
         row.direction.code,
         row.direction.designation,
+        ...(row.receiverDirectionNames ?? []),
         String(row.type),
         String(row.status),
         String(row.confidentialityLevel),
@@ -174,7 +178,7 @@ export function DocumentTable({
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-[1280px] w-full table-fixed divide-y divide-slate-200 text-sm">
+        <table className="min-w-[1420px] w-full table-fixed divide-y divide-slate-200 text-sm">
           <thead className="bg-[var(--table-head)] text-left text-slate-700">
             <tr>
             {isVisible("reference") ? (
@@ -208,13 +212,20 @@ export function DocumentTable({
               </th>
             ) : null}
             {isVisible("direction") ? (
-              <th className="hidden w-[15%] px-4 py-3 xl:table-cell">
+              <th className="hidden w-[14%] px-4 py-3 xl:table-cell">
                 <SortableColumnHeader
-                  label="Direction"
+                  label="Direction emettrice"
                   active={activeSortBy === "direction"}
                   direction={activeSortDir}
                   onClick={() => updateSort("direction")}
                 />
+              </th>
+            ) : null}
+            {isVisible("receivers") ? (
+              <th className="hidden w-[16%] px-4 py-3 2xl:table-cell">
+                <span className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">
+                  Directions destinataires
+                </span>
               </th>
             ) : null}
             {isVisible("movementType") ? (
@@ -299,6 +310,15 @@ export function DocumentTable({
                   <LongText
                     value={formatStructureLabel(row.direction.code, row.direction.designation, row.directionId)}
                     label="Direction emettrice"
+                    className="text-slate-600"
+                  />
+                </td>
+              ) : null}
+              {isVisible("receivers") ? (
+                <td className="hidden px-4 py-3.5 text-slate-600 2xl:table-cell">
+                  <LongText
+                    value={row.receiverDirectionNames?.join(", ") || row.receiverDirectionIds.join(", ") || "-"}
+                    label="Directions destinataires"
                     className="text-slate-600"
                   />
                 </td>

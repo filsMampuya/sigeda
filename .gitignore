@@ -8,3 +8,4 @@ coverage
 .env.*.local
 firebase-debug.log
 .codex-tmp
+.tmp

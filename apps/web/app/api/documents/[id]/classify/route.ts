@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getServerAuthToken } from "@/lib/auth";
 import { getServerOnPremiseApiBaseUrl } from "@/lib/env";
+import {
+  applyServerSessionCookies,
+  executeWithServerSessionRetry
+} from "@/lib/server-session";
 
 type RouteContext = {
   params: {
@@ -9,27 +12,32 @@ type RouteContext = {
   };
 };
 
-export async function POST(_request: Request, { params }: RouteContext) {
-  const authToken = getServerAuthToken();
+export async function POST(request: Request, { params }: RouteContext) {
+  const payload = await request.json().catch(() => ({}));
+  const execution = await executeWithServerSessionRetry(request, (accessToken) =>
+    fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/classify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store"
+    })
+  );
 
-  if (!authToken) {
-    return NextResponse.json({ message: "Non authentifie." }, { status: 401 });
+  if (execution.unauthorized || !execution.response) {
+    return execution.unauthorized;
   }
 
-  const response = await fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/classify`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${authToken}`
-    },
-    cache: "no-store"
-  });
-
+  const response = execution.response;
   const text = await response.text();
-
-  return new NextResponse(text, {
+  const nextResponse = new NextResponse(text, {
     status: response.status,
     headers: {
       "Content-Type": response.headers.get("content-type") ?? "application/json"
     }
   });
+
+  return applyServerSessionCookies(nextResponse, request, execution.refreshedSession);
 }

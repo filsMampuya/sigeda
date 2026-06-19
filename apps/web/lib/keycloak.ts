@@ -66,14 +66,41 @@ export async function exchangeCodeForToken(request: Request, code: string) {
     throw new Error(`Keycloak token exchange failed with status ${response.status}.`);
   }
 
-  return (await response.json()) as {
-    access_token: string;
-    expires_in?: number;
-    refresh_token?: string;
-    id_token?: string;
-  };
+  return (await response.json()) as KeycloakTokenResponse;
+}
+
+export async function refreshKeycloakToken(refreshToken: string) {
+  const config = getKeycloakConfigOrThrow();
+  const tokenUrl = new URL(`/realms/${config.realm}/protocol/openid-connect/token`, config.internalUrl);
+  const body = new URLSearchParams({
+    client_id: config.clientId,
+    grant_type: "refresh_token",
+    refresh_token: refreshToken
+  });
+  const response = await fetch(tokenUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body,
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(`Keycloak refresh failed with status ${response.status}.`);
+  }
+
+  return (await response.json()) as KeycloakTokenResponse;
 }
 
 export function createAuthState() {
   return randomBytes(24).toString("base64url");
 }
+
+export type KeycloakTokenResponse = {
+  access_token: string;
+  expires_in?: number;
+  refresh_token?: string;
+  refresh_expires_in?: number;
+  id_token?: string;
+};

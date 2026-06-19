@@ -29,14 +29,16 @@ export class AttachmentsController {
   @Get(":id/download")
   async download(
     @Param("id", new ParseUUIDPipe()) id: string,
+    @Query("disposition") disposition: "view" | "download" | undefined,
     @CurrentUser() principal: AuthenticatedPrincipal,
     @Req() request: Request,
     @Res() response: Response
   ) {
-    const payload = await this.attachments.getDownloadPayload(id, principal, request);
+    const accessMode = disposition === "view" ? "view" : "download";
+    const payload = await this.attachments.getAttachmentStreamPayload(id, principal, request, accessMode);
 
     response.setHeader("Content-Type", payload.mimeType);
-    response.setHeader("Content-Disposition", `inline; filename="${payload.fileName}"`);
+    response.setHeader("Content-Disposition", `${accessMode === "download" ? "attachment" : "inline"}; filename="${payload.fileName}"`);
     payload.stream.pipe(response);
   }
 }

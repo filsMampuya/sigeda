@@ -16,6 +16,7 @@ type DocumentSearchFiltersProps = {
   emitterDirectionId?: string;
   receiverDirectionId?: string;
   copyDirectionId?: string;
+  directionScope?: "all" | "emitted" | "received";
   serviceId?: string;
   bureauId?: string;
   folderId?: string;
@@ -88,6 +89,7 @@ export function DocumentSearchFilters({
   emitterDirectionId,
   receiverDirectionId,
   copyDirectionId,
+  directionScope,
   serviceId,
   bureauId,
   folderId,
@@ -120,6 +122,7 @@ export function DocumentSearchFilters({
   const [isPending, startTransition] = useTransition();
   const [searchTerm, setSearchTerm] = useState(q ?? "");
   const [selectedDateField, setSelectedDateField] = useState(dateField ?? "updatedAt");
+  const [selectedDirectionScope, setSelectedDirectionScope] = useState(directionScope ?? "all");
   const [selectedPeriodPreset, setSelectedPeriodPreset] = useState(periodPreset ?? "");
   const [selectedDateFrom, setSelectedDateFrom] = useState(dateFrom ?? "");
   const [selectedDateTo, setSelectedDateTo] = useState(dateTo ?? "");
@@ -157,6 +160,7 @@ export function DocumentSearchFilters({
     const params = new URLSearchParams(window.location.search);
 
     setOrDelete(params, "q", searchTerm);
+    setOrDelete(params, "directionScope", selectedDirectionScope === "all" ? "" : selectedDirectionScope);
     setOrDelete(params, "dateField", selectedDateField);
     setOrDelete(params, "periodPreset", selectedPeriodPreset);
     setOrDelete(params, "dateFrom", selectedDateFrom);
@@ -196,6 +200,7 @@ export function DocumentSearchFilters({
 
   function reset() {
     setSearchTerm("");
+    setSelectedDirectionScope("all");
     setSelectedDateField("updatedAt");
     setSelectedPeriodPreset("");
     setSelectedDateFrom("");
@@ -259,6 +264,15 @@ export function DocumentSearchFilters({
                 placeholder="Recherche avancee cote base"
               />
             </div>
+            <select
+              value={selectedDirectionScope}
+              onChange={(event) => setSelectedDirectionScope(event.target.value as "all" | "emitted" | "received")}
+              className="h-10 rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-slate-500"
+            >
+              <option value="all">Tous</option>
+              <option value="emitted">Emis</option>
+              <option value="received">Recus</option>
+            </select>
             <button
               type="button"
               onClick={() =>

@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { getServerAuthToken } from "@/lib/auth";
 import { getServerOnPremiseApiBaseUrl } from "@/lib/env";
+import {
+  applyServerSessionCookies,
+  executeWithServerSessionRetry
+} from "@/lib/server-session";
 
 type RouteContext = {
   params: {
@@ -10,44 +13,44 @@ type RouteContext = {
 };
 
 export async function POST(request: Request, { params }: RouteContext) {
-  const authToken = getServerAuthToken();
-
-  if (!authToken) {
-    return NextResponse.json({ message: "Non authentifie." }, { status: 401 });
-  }
-
   const contentType = request.headers.get("content-type") ?? "";
-  let response: Response;
+  const payload = contentType.includes("multipart/form-data") ? await request.formData() : await request.json().catch(() => null);
 
-  if (contentType.includes("multipart/form-data")) {
-    const formData = await request.formData();
-    response = await fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/annotations`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${authToken}`
-      },
-      body: formData,
-      cache: "no-store"
-    });
-  } else {
-    const payload = await request.json().catch(() => null);
-    response = await fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/annotations`, {
+  const execution = await executeWithServerSessionRetry(request, (accessToken) => {
+    if (contentType.includes("multipart/form-data")) {
+      return fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/annotations`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
+        body: payload as FormData,
+        cache: "no-store"
+      });
+    }
+
+    return fetch(`${getServerOnPremiseApiBaseUrl()}/documents/${params.id}/annotations`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`
+        Authorization: `Bearer ${accessToken}`
       },
       body: JSON.stringify(payload),
       cache: "no-store"
     });
+  });
+
+  if (execution.unauthorized || !execution.response) {
+    return execution.unauthorized;
   }
 
+  const response = execution.response;
   const text = await response.text();
-
-  return new NextResponse(text, {
+  const nextResponse = new NextResponse(text, {
     status: response.status,
     headers: {
       "Content-Type": response.headers.get("content-type") ?? "application/json"
     }
   });
+
+  return applyServerSessionCookies(nextResponse, request, execution.refreshedSession);
 }

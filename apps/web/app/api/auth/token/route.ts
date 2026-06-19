@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 
-import { authCookieName } from "@/lib/auth";
+import {
+  applyServerSessionCookies,
+  buildUnauthorizedSessionResponse,
+  ensureServerAccessToken
+} from "@/lib/server-session";
 
-export function GET(request: Request) {
-  const token = request.headers
-    .get("cookie")
-    ?.split(";")
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(`${authCookieName}=`))
-    ?.split("=")[1];
+export async function GET(request: Request) {
+  const forceRefresh = new URL(request.url).searchParams.get("refresh") === "1";
+  const session = await ensureServerAccessToken(request, { forceRefresh });
 
-  if (!token) {
-    return NextResponse.json({ message: "Not authenticated." }, { status: 401 });
+  if (!session?.accessToken) {
+    return buildUnauthorizedSessionResponse(request);
   }
 
-  return NextResponse.json({ accessToken: token });
+  const response = NextResponse.json({ accessToken: session.accessToken });
+  return applyServerSessionCookies(response, request, session.refreshedSession);
 }

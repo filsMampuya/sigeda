@@ -1,5 +1,5 @@
 import { DepartmentType } from "@sigeda/database";
-import { Transform, Type, type TransformFnParams } from "class-transformer";
+import { Transform, type TransformFnParams } from "class-transformer";
 import {
   ArrayUnique,
   IsArray,
@@ -10,8 +10,7 @@ import {
   IsUUID,
   Max,
   MaxLength,
-  Min,
-  ValidateNested
+  Min
 } from "class-validator";
 import {
   optionalTrimmedString,
@@ -108,6 +107,12 @@ export class CreateDocumentDto {
 
   @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
   @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  confidentialityLevel?: string;
+
+  @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
+  @IsOptional()
   @IsUUID()
   emitterDirectionId?: string;
 
@@ -134,7 +139,5 @@ export class CreateDocumentDto {
   @Transform(({ value }: TransformFnParams) => parseJsonArray<CreateDocumentSignerDto>(value))
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateDocumentSignerDto)
   signers?: CreateDocumentSignerDto[];
 }

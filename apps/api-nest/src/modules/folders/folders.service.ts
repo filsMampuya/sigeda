@@ -267,9 +267,19 @@ function mapFolder(folder: FolderWithRelations, departments: Department[]): Arch
   const accessibleDepartments = folder.accessibleBureauIds
     .map((bureauId) => departments.find((department) => department.id === bureauId))
     .filter((department): department is Department => Boolean(department));
+  const entryArchiveCount = folder.archives.filter((archive) => archive.movementType === "ENTREE").length;
+  const outputArchiveCount = folder.archives.filter((archive) => archive.movementType === "SORTIE").length;
   const latestArchivedAt = folder.archives
     .map((archive) => archive.archivedAt.toISOString())
     .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
+  const sectionsUsed =
+    entryArchiveCount > 0 && outputArchiveCount > 0
+      ? "ENTREE_SORTIE"
+      : entryArchiveCount > 0
+        ? "ENTREE"
+        : outputArchiveCount > 0
+          ? "SORTIE"
+          : "AUCUNE";
 
   return {
     id: folder.id,
@@ -282,7 +292,6 @@ function mapFolder(folder: FolderWithRelations, departments: Department[]): Arch
     createdAt: folder.createdAt.toISOString(),
     updatedAt: folder.updatedAt.toISOString(),
     status: folder.status,
-    section: folder.archives[0]?.movementType,
     ownerDirectionCode: folder.ownerDirection.code,
     ownerDirectionName: folder.ownerDirection.designation,
     partnerDirectionCode: folder.partnerDirection.code,
@@ -292,6 +301,9 @@ function mapFolder(folder: FolderWithRelations, departments: Department[]): Arch
     accessibleBureauCodes: accessibleDepartments.map((department) => department.code),
     accessibleBureauNames: accessibleDepartments.map((department) => department.designation),
     archiveCount: folder.archives.length,
+    entryArchiveCount,
+    outputArchiveCount,
+    sectionsUsed,
     latestArchivedAt
   };
 }
@@ -407,7 +419,9 @@ function applyFolderFilters(folders: ArchiveFolderListItem[], query: ListFolders
       (!year || folder.year === year) &&
       (!directionId || folder.ownerDirectionId === directionId) &&
       (!partnerDirectionId || folder.partnerDirectionId === partnerDirectionId) &&
-      (!section || folder.section === section) &&
+      (!section ||
+        (section === "ENTREE" && folder.entryArchiveCount > 0) ||
+        (section === "SORTIE" && folder.outputArchiveCount > 0)) &&
       (!status || folder.status === status) &&
       matchesDateRange(folder[dateField], period)
     );

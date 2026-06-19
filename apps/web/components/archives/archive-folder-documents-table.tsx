@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import type { ArchiveFolderDocumentListItem } from "@sigeda/shared/types";
 
 import { Card } from "@/components/ui/card";
@@ -6,6 +9,20 @@ import { LongText } from "@/components/ui/long-text";
 import { formatShortDate, formatStructureLabel } from "@/lib/format";
 
 export function ArchiveFolderDocumentsTable({ rows }: { rows: ArchiveFolderDocumentListItem[] }) {
+  const [movementFilter, setMovementFilter] = useState<"ALL" | "ENTREE" | "SORTIE">("ALL");
+  const stats = useMemo(
+    () => ({
+      total: rows.length,
+      entry: rows.filter((row) => row.movementType === "ENTREE").length,
+      output: rows.filter((row) => row.movementType === "SORTIE").length
+    }),
+    [rows]
+  );
+  const filteredRows = useMemo(
+    () => rows.filter((row) => movementFilter === "ALL" || row.movementType === movementFilter),
+    [movementFilter, rows]
+  );
+
   return (
     <Card className="min-w-0 overflow-hidden p-0">
       <div className="flex items-center justify-between border-b border-slate-200 bg-[var(--header-tint)] px-5 py-3">
@@ -13,8 +30,41 @@ export function ArchiveFolderDocumentsTable({ rows }: { rows: ArchiveFolderDocum
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Inventaire</p>
           <h2 className="text-sm font-semibold text-brand-navy">Documents classes</h2>
         </div>
-        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
-          {rows.length} element{rows.length > 1 ? "s" : ""}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+            Total : {stats.total}
+          </span>
+          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+            Entree : {stats.entry}
+          </span>
+          <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+            Sortie : {stats.output}
+          </span>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-3">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { value: "ALL", label: "Tous" },
+            { value: "ENTREE", label: "Entree" },
+            { value: "SORTIE", label: "Sortie" }
+          ].map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setMovementFilter(option.value as "ALL" | "ENTREE" | "SORTIE")}
+              className={
+                movementFilter === option.value
+                  ? "rounded-full bg-brand-navy px-3 py-1.5 text-xs font-medium text-white"
+                  : "rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
+              }
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+          {filteredRows.length} element{filteredRows.length > 1 ? "s" : ""}
         </span>
       </div>
       <div className="max-w-full overflow-x-auto">
@@ -33,14 +83,14 @@ export function ArchiveFolderDocumentsTable({ rows }: { rows: ArchiveFolderDocum
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 bg-white">
-            {rows.length === 0 ? (
+            {filteredRows.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-5 py-10 text-center text-slate-500">
-                  Aucun document archive dans ce classeur.
+                  Aucun document pour ce filtre dans ce classeur.
                 </td>
               </tr>
             ) : null}
-            {rows.map((row) => (
+            {filteredRows.map((row) => (
               <tr key={row.archiveId} className="align-top hover:bg-slate-50/80">
                 <td className="px-5 py-3.5">
                   <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">

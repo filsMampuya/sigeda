@@ -8,6 +8,7 @@ import type {
 import { PrismaService } from "../prisma/prisma.service.js";
 import { FoldersService } from "../folders/folders.service.js";
 import { DepartmentsService } from "../departments/departments.service.js";
+import { PhysicalArchivesService } from "../physical-archives/physical-archives.service.js";
 import type { AuthenticatedPrincipal } from "../auth/auth.types.js";
 import { resolveDepartmentScope } from "../../shared/department-scope.js";
 import type { ListDocumentArchivesQueryDto } from "./dto/list-document-archives-query.dto.js";
@@ -70,7 +71,8 @@ export class DocumentArchivesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly folders: FoldersService,
-    private readonly departments: DepartmentsService
+    private readonly departments: DepartmentsService,
+    private readonly physicalArchives: PhysicalArchivesService
   ) {}
 
   async list(query: ListDocumentArchivesQueryDto, principal: AuthenticatedPrincipal): Promise<PaginatedResult<DocumentArchiveListItem>> {
@@ -78,7 +80,7 @@ export class DocumentArchivesService {
 
     const scopedArchives = archives.filter((archive) => canAccessArchive(archive, user));
     const mapped = decorateArchiveFlags(
-      scopedArchives.map(mapArchive),
+      scopedArchives.map((archive) => mapArchive(archive, user)),
       user,
       buildArchivedDocumentIdsForDirection(archives, user)
     );
@@ -110,7 +112,7 @@ export class DocumentArchivesService {
     });
 
     const mappedArchive = decorateArchiveFlags(
-      [mapArchive(archive)],
+      [mapArchive(archive, user)],
       user,
       buildArchivedDocumentIdsForDirection(siblingArchives, user)
     )[0];
@@ -184,6 +186,20 @@ export class DocumentArchivesService {
         }
       });
 
+      await this.physicalArchives.ensureAutomaticForDocumentArchives({
+        documentId: archive.documentId,
+        emitterDirectionId: archive.document.emitterDirectionId,
+        year: archive.document.year,
+        documentArchives: [
+          {
+            id: classifiedArchive.id,
+            documentId: classifiedArchive.documentId,
+            folderId: classifiedArchive.folderId,
+            movementType: classifiedArchive.movementType
+          }
+        ]
+      });
+
       await this.prisma.auditLog.create({
         data: {
           userId: user.id,
@@ -217,7 +233,13 @@ export class DocumentArchivesService {
     }
   }
 
-  async classifyDocument(documentId: string, principal: AuthenticatedPrincipal) {
+  async classifyDocument(
+    documentId: string,
+    principal: AuthenticatedPrincipal,
+    input?: {
+      bureauId?: string;
+    }
+  ) {
     const [document, user] = await Promise.all([
       this.prisma.document.findUnique({
         where: { id: documentId },
@@ -255,21 +277,25 @@ export class DocumentArchivesService {
     }
 
     const movementType: MovementType = isEmitterDirection ? MovementType.SORTIE : MovementType.ENTREE;
-    const partnerDirectionIds = isEmitterDirection
-      ? Array.from(new Set([...receiverDirectionIds, ...copyDirectionIds].filter(Boolean)))
-      : [document.emitterDirectionId];
+    const partnerDirectionIds = resolvePartnerDirectionIdsForClassification({
+      emitterDirectionId: document.emitterDirectionId,
+      receiverDirectionIds,
+      copyDirectionIds,
+      isEmitterDirection
+    });
 
     if (!partnerDirectionIds.length) {
       throw new BadRequestException("Aucune direction partenaire n'a ete determinee pour le classement.");
     }
 
     try {
+      const targetBureauId = await this.resolveClassificationBureauId(user, input?.bureauId);
       const archives = [] as DocumentArchive[];
 
       for (const partnerDirectionId of partnerDirectionIds) {
         const targetFolder = await this.folders.findActiveForArchiving({
           year: document.year,
-          bureauId: scope.bureauId,
+          bureauId: targetBureauId,
           partnerDirectionId
         });
 
@@ -277,7 +303,7 @@ export class DocumentArchivesService {
           where: {
             documentId_bureauId_folderId_movementType: {
               documentId: document.id,
-              bureauId: scope.bureauId,
+              bureauId: targetBureauId,
               folderId: targetFolder.id,
               movementType
             }
@@ -287,7 +313,7 @@ export class DocumentArchivesService {
           },
           create: {
             documentId: document.id,
-            bureauId: scope.bureauId,
+            bureauId: targetBureauId,
             folderId: targetFolder.id,
             movementType,
             archivedById: user.id
@@ -306,7 +332,7 @@ export class DocumentArchivesService {
               description: `Classement du document ${document.reference} dans le classeur ${targetFolder.id}`,
               documentId: document.id,
               documentReference: document.reference,
-              targetBureauId: scope.bureauId,
+              targetBureauId,
               targetFolderId: targetFolder.id,
               partnerDirectionId,
               movementType,
@@ -317,6 +343,18 @@ export class DocumentArchivesService {
           }
         });
       }
+
+      await this.physicalArchives.ensureAutomaticForDocumentArchives({
+        documentId: document.id,
+        emitterDirectionId: document.emitterDirectionId,
+        year: document.year,
+        documentArchives: archives.map((archive) => ({
+          id: archive.id,
+          documentId: archive.documentId,
+          folderId: archive.folderId,
+          movementType: archive.movementType
+        }))
+      });
 
       return archives;
     } catch (error) {
@@ -330,6 +368,44 @@ export class DocumentArchivesService {
     }
   }
 
+  private async resolveClassificationBureauId(user: ScopedUser, requestedBureauId?: string) {
+    const scope = resolveDepartmentScope(user.department);
+
+    if (!scope.directionId || !scope.bureauId) {
+      throw new BadRequestException("Aucun bureau n'est rattache a votre compte. Le classement automatique ne peut pas etre determine.");
+    }
+
+    const targetBureauId = requestedBureauId?.trim() || scope.bureauId;
+
+    if (targetBureauId === scope.bureauId) {
+      return targetBureauId;
+    }
+
+    const bureau = await this.prisma.department.findUnique({
+      where: { id: targetBureauId },
+      select: {
+        id: true,
+        type: true,
+        directionId: true,
+        serviceId: true
+      }
+    });
+
+    if (!bureau || bureau.type !== "BUREAU") {
+      throw new BadRequestException("Le bureau de classement selectionne est invalide.");
+    }
+
+    if (bureau.directionId !== scope.directionId) {
+      throw new ForbiddenException("Vous ne pouvez pas classer un document dans un bureau hors de votre direction.");
+    }
+
+    if (user.role.code === "AGENT" && bureau.id !== scope.bureauId) {
+      throw new ForbiddenException("Un agent ne peut classer un document que dans son propre bureau.");
+    }
+
+    return bureau.id;
+  }
+
   async syncForCreatedDocument(input: {
     documentId: string;
     year: number;
@@ -340,13 +416,18 @@ export class DocumentArchivesService {
     archivedById: string;
   }) {
     const ownerDirection = await this.departments.resolveOwnerDirectionFromBureau(input.bureauId);
-    const partners = Array.from(new Set([...input.receiverDirectionIds, ...input.copyDirectionIds].filter(Boolean)));
+    const partners = resolvePartnerDirectionIdsForClassification({
+      emitterDirectionId: input.emitterDirectionId,
+      receiverDirectionIds: input.receiverDirectionIds,
+      copyDirectionIds: input.copyDirectionIds,
+      isEmitterDirection: ownerDirection.id === input.emitterDirectionId
+    });
 
     if (ownerDirection.id === input.emitterDirectionId) {
       return this.createArchives(input, partners, "SORTIE");
     }
 
-    return this.createArchives(input, [input.emitterDirectionId], "ENTREE");
+    return this.createArchives(input, partners, "ENTREE");
   }
 
   private async createArchives(
@@ -471,13 +552,32 @@ const archiveInclude = {
   bureau: true
 } as const;
 
-function mapArchive(archive: ArchiveWithRelations): DocumentArchiveListItem {
+function resolvePartnerDirectionIdsForClassification(input: {
+  emitterDirectionId: string;
+  receiverDirectionIds: string[];
+  copyDirectionIds: string[];
+  isEmitterDirection: boolean;
+}) {
+  if (input.isEmitterDirection) {
+    // Cote direction emettrice, les archives documentaires SORTIE couvrent
+    // les directions destinataires et les directions en copie.
+    return Array.from(new Set([...input.receiverDirectionIds, ...input.copyDirectionIds].filter(Boolean)));
+  }
+
+  // Cote direction receptionnaire (destinataire principal ou copie),
+  // le classement manuel cree exclusivement une archive ENTREE
+  // rattachee a la direction emettrice.
+  return input.emitterDirectionId ? [input.emitterDirectionId] : [];
+}
+
+function mapArchive(archive: ArchiveWithRelations, user: ScopedUser | null): DocumentArchiveListItem {
   const partnerDirections =
     archive.movementType === "SORTIE"
       ? archive.document.recipients
           .filter((recipient) => recipient.kind === "RECEIVER" || recipient.kind === "COPY")
           .map((recipient) => recipient.direction)
       : [archive.document.emitterDirection];
+  const visibleAnnotations = filterVisibleArchiveAnnotations(archive.document.annotations, archive.document.emitterDirectionId, user);
 
   return {
     id: archive.id,
@@ -493,7 +593,7 @@ function mapArchive(archive: ArchiveWithRelations): DocumentArchiveListItem {
     updatedAt: archive.document.updatedAt.toISOString(),
     archivedBy: archive.archivedById,
     archiveFolderId: archive.folderId,
-    annotationCount: archive.document.annotations.length,
+    annotationCount: visibleAnnotations.length,
     documentReference: archive.document.reference,
     documentTitle: archive.document.title || archive.document.subject || archive.document.reference,
     referenceNumber: archive.document.referenceNumber,
@@ -510,10 +610,32 @@ function mapArchive(archive: ArchiveWithRelations): DocumentArchiveListItem {
     documentCreatedAt: archive.document.createdAt.toISOString(),
     documentStatus: archive.document.status as DocumentArchiveListItem["documentStatus"],
     confidentialityLevel: archive.document.confidentiality as DocumentArchiveListItem["confidentialityLevel"],
-    hasAnnotations: archive.document.annotations.length > 0,
-    annotationDirectionIds: Array.from(new Set(archive.document.annotations.map((annotation) => annotation.sourceDirectionId))),
-    latestAnnotationAt: archive.document.annotations[archive.document.annotations.length - 1]?.createdAt.toISOString()
+    hasAnnotations: visibleAnnotations.length > 0,
+    annotationDirectionIds: Array.from(new Set(visibleAnnotations.map((annotation) => annotation.sourceDirectionId))),
+    latestAnnotationAt: visibleAnnotations[visibleAnnotations.length - 1]?.createdAt.toISOString()
   };
+}
+
+function filterVisibleArchiveAnnotations(
+  annotations: Array<{ sourceDirectionId: string; createdAt: Date }>,
+  emitterDirectionId: string,
+  user: ScopedUser | null
+) {
+  if (!user || ["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(user.role.code)) {
+    return annotations;
+  }
+
+  const scope = resolveDepartmentScope(user.department);
+
+  if (!scope.directionId) {
+    return [];
+  }
+
+  if (scope.directionId === emitterDirectionId) {
+    return annotations;
+  }
+
+  return annotations.filter((annotation) => annotation.sourceDirectionId === scope.directionId);
 }
 
 function decorateArchiveFlags(

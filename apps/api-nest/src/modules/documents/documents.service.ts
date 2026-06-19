@@ -8,6 +8,7 @@ import { AttachmentsService } from "../attachments/attachments.service.js";
 import { PhysicalArchivesService } from "../physical-archives/physical-archives.service.js";
 import { resolveDepartmentScope } from "../../shared/department-scope.js";
 import type { CreateDocumentAnnotationDto } from "./dto/create-document-annotation.dto.js";
+import type { ClassifyDocumentDto } from "./dto/classify-document.dto.js";
 import type { CreateDocumentDto } from "./dto/create-document.dto.js";
 import type { CreateDocumentVersionDto } from "./dto/create-document-version.dto.js";
 
@@ -23,6 +24,15 @@ type DepartmentNode = {
     } | null;
   } | null;
 } | null;
+
+type EmitterDirectionNode = {
+  id: string;
+  type: DepartmentType;
+  parent?: {
+    id: string;
+    type: DepartmentType;
+  } | null;
+};
 
 type AuthorWithScope = User & {
   role: { code: string; name: string };
@@ -86,6 +96,33 @@ export class DocumentsService {
     return documents.map((document) => serializeDocument(document));
   }
 
+  async listSignerCandidates(principal: AuthenticatedPrincipal, requestedEmitterDirectionId?: string) {
+    const author = await this.resolveAuthenticatedAuthor(principal);
+    const authorScope = resolveEmitterScope(author);
+    const emitterDirection = await this.resolveEmitterDirection(author, requestedEmitterDirectionId, authorScope);
+    const signerUsers = await this.findEligibleSignerUsersForEmitter(emitterDirection);
+
+    return signerUsers.map((user) => {
+      const scope = resolveDepartmentScope(user.department);
+
+      return {
+        id: user.id,
+        email: user.email,
+        matricule: user.matricule,
+        nom: user.nom,
+        prenom: user.prenom,
+        isActive: user.isActive,
+        role: {
+          code: user.role.code,
+          name: user.role.name
+        },
+        directionId: scope.directionId,
+        serviceId: scope.serviceId,
+        bureauId: scope.bureauId
+      };
+    });
+  }
+
   async get(id: string, principal?: AuthenticatedPrincipal) {
     const document = await this.getDocumentRecord(id);
 
@@ -94,8 +131,11 @@ export class DocumentsService {
     }
 
     const validationEvents = await this.getValidationTimelineEvents(document.id, getLatestVersion(document)?.version ?? 1);
+    const currentUser: AuthorWithScope | null = principal ? await this.resolveAuthenticatedAuthor(principal) : null;
 
-    const currentUser = principal ? await this.resolveAuthenticatedAuthor(principal) : null;
+    if (currentUser && !canAccessDocumentForUser(document, currentUser)) {
+      throw new NotFoundException("Document not found.");
+    }
 
     return serializeDocument(document, true, validationEvents, currentUser);
   }
@@ -173,6 +213,7 @@ export class DocumentsService {
         subject: getOptionalString(input.subject),
         summary: getOptionalString(input.summary),
         type,
+        confidentialityLevel: getOptionalString(input.confidentialityLevel),
         emitterDirectionId: getOptionalString(input.emitterDirectionId) ?? undefined,
         receiverDirectionIds: getStringArray(input.receiverDirectionIds),
         copyDirectionIds: getStringArray(input.copyDirectionIds),
@@ -226,9 +267,18 @@ export class DocumentsService {
       document.emitterDirectionId,
       ...document.transmissions.map((transmission) => transmission.targetDirectionId)
     ]);
+    const recipientDirectionIds = uniqueStrings(document.recipients.map((recipient) => recipient.directionId));
 
     if (!knownDirections.has(input.sourceDirectionId)) {
       throw new BadRequestException("La direction source de l'observation n'est pas liee a ce document.");
+    }
+
+    if (recordedByDirectionId === document.emitterDirectionId) {
+      if (!recipientDirectionIds.includes(input.sourceDirectionId)) {
+        throw new BadRequestException("La direction emettrice doit selectionner une direction destinataire liee au document.");
+      }
+    } else if (input.sourceDirectionId !== recordedByDirectionId) {
+      throw new BadRequestException("Une direction destinataire ne peut enregistrer une annotation qu'en son propre nom.");
     }
 
     const comment = input.content?.trim() || null;
@@ -567,8 +617,10 @@ export class DocumentsService {
     return this.get(document.id, principal);
   }
 
-  async classify(documentId: string, principal: AuthenticatedPrincipal) {
-    await this.archives.classifyDocument(documentId, principal);
+  async classify(documentId: string, principal: AuthenticatedPrincipal, input?: ClassifyDocumentDto) {
+    await this.archives.classifyDocument(documentId, principal, {
+      bureauId: input?.bureauId
+    });
 
     return this.get(documentId, principal);
   }
@@ -595,6 +647,34 @@ export class DocumentsService {
     return this.attachments.getDocumentAnnotationSecureAccessPayload(annotationId, principal, request, disposition);
   }
 
+  async getDocumentAnnotationDownloadPayload(
+    documentId: string,
+    annotationId: string,
+    principal: AuthenticatedPrincipal,
+    request: RequestLike,
+    disposition: "view" | "download" | undefined
+  ) {
+    const document = await this.getDocumentRecord(documentId);
+    const currentUser = await this.resolveAuthenticatedAuthor(principal);
+
+    if (!document || !canAccessDocumentForUser(document, currentUser)) {
+      throw new NotFoundException("Document not found.");
+    }
+
+    const annotationExists = document.annotations.some((annotation: any) => annotation.id === annotationId);
+
+    if (!annotationExists) {
+      throw new NotFoundException("Annotation introuvable.");
+    }
+
+    return this.attachments.getDocumentAnnotationDownloadPayload(
+      annotationId,
+      principal,
+      request,
+      disposition === "view" ? "view" : "download"
+    );
+  }
+
   private async persistDocument(input: {
     input: CreateDocumentInput;
     author: AuthorWithScope;
@@ -613,9 +693,15 @@ export class DocumentsService {
 
     const emitterDirection = await this.resolveEmitterDirection(input.author, input.input.emitterDirectionId, authorScope);
     const emitterDirectionId = emitterDirection.id;
+    const authorDirectionId = authorScope.directionId ?? null;
+    const isIncomingDocument = Boolean(authorDirectionId && emitterDirectionId !== authorDirectionId);
     const signerScope = resolveSignerScope(authorScope, emitterDirectionId);
-    const receiverDirectionIds = uniqueStrings(input.input.receiverDirectionIds ?? []).filter(Boolean);
-    const copyDirectionIds = uniqueStrings(input.input.copyDirectionIds ?? []).filter(Boolean);
+    const receiverDirectionIds = isIncomingDocument && authorDirectionId
+      ? [authorDirectionId]
+      : uniqueStrings(input.input.receiverDirectionIds ?? []).filter(Boolean);
+    const copyDirectionIds = uniqueStrings(input.input.copyDirectionIds ?? []).filter(
+      (directionId) => Boolean(directionId) && !receiverDirectionIds.includes(directionId)
+    );
 
     await this.validateRecipientDirections({
       emitterDirectionId,
@@ -623,7 +709,7 @@ export class DocumentsService {
       copyDirectionIds
     });
 
-    const signerRecords = await this.resolveSignerRecords(input.input, input.author, signerScope);
+    const signerRecords = await this.resolveSignerRecords(input.input, input.author, emitterDirection, signerScope);
 
     if (!receiverDirectionIds.length) {
       throw new BadRequestException("At least one receiver direction is required.");
@@ -656,6 +742,7 @@ export class DocumentsService {
       subject: input.input.subject?.trim() || null,
       summary: input.input.summary?.trim() || null,
       type: input.type,
+      confidentialityLevel: input.input.confidentialityLevel?.trim() || null,
       emitterDirectionId,
       receiverDirectionIds,
       copyDirectionIds,
@@ -673,6 +760,7 @@ export class DocumentsService {
           subject: input.input.subject?.trim() || null,
           summary: input.input.summary?.trim() || null,
           type: input.type,
+          confidentiality: input.input.confidentialityLevel?.trim() || null,
           status: "EN_VALIDATION",
           emitterDirectionId,
           authorId: input.author.id,
@@ -872,13 +960,13 @@ export class DocumentsService {
       throw new BadRequestException("Authenticated user must be attached to an organizational department.");
     }
 
-    const scope = resolveEmitterScope(author);
+    const scope = resolveEmitterScope(author as AuthorWithScope);
 
     if (!scope.directionId || !scope.bureauId) {
       throw new BadRequestException("Authenticated user must be attached to a bureau within an owning direction.");
     }
 
-    return author;
+    return author as AuthorWithScope;
   }
 
   private async getDocumentRecord(id: string) {
@@ -890,6 +978,15 @@ export class DocumentsService {
         recipients: { include: { direction: true } },
         archives: {
           include: {
+            bureau: {
+              select: {
+                id: true,
+                code: true,
+                designation: true,
+                directionId: true,
+                serviceId: true
+              }
+            },
             folder: {
               include: {
                 ownerDirection: {
@@ -986,7 +1083,10 @@ export class DocumentsService {
 
     if (!requestedId || requestedId === authorScope.emitterDirectionId) {
       return this.prisma.department.findUniqueOrThrow({
-        where: { id: authorScope.emitterDirectionId }
+        where: { id: authorScope.emitterDirectionId },
+        include: {
+          parent: true
+        }
       });
     }
 
@@ -996,6 +1096,9 @@ export class DocumentsService {
         type: {
           in: [DepartmentType.DIRECTION, DepartmentType.DIRECTION_GENERALE]
         }
+      },
+      include: {
+        parent: true
       }
     });
 
@@ -1006,7 +1109,12 @@ export class DocumentsService {
     return emitterDirection;
   }
 
-  private async resolveSignerRecords(input: CreateDocumentInput, author: AuthorWithScope, emitterScope: EmitterScope) {
+  private async resolveSignerRecords(
+    input: CreateDocumentInput,
+    author: AuthorWithScope,
+    emitterDirection: EmitterDirectionNode,
+    emitterScope: EmitterScope
+  ) {
     const requestedSigners = input.signers ?? [];
 
     if (!requestedSigners.length) {
@@ -1036,25 +1144,7 @@ export class DocumentsService {
       throw new BadRequestException("At least one signer user must be selected.");
     }
 
-    const signerUsers = await this.prisma.user.findMany({
-      where: {
-        id: {
-          in: signerUserIds
-        }
-      },
-      include: {
-        role: true,
-        department: {
-          include: {
-            parent: {
-              include: {
-                parent: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const signerUsers = await this.findEligibleSignerUsersForEmitter(emitterDirection, signerUserIds);
 
     if (signerUsers.length !== signerUserIds.length) {
       throw new BadRequestException("One or more selected signers could not be found.");
@@ -1073,19 +1163,72 @@ export class DocumentsService {
         throw new BadRequestException("Selected signer is invalid.");
       }
 
-      if (!isUserWithinEmitterScope(user, emitterScope)) {
-        throw new BadRequestException("Selected signer must belong to the emitter structure scope.");
+      if (!user.department) {
+        throw new BadRequestException("Selected signer must be attached to an active structure.");
       }
 
       return {
         userId: user.id,
         fullName: [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email,
         functionTitle: user.role.name,
-        departmentId: emitterScope.signerDepartmentId,
-        departmentType: emitterScope.signerDepartmentType,
+        departmentId: user.department.id,
+        departmentType: user.department.type,
         signingOrder: signer.signingOrder ?? index + 1
       } satisfies SignerRecordInput;
     });
+  }
+
+  private async findEligibleSignerUsersForEmitter(emitterDirection: EmitterDirectionNode, signerUserIds?: string[]) {
+    const eligibleDirectionIds = getSignerCandidateDirectionIds(emitterDirection);
+    const signerRoleCodes = ["AGENT", "MANAGER", "DIRECTEUR", "DIRECTEUR_GENERAL"] as const;
+    const users = await this.prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: {
+          code: {
+            in: [...signerRoleCodes]
+          }
+        },
+        ...(signerUserIds?.length
+          ? {
+              id: {
+                in: signerUserIds
+              }
+            }
+          : {}),
+        department: {
+          is: {
+            OR: [
+              {
+                id: {
+                  in: eligibleDirectionIds
+                }
+              },
+              {
+                directionId: {
+                  in: eligibleDirectionIds
+                }
+              }
+            ]
+          }
+        }
+      },
+      include: {
+        role: true,
+        department: {
+          include: {
+            parent: {
+              include: {
+                parent: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: [{ nom: "asc" }, { prenom: "asc" }, { email: "asc" }]
+    });
+
+    return users;
   }
 
   private async validateRecipientDirections(input: {
@@ -1138,6 +1281,7 @@ type CreateDocumentInput = {
   subject?: string;
   summary?: string;
   type?: string;
+  confidentialityLevel?: string;
   emitterDirectionId?: string;
   receiverDirectionIds?: string[];
   copyDirectionIds?: string[];
@@ -1167,7 +1311,9 @@ function resolveSignerScope(authorScope: EmitterScope, emitterDirectionId: strin
   };
 }
 
-function serializeDocument(document: any, includeLifecycle = false, validationEvents: any[] = [], currentUser?: AuthorWithScope | null) {
+function serializeDocument(document: any, includeLifecycle = false, validationEvents: any[] = [], currentUser: AuthorWithScope | null = null) {
+  const visibleArchives = filterDocumentArchivesForUser(document.archives ?? [], currentUser);
+  const visibleAnnotations = filterDocumentAnnotationsForUser(document.annotations ?? [], document, currentUser);
   const serializedSigners =
     document.signers?.map((signer: any) => ({
       userId: signer.userId ?? undefined,
@@ -1187,17 +1333,22 @@ function serializeDocument(document: any, includeLifecycle = false, validationEv
     ...document.recipients.filter((recipient: any) => recipient.kind === "RECEIVER").map((recipient: any) => recipient.directionId),
     ...document.recipients.filter((recipient: any) => recipient.kind === "COPY").map((recipient: any) => recipient.directionId)
   ];
+  const isCurrentDirectionParticipant = Boolean(
+    currentDirectionId &&
+      (currentDirectionId === document.emitterDirectionId || targetDirectionIds.includes(currentDirectionId))
+  );
   const currentDirectionArchives =
     currentDirectionId
-      ? (document.archives ?? []).filter((archive: any) => archive.folder?.ownerDirectionId === currentDirectionId)
+      ? visibleArchives.filter((archive: any) => archive.folder?.ownerDirectionId === currentDirectionId)
       : [];
+  const currentDirectionClassifiedArchives = currentDirectionArchives.filter((archive: any) => Boolean(archive.archivedAt));
   const currentDirectionMovement =
     currentDirectionId === document.emitterDirectionId
       ? "SORTIE"
       : currentDirectionId && targetDirectionIds.includes(currentDirectionId)
         ? "ENTREE"
         : undefined;
-  const currentDirectionArchivedAt = currentDirectionArchives
+  const currentDirectionArchivedAt = currentDirectionClassifiedArchives
     .map((archive: any) => archive.archivedAt?.toISOString?.() ?? archive.archivedAt)
     .filter(Boolean)
     .sort((left: string, right: string) => Date.parse(right) - Date.parse(left))[0];
@@ -1211,18 +1362,134 @@ function serializeDocument(document: any, includeLifecycle = false, validationEv
       ...attachment,
       sizeBytes: Number(attachment.sizeBytes)
     })),
+    archives: visibleArchives,
     versionsHistory: lifecycle?.versionsHistory,
-    annotations: lifecycle?.annotations,
+    annotations: visibleAnnotations.map((annotation: any) => ({
+      id: annotation.id,
+      documentId: annotation.documentId,
+      documentVersionId: annotation.documentVersionId,
+      documentVersionNumber: annotation.documentVersion?.version ?? 1,
+      sourceDirectionId: annotation.sourceDirectionId,
+      sourceDirectionCode: annotation.sourceDirection?.code,
+      sourceDirectionName: annotation.sourceDirection?.designation,
+      recordedByDirectionId: annotation.recordedByDirectionId,
+      recordedByDirectionCode: annotation.recordedByDirection?.code,
+      recordedByDirectionName: annotation.recordedByDirection?.designation,
+      createdByUserId: annotation.createdByUserId,
+      createdByUserName:
+        [annotation.createdByUser?.nom, annotation.createdByUser?.prenom].filter(Boolean).join(" ").trim() ||
+        annotation.createdByUser?.email ||
+        undefined,
+      status: annotation.status,
+      content: annotation.content,
+      attachment:
+        annotation.objectKey && annotation.fileName
+          ? {
+              name: annotation.fileName,
+              filePath: annotation.objectKey,
+              mimeType: annotation.mimeType ?? undefined,
+              sizeBytes: annotation.sizeBytes ? Number(annotation.sizeBytes) : undefined,
+              fileUrl: `/documents/${annotation.documentId}/annotations/${annotation.id}/access`
+            }
+          : undefined,
+      createdAt: annotation.createdAt.toISOString(),
+      updatedAt: annotation.updatedAt.toISOString()
+    })),
     transmissions: lifecycle?.transmissions,
     timeline: lifecycle?.timeline,
     pendingResponseDirectionIds: lifecycle?.pendingResponseDirectionIds,
     pendingResponseDirectionNames: lifecycle?.pendingResponseDirectionNames,
     respondedDirectionIds: lifecycle?.respondedDirectionIds,
     respondedDirectionNames: lifecycle?.respondedDirectionNames,
-    canClassify: Boolean(currentDirectionId && currentDirectionMovement && currentDirectionArchives.length === 0),
+    canClassify:
+      Boolean(
+        isCurrentDirectionParticipant &&
+          currentDirectionMovement &&
+          currentDirectionClassifiedArchives.length === 0
+      ),
     currentDirectionMovement,
     currentDirectionArchivedAt
   };
+}
+
+function getSignerCandidateDirectionIds(emitterDirection: EmitterDirectionNode) {
+  const directionIds = [emitterDirection.id];
+
+  if (emitterDirection.parent?.type === DepartmentType.DIRECTION_GENERALE) {
+    directionIds.push(emitterDirection.parent.id);
+  }
+
+  return Array.from(new Set(directionIds));
+}
+
+function canAccessDocumentForUser(document: any, user: AuthorWithScope | null) {
+  if (!user || ["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(user.role.code)) {
+    return true;
+  }
+
+  const userScope = resolveEmitterScope(user);
+  const userDirectionId = userScope.directionId;
+
+  if (!userDirectionId) {
+    return false;
+  }
+
+  const recipientDirectionIds = uniqueStrings(document.recipients?.map((recipient: any) => recipient.directionId) ?? []);
+
+  return document.emitterDirectionId === userDirectionId || recipientDirectionIds.includes(userDirectionId);
+}
+
+function canAccessDocumentArchiveForUser(archive: any, user: AuthorWithScope | null) {
+  if (!user || ["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(user.role.code)) {
+    return true;
+  }
+
+  const userScope = resolveEmitterScope(user);
+
+  if (!userScope.directionId) {
+    return false;
+  }
+
+  if (user.role.code === "DIRECTEUR") {
+    return archive.bureau?.directionId === userScope.directionId;
+  }
+
+  if (user.role.code === "MANAGER") {
+    return Boolean(userScope.serviceId && archive.bureau?.serviceId === userScope.serviceId);
+  }
+
+  if (user.role.code === "AGENT") {
+    return Boolean(userScope.bureauId && archive.bureauId === userScope.bureauId);
+  }
+
+  return archive.bureau?.directionId === userScope.directionId;
+}
+
+function canAccessDocumentAnnotationForUser(annotation: any, document: any, user: AuthorWithScope | null) {
+  if (!user || ["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(user.role.code)) {
+    return true;
+  }
+
+  const userScope = resolveEmitterScope(user);
+  const userDirectionId = userScope.directionId;
+
+  if (!userDirectionId) {
+    return false;
+  }
+
+  if (document.emitterDirectionId === userDirectionId) {
+    return true;
+  }
+
+  return annotation.sourceDirectionId === userDirectionId;
+}
+
+function filterDocumentArchivesForUser(archives: any[], user: AuthorWithScope | null) {
+  return archives.filter((archive) => canAccessDocumentArchiveForUser(archive, user));
+}
+
+function filterDocumentAnnotationsForUser(annotations: any[], document: any, user: AuthorWithScope | null) {
+  return annotations.filter((annotation) => canAccessDocumentAnnotationForUser(annotation, document, user));
 }
 
 function buildLifecyclePayload(document: any, validationEvents: any[] = []) {
@@ -1368,6 +1635,7 @@ function buildDocumentSnapshot(input: {
   subject?: string | null;
   summary?: string | null;
   type: string;
+  confidentialityLevel?: string | null;
   emitterDirectionId: string;
   receiverDirectionIds: string[];
   copyDirectionIds: string[];
@@ -1382,6 +1650,7 @@ function buildDocumentSnapshot(input: {
     subject: input.subject ?? null,
     summary: input.summary ?? null,
     type: input.type,
+    confidentialityLevel: input.confidentialityLevel ?? null,
     emitterDirectionId: input.emitterDirectionId,
     receiverDirectionIds: input.receiverDirectionIds,
     copyDirectionIds: input.copyDirectionIds,
@@ -1537,14 +1806,14 @@ function resolveEmitterScope(author: AuthorWithScope): EmitterScope {
 
   if (department.type === "BUREAU") {
     const scope = resolveDepartmentScope(department);
-    return {
-      emitterDirectionId: scope.directionId ?? "",
-      signerDepartmentId: department.id,
-      signerDepartmentType: DepartmentType.BUREAU,
-      bureauId: department.id,
-      serviceId: scope.serviceId,
-      directionId: scope.directionId
-    };
+      return {
+        emitterDirectionId: scope.directionId ?? "",
+        signerDepartmentId: department.id,
+        signerDepartmentType: DepartmentType.BUREAU,
+        bureauId: department.id,
+        serviceId: scope.serviceId,
+        directionId: scope.directionId
+      };
   }
 
   if (department.type === "SERVICE") {
@@ -1566,26 +1835,6 @@ function resolveEmitterScope(author: AuthorWithScope): EmitterScope {
     serviceId: null,
     directionId: department.id
   };
-}
-
-function isUserWithinEmitterScope(
-  user: User & {
-    role: { code: string; name: string };
-    department: DepartmentNode;
-  },
-  emitterScope: EmitterScope
-) {
-  const scope = resolveDepartmentScope(user.department);
-
-  if (emitterScope.signerDepartmentType === DepartmentType.BUREAU) {
-    return scope.bureauId === emitterScope.signerDepartmentId;
-  }
-
-  if (emitterScope.signerDepartmentType === DepartmentType.SERVICE) {
-    return scope.serviceId === emitterScope.signerDepartmentId;
-  }
-
-  return scope.directionId === emitterScope.signerDepartmentId;
 }
 
 function uniqueStrings(values: Array<string | undefined | null>) {

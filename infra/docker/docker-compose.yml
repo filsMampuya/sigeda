@@ -49,7 +49,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
-    command: start-dev --import-realm
+    command: start-dev --hostname=http://localhost:8080 --import-realm
     environment:
       KEYCLOAK_ADMIN: ${SIGEDA_KEYCLOAK_ADMIN_USER:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${SIGEDA_KEYCLOAK_ADMIN_PASSWORD:-admin}

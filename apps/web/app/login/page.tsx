@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/auth/login-form";
-import { getServerAuthToken } from "@/lib/auth";
+import { getValidServerAuthToken } from "@/lib/server-auth";
 
 type LoginPageProps = {
   searchParams?: {
@@ -9,8 +9,8 @@ type LoginPageProps = {
   };
 };
 
-export default function LoginPage({ searchParams }: LoginPageProps) {
-  if (getServerAuthToken()) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  if (await getValidServerAuthToken()) {
     redirect("/dashboard");
   }
 

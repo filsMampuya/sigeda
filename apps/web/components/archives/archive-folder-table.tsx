@@ -9,30 +9,34 @@ import { Card } from "@/components/ui/card";
 import { ColumnVisibilityMenu } from "@/components/ui/column-visibility-menu";
 import { LongText } from "@/components/ui/long-text";
 import { PaginationControls } from "@/components/ui/pagination-controls";
-import { getClientAuthToken } from "@/lib/client-auth-token";
+import { authorizedRequest } from "@/lib/client-http";
 import { getPublicOnPremiseApiBaseUrl } from "@/lib/env";
 import { formatShortDate } from "@/lib/format";
 
 type FolderColumnId =
   | "year"
-  | "section"
+  | "sectionsUsed"
   | "direction"
   | "partner"
   | "bureau"
   | "access"
   | "archiveCount"
+  | "entryArchiveCount"
+  | "outputArchiveCount"
   | "createdAt"
   | "updatedAt"
   | "status";
 
 const allColumns: Array<{ id: FolderColumnId; label: string }> = [
   { id: "year", label: "Annee" },
-  { id: "section", label: "Section" },
+  { id: "sectionsUsed", label: "Sections utilisees" },
   { id: "direction", label: "Direction" },
   { id: "partner", label: "Direction partenaire" },
   { id: "bureau", label: "Bureau" },
   { id: "access", label: "Acces" },
-  { id: "archiveCount", label: "Nombre de documents" },
+  { id: "archiveCount", label: "Total documents" },
+  { id: "entryArchiveCount", label: "Documents entree" },
+  { id: "outputArchiveCount", label: "Documents sortie" },
   { id: "createdAt", label: "Date creation" },
   { id: "updatedAt", label: "Date modification" },
   { id: "status", label: "Statut" }
@@ -40,11 +44,13 @@ const allColumns: Array<{ id: FolderColumnId; label: string }> = [
 
 const defaultVisibleColumns: FolderColumnId[] = [
   "year",
-  "section",
+  "sectionsUsed",
   "direction",
   "partner",
   "bureau",
   "archiveCount",
+  "entryArchiveCount",
+  "outputArchiveCount",
   "createdAt",
   "updatedAt",
   "status"
@@ -117,20 +123,13 @@ export function ArchiveFolderTable({
   }, [quickSearch, rows]);
 
   async function updateStatus(id: string, status: "ACTIVE" | "ARCHIVED") {
-    const accessToken = await getClientAuthToken();
-    const response = await fetch(`${apiBaseUrl}/folders/${id}/status`, {
+    await authorizedRequest(`${apiBaseUrl}/folders/${id}/status`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({ status })
     });
-
-    if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as { message?: string } | null;
-      throw new Error(body?.message ?? "Mise a jour du statut impossible.");
-    }
 
     window.location.reload();
   }
@@ -173,8 +172,8 @@ export function ArchiveFolderTable({
               {isVisible("year") ? (
                 <th className="w-[7%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Annee</th>
               ) : null}
-              {isVisible("section") ? (
-                <th className="w-[7%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Section</th>
+              {isVisible("sectionsUsed") ? (
+                <th className="w-[11%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Sections</th>
               ) : null}
               {isVisible("direction") ? (
                 <th className="w-[12%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Direction</th>
@@ -189,7 +188,13 @@ export function ArchiveFolderTable({
                 <th className="w-[15%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Acces</th>
               ) : null}
               {isVisible("archiveCount") ? (
-                <th className="w-[7%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Documents</th>
+                <th className="w-[7%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Total</th>
+              ) : null}
+              {isVisible("entryArchiveCount") ? (
+                <th className="w-[8%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Entree</th>
+              ) : null}
+              {isVisible("outputArchiveCount") ? (
+                <th className="w-[8%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Sortie</th>
               ) : null}
               {isVisible("createdAt") ? (
                 <th className="w-[10%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Date creation</th>
@@ -214,7 +219,11 @@ export function ArchiveFolderTable({
             {filteredRows.map((row) => (
               <tr key={row.id} className="align-top hover:bg-slate-50/80">
                 {isVisible("year") ? <td className="px-5 py-3.5">{row.year}</td> : null}
-                {isVisible("section") ? <td className="px-5 py-3.5 font-medium text-brand-navy">{row.section}</td> : null}
+                {isVisible("sectionsUsed") ? (
+                  <td className="px-5 py-3.5">
+                    <LongText value={formatSectionsUsed(row.sectionsUsed)} label="Sections utilisees" className="font-medium text-brand-navy" />
+                  </td>
+                ) : null}
                 {isVisible("direction") ? (
                   <td className="px-5 py-3.5">
                     <LongText
@@ -255,6 +264,8 @@ export function ArchiveFolderTable({
                   </td>
                 ) : null}
                 {isVisible("archiveCount") ? <td className="px-5 py-3.5">{row.archiveCount}</td> : null}
+                {isVisible("entryArchiveCount") ? <td className="px-5 py-3.5">{row.entryArchiveCount}</td> : null}
+                {isVisible("outputArchiveCount") ? <td className="px-5 py-3.5">{row.outputArchiveCount}</td> : null}
                 {isVisible("createdAt") ? (
                   <td className="px-5 py-3.5 text-slate-600">{formatShortDate(row.createdAt)}</td>
                 ) : null}
@@ -318,4 +329,17 @@ function formatDirection(code?: string, designation?: string, fallback?: string)
   }
 
   return designation ?? code ?? fallback ?? "-";
+}
+
+function formatSectionsUsed(value: ArchiveFolderListItem["sectionsUsed"]) {
+  switch (value) {
+    case "ENTREE":
+      return "Entree uniquement";
+    case "SORTIE":
+      return "Sortie uniquement";
+    case "ENTREE_SORTIE":
+      return "Entree + Sortie";
+    default:
+      return "Aucune section utilisee";
+  }
 }

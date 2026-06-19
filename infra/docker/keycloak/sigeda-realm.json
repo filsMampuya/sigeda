@@ -31,13 +31,154 @@
   ],
   "users": [
     {
+      "id": "00000000-0000-0000-0000-000000000001",
       "username": "admin@sigeda.local",
       "email": "admin@sigeda.local",
       "firstName": "SIGEDA",
       "lastName": "ADMIN",
       "enabled": true,
-      "credentials": [{ "type": "password", "value": "SigedaAdmin1!", "temporary": true }],
+      "credentials": [{ "type": "password", "value": "SigedaAdmin1!", "temporary": false }],
       "realmRoles": ["ADMIN"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000002",
+      "username": "dg.demo@sigeda.local",
+      "email": "dg.demo@sigeda.local",
+      "firstName": "Direction",
+      "lastName": "Generale",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaDg1!", "temporary": false }],
+      "realmRoles": ["DIRECTEUR_GENERAL"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000003",
+      "username": "directeur.technique@sigeda.local",
+      "email": "directeur.technique@sigeda.local",
+      "firstName": "Directeur",
+      "lastName": "Technique",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaDirTech1!", "temporary": false }],
+      "realmRoles": ["DIRECTEUR"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000004",
+      "username": "directeur.commerciale@sigeda.local",
+      "email": "directeur.commerciale@sigeda.local",
+      "firstName": "Directeur",
+      "lastName": "Commerciale",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaDirCom1!", "temporary": false }],
+      "realmRoles": ["DIRECTEUR"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000005",
+      "username": "directeur.finance@sigeda.local",
+      "email": "directeur.finance@sigeda.local",
+      "firstName": "Directeur",
+      "lastName": "Finance",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaDir1!", "temporary": false }],
+      "realmRoles": ["DIRECTEUR"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000006",
+      "username": "manager.technique@sigeda.local",
+      "email": "manager.technique@sigeda.local",
+      "firstName": "Manager",
+      "lastName": "Technique",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaMngTech1!", "temporary": false }],
+      "realmRoles": ["MANAGER"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000007",
+      "username": "manager.commercial@sigeda.local",
+      "email": "manager.commercial@sigeda.local",
+      "firstName": "Manager",
+      "lastName": "Commercial",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaMngCom1!", "temporary": false }],
+      "realmRoles": ["MANAGER"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000008",
+      "username": "manager.compta@sigeda.local",
+      "email": "manager.compta@sigeda.local",
+      "firstName": "Manager",
+      "lastName": "Compta",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaMng1!", "temporary": false }],
+      "realmRoles": ["MANAGER"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000009",
+      "username": "agent.technique@sigeda.local",
+      "email": "agent.technique@sigeda.local",
+      "firstName": "Agent",
+      "lastName": "Technique",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaAgtTech1!", "temporary": false }],
+      "realmRoles": ["AGENT"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000010",
+      "username": "agent.commercial@sigeda.local",
+      "email": "agent.commercial@sigeda.local",
+      "firstName": "Agent",
+      "lastName": "Commercial",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaAgtCom1!", "temporary": false }],
+      "realmRoles": ["AGENT"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000011",
+      "username": "agent.cadre@sigeda.local",
+      "email": "agent.cadre@sigeda.local",
+      "firstName": "Agent",
+      "lastName": "Cadre",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaAgt1!", "temporary": false }],
+      "realmRoles": ["AGENT"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000012",
+      "username": "agent.annexe@sigeda.local",
+      "email": "agent.annexe@sigeda.local",
+      "firstName": "Agent",
+      "lastName": "Annexe",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaAgt2!", "temporary": false }],
+      "realmRoles": ["AGENT"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000013",
+      "username": "agent.treso@sigeda.local",
+      "email": "agent.treso@sigeda.local",
+      "firstName": "Agent",
+      "lastName": "Tresorerie",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaAgt3!", "temporary": false }],
+      "realmRoles": ["AGENT"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000014",
+      "username": "agent.administratif@sigeda.local",
+      "email": "agent.administratif@sigeda.local",
+      "firstName": "Agent",
+      "lastName": "Administratif",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaAgtAdm1!", "temporary": false }],
+      "realmRoles": ["AGENT"]
+    },
+    {
+      "id": "00000000-0000-0000-0000-000000000015",
+      "username": "auditeur.demo@sigeda.local",
+      "email": "auditeur.demo@sigeda.local",
+      "firstName": "Auditeur",
+      "lastName": "Demo",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "SigedaAud1!", "temporary": false }],
+      "realmRoles": ["AUDITEUR"]
     }
   ]
 }

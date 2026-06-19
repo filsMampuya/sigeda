@@ -1,6 +1,6 @@
- "use client";
+"use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 
@@ -16,15 +16,27 @@ const errorMessages: Record<string, string> = {
 
 export function LoginForm({ autoRedirect = false, errorCode }: LoginFormProps) {
   const errorMessage = errorCode ? errorMessages[errorCode] ?? "La connexion n'a pas pu etre etablie." : null;
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  function startAuthentication() {
+    if (isRedirecting) {
+      return;
+    }
+
+    setIsRedirecting(true);
+    window.location.replace("/api/auth/login");
+  }
 
   useEffect(() => {
     if (!autoRedirect || errorMessage) {
+      setIsRedirecting(false);
       return;
     }
 
     const timeout = window.setTimeout(() => {
+      setIsRedirecting(true);
       window.location.replace("/api/auth/login");
-    }, 150);
+    }, 250);
 
     return () => window.clearTimeout(timeout);
   }, [autoRedirect, errorMessage]);
@@ -47,12 +59,14 @@ export function LoginForm({ autoRedirect = false, errorCode }: LoginFormProps) {
             <p className="mt-2 text-sm text-slate-700">Connexion federee via Keycloak.</p>
           </div>
         )}
-        <a
-          href="/api/auth/login"
+        <button
+          type="button"
+          disabled={isRedirecting}
+          onClick={startAuthentication}
           className="mt-6 block rounded-xl bg-brand-navy px-5 py-3 text-center text-sm font-medium text-white transition hover:bg-[#10263a]"
         >
-          {errorMessage ? "Se connecter" : "Continuer"}
-        </a>
+          {isRedirecting ? "Redirection..." : errorMessage ? "Se connecter" : "Continuer"}
+        </button>
         <p className="mt-4 text-xs text-slate-500">Banque Centrale du Congo</p>
       </Card>
     </div>

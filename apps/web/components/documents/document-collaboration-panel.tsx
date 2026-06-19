@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Departement, DocumentEntity } from "@sigeda/shared/types";
+import type { AuthenticatedUser, Departement, DocumentEntity } from "@sigeda/shared/types";
 
 import { DocumentAnnotationFileActions } from "@/components/documents/document-annotation-file-actions";
 import { Card } from "@/components/ui/card";
 import { LongText } from "@/components/ui/long-text";
+import { getDisplayableErrorMessage } from "@/lib/client-http";
 import { formatShortDate, formatStructureLabel } from "@/lib/format";
 
 type DocumentCollaborationPanelProps = {
+  currentUser: AuthenticatedUser | null;
   directions: Departement[];
   document: DocumentEntity;
 };
@@ -22,12 +24,31 @@ type UsefulEvent = {
   createdAt: string;
 };
 
-export function DocumentCollaborationPanel({ directions, document }: DocumentCollaborationPanelProps) {
+function extractActionErrorMessage(responseText: string) {
+  if (!responseText.trim()) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(responseText) as { message?: string | string[] };
+
+    if (Array.isArray(payload.message) && payload.message.length > 0) {
+      return payload.message.join(" ");
+    }
+
+    if (typeof payload.message === "string" && payload.message.trim().length > 0) {
+      return payload.message;
+    }
+  } catch {
+    return responseText.trim();
+  }
+
+  return responseText.trim();
+}
+
+export function DocumentCollaborationPanel({ currentUser, directions, document }: DocumentCollaborationPanelProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [annotationSourceDirectionId, setAnnotationSourceDirectionId] = useState(
-    document.pendingResponseDirectionIds?.[0] ?? document.receiverDirectionIds[0] ?? ""
-  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [annotationContent, setAnnotationContent] = useState("");
   const [annotationFile, setAnnotationFile] = useState<File | null>(null);
   const [annotationFileInputKey, setAnnotationFileInputKey] = useState(0);
@@ -35,6 +56,91 @@ export function DocumentCollaborationPanel({ directions, document }: DocumentCol
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const directionLookup = useMemo(() => new Map(directions.map((direction) => [direction.id, direction])), [directions]);
+  const annotationDirectionIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [document.emitterDirectionId, ...document.receiverDirectionIds, ...document.copyDirectionIds].filter(
+            (directionId): directionId is string => Boolean(directionId)
+          )
+        )
+      ),
+    [document.copyDirectionIds, document.emitterDirectionId, document.receiverDirectionIds]
+  );
+  const hasGlobalAnnotationScope = ["ADMIN", "DIRECTEUR_GENERAL", "AUDITEUR"].includes(currentUser?.role ?? "");
+  const isEmitterRecorder = Boolean(currentUser?.directionId && currentUser.directionId === document.emitterDirectionId);
+  const canAnnotate =
+    hasGlobalAnnotationScope ||
+    (currentUser?.directionId ? annotationDirectionIds.includes(currentUser.directionId) : false);
+  const canChooseSourceDirection = Boolean(hasGlobalAnnotationScope || isEmitterRecorder);
+  const recipientAnnotationDirectionIds = useMemo(
+    () =>
+      Array.from(new Set([...document.receiverDirectionIds, ...document.copyDirectionIds].filter(Boolean))),
+    [document.copyDirectionIds, document.receiverDirectionIds]
+  );
+  const selectableAnnotationDirectionIds = useMemo(() => {
+    if (!currentUser?.directionId) {
+      return [];
+    }
+
+    if (!canChooseSourceDirection) {
+      return annotationDirectionIds.includes(currentUser.directionId) ? [currentUser.directionId] : [];
+    }
+
+    const candidateIds = isEmitterRecorder ? recipientAnnotationDirectionIds : annotationDirectionIds;
+    return candidateIds.filter((directionId) => directionId !== document.emitterDirectionId);
+  }, [
+    annotationDirectionIds,
+    canChooseSourceDirection,
+    currentUser?.directionId,
+    document.emitterDirectionId,
+    isEmitterRecorder,
+    recipientAnnotationDirectionIds
+  ]);
+  const defaultAnnotationSourceDirectionId = useMemo(() => {
+    if (!selectableAnnotationDirectionIds.length) {
+      return "";
+    }
+
+    if (!canChooseSourceDirection && currentUser?.directionId && selectableAnnotationDirectionIds.includes(currentUser.directionId)) {
+      return currentUser.directionId;
+    }
+
+    return (
+      document.pendingResponseDirectionIds?.find((directionId) => selectableAnnotationDirectionIds.includes(directionId)) ??
+      document.receiverDirectionIds.find((directionId) => selectableAnnotationDirectionIds.includes(directionId)) ??
+      selectableAnnotationDirectionIds[0] ??
+      ""
+    );
+  }, [
+    canChooseSourceDirection,
+    currentUser?.directionId,
+    document.pendingResponseDirectionIds,
+    document.receiverDirectionIds,
+    selectableAnnotationDirectionIds
+  ]);
+  const [annotationSourceDirectionId, setAnnotationSourceDirectionId] = useState(defaultAnnotationSourceDirectionId);
+
+  useEffect(() => {
+    if (!currentUser?.directionId) {
+      return;
+    }
+
+    if (!canChooseSourceDirection && selectableAnnotationDirectionIds.includes(currentUser.directionId)) {
+      setAnnotationSourceDirectionId(currentUser.directionId);
+      return;
+    }
+
+    if (!selectableAnnotationDirectionIds.includes(annotationSourceDirectionId) && defaultAnnotationSourceDirectionId) {
+      setAnnotationSourceDirectionId(defaultAnnotationSourceDirectionId);
+    }
+  }, [
+    annotationSourceDirectionId,
+    canChooseSourceDirection,
+    currentUser?.directionId,
+    defaultAnnotationSourceDirectionId,
+    selectableAnnotationDirectionIds
+  ]);
 
   const usefulHistory = useMemo<UsefulEvent[]>(() => {
     const events: UsefulEvent[] = [
@@ -93,12 +199,20 @@ export function DocumentCollaborationPanel({ directions, document }: DocumentCol
 
     const response = await fetch(`/api/documents/${document.id}/annotations`, {
       method: "POST",
-      body: formData
+      body: formData,
+      cache: "no-store",
+      credentials: "same-origin"
     });
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => ({}))) as { message?: string };
-      throw new Error(payload.message || "L'annotation n'a pas pu etre enregistree.");
+      const responseText = await response.text();
+      const errorMessage = extractActionErrorMessage(responseText);
+
+      if (errorMessage) {
+        throw new Error(errorMessage);
+      }
+
+      throw new Error("L'annotation n'a pas pu etre enregistree.");
     }
 
     const uploadedFileName = annotationFile?.name;
@@ -112,6 +226,22 @@ export function DocumentCollaborationPanel({ directions, document }: DocumentCol
         : "Annotation enregistree avec succes."
     );
     router.refresh();
+  }
+
+  async function handleAnnotationSubmit() {
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await submitAnnotation();
+    } catch (error) {
+      setErrorMessage(getDisplayableErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -186,17 +316,18 @@ export function DocumentCollaborationPanel({ directions, document }: DocumentCol
           <div className="space-y-3">
             <label className="space-y-1.5 text-sm text-slate-700">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Direction annotatrice
+                {canChooseSourceDirection ? "Direction source de l'observation" : "Direction annotatrice"}
               </span>
               <select
                 value={annotationSourceDirectionId}
                 onChange={(event) => setAnnotationSourceDirectionId(event.target.value)}
                 className={inputClassName}
+                disabled={!canChooseSourceDirection || selectableAnnotationDirectionIds.length <= 1}
               >
                 <option value="" disabled>
                   Selectionner une direction
                 </option>
-                {Array.from(new Set([...document.receiverDirectionIds, ...document.copyDirectionIds])).map((directionId) => {
+                {selectableAnnotationDirectionIds.map((directionId) => {
                   const direction = directionLookup.get(directionId);
                   return (
                     <option key={directionId} value={directionId}>
@@ -206,6 +337,42 @@ export function DocumentCollaborationPanel({ directions, document }: DocumentCol
                 })}
               </select>
             </label>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                <p>
+                  <span className="font-semibold text-slate-900">Direction encodant l&apos;annotation:</span>{" "}
+                  {currentUser?.directionId
+                    ? (directionLookup.get(currentUser.directionId)
+                        ? formatStructureLabel(
+                            directionLookup.get(currentUser.directionId)?.code ?? "",
+                            directionLookup.get(currentUser.directionId)?.designation ?? ""
+                          )
+                        : currentUser.directionId)
+                    : "Non determinee"}
+                </p>
+              <p className="mt-1">
+                <span className="font-semibold text-slate-900">Direction source de l&apos;observation:</span>{" "}
+                {directionLookup.get(annotationSourceDirectionId)
+                  ? formatStructureLabel(
+                      directionLookup.get(annotationSourceDirectionId)?.code ?? "",
+                      directionLookup.get(annotationSourceDirectionId)?.designation ?? ""
+                    )
+                  : annotationSourceDirectionId || "A selectionner"}
+              </p>
+              {!canChooseSourceDirection ? (
+                <p className="mt-1 text-slate-500">
+                  Dans ce contexte, la direction annotatrice est verrouillee sur votre propre direction.
+                </p>
+              ) : isEmitterRecorder ? (
+                <p className="mt-1 text-slate-500">
+                  Seules les directions destinataires ou en copie liees a ce document peuvent etre selectionnees.
+                </p>
+              ) : null}
+            </div>
+            {!canAnnotate ? (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                Votre direction n'est pas autorisee a annoter ce document.
+              </p>
+            ) : null}
             <label className="space-y-1.5 text-sm text-slate-700">
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Commentaire</span>
               <textarea
@@ -233,19 +400,11 @@ export function DocumentCollaborationPanel({ directions, document }: DocumentCol
             </label>
             <button
               type="button"
-              disabled={isPending || !annotationSourceDirectionId || (!annotationContent.trim() && !annotationFile)}
-              onClick={() =>
-                startTransition(async () => {
-                  try {
-                    await submitAnnotation();
-                  } catch (error) {
-                    setErrorMessage(error instanceof Error ? error.message : "Operation impossible.");
-                  }
-                })
-              }
+              disabled={isSubmitting || !canAnnotate || !annotationSourceDirectionId || (!annotationContent.trim() && !annotationFile)}
+              onClick={() => void handleAnnotationSubmit()}
               className="h-9 rounded-md bg-brand-navy px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isPending ? "Traitement..." : "Enregistrer l'annotation"}
+              {isSubmitting ? "Traitement..." : "Enregistrer l'annotation"}
             </button>
           </div>
         </div>

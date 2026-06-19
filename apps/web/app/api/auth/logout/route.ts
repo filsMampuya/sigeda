@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { authCookieName, authStateCookieName } from "@/lib/auth";
+import { authCookieName, authIdCookieName, authRefreshCookieName, authStateCookieName } from "@/lib/auth";
 import { buildKeycloakLogoutUrl } from "@/lib/keycloak";
 
 function isSecureRequest(request: Request) {
@@ -16,7 +16,7 @@ function isSecureRequest(request: Request) {
 export function GET(request: Request) {
   const response = NextResponse.redirect(buildKeycloakLogoutUrl(request));
 
-  for (const name of [authCookieName, authStateCookieName]) {
+  for (const name of [authCookieName, authRefreshCookieName, authIdCookieName, authStateCookieName]) {
     response.cookies.set(name, "", {
       httpOnly: true,
       secure: isSecureRequest(request),

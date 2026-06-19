@@ -70,6 +70,7 @@ type SearchableDocument = {
     folder: {
       id: string;
       bureauId: string;
+      ownerDirectionId: string;
       partnerDirectionId: string;
       status: "ACTIVE" | "ARCHIVED";
     };
@@ -130,8 +131,8 @@ export class SearchService {
     query: SearchDocumentsQueryDto,
     principal: AuthenticatedPrincipal
   ): Promise<PaginatedResult<DocumentEntity>> {
-    const { documents, filters } = await this.buildSearchContext(query, principal);
-    const items = sortDocuments(documents.map(mapSearchDocument), filters.sortBy, filters.sortDir);
+    const { documents, filters, currentDirectionId } = await this.buildSearchContext(query, principal);
+    const items = sortDocuments(documents.map((document) => mapSearchDocument(document, currentDirectionId)), filters.sortBy, filters.sortDir);
     const page = Math.max(query.page ?? 1, 1);
     const pageSize = Math.max(query.pageSize ?? 10, 1);
     const total = items.length;
@@ -335,6 +336,7 @@ export class SearchService {
               select: {
                 id: true,
                 bureauId: true,
+                ownerDirectionId: true,
                 partnerDirectionId: true,
                 status: true
               }
@@ -345,10 +347,16 @@ export class SearchService {
       orderBy: { updatedAt: "desc" }
     })) as unknown as SearchableDocument[];
 
+    const userDirectionId = user ? resolveDepartmentScope(user.department).directionId ?? undefined : undefined;
     const scoped = documents.filter((document) => canAccessDocument(document, user));
-    const filtered = scoped.filter((document) => matchesDerivedFilters(document, filters));
+    const filtered = scoped.filter((document) =>
+      matchesDerivedFilters(document, {
+        ...filters,
+        currentDirectionId: userDirectionId
+      })
+    );
 
-    return { documents: filtered, filters };
+    return { documents: filtered, filters, currentDirectionId: userDirectionId };
   }
 }
 
@@ -360,6 +368,7 @@ function parseFilters(query: SearchDocumentsQueryDto) {
     emitterDirectionId: normalizeString(query.emitterDirectionId ?? query.directionId),
     receiverDirectionId: normalizeString(query.receiverDirectionId),
     copyDirectionId: normalizeString(query.copyDirectionId),
+    directionScope: query.directionScope ?? "all",
     bureauId: normalizeString(query.bureauId),
     folderId: normalizeString(query.folderId),
     serviceId: normalizeString(query.serviceId),
@@ -392,34 +401,42 @@ function canAccessDocument(document: SearchableDocument, user: UserWithScope | n
   }
 
   const userScope = resolveDepartmentScope(user.department);
-  const authorScope = resolveDepartmentScope(document.author?.department ?? null);
-  const archiveBureauIds = uniqueStrings(document.archives.map((archive) => archive.bureauId));
-  const emitterDirectionId = document.emitterDirectionId;
+  const userDirectionId = userScope.directionId;
 
-  if (user.role.code === "DIRECTEUR") {
-    return userScope.directionId === emitterDirectionId;
+  if (!userDirectionId) {
+    return false;
   }
 
-  if (user.role.code === "MANAGER") {
-    return Boolean(userScope.serviceId && userScope.serviceId === authorScope.serviceId);
-  }
+  const recipientDirectionIds = uniqueStrings(document.recipients.map((recipient) => recipient.directionId));
 
-  return Boolean(userScope.bureauId && archiveBureauIds.includes(userScope.bureauId));
+  return document.emitterDirectionId === userDirectionId || recipientDirectionIds.includes(userDirectionId);
 }
 
 function matchesDerivedFilters(
   document: SearchableDocument,
-  filters: ReturnType<typeof parseFilters>
+  filters: ReturnType<typeof parseFilters> & {
+    currentDirectionId?: string;
+  }
 ) {
   const authorScope = resolveDepartmentScope(document.author?.department ?? null);
   const archiveBureauIds = uniqueStrings(document.archives.map((archive) => archive.bureauId));
   const period = resolveDateRange(filters.periodPreset, filters.dateFrom, filters.dateTo);
   const targetDate = filters.dateField === "createdAt" ? document.createdAt.toISOString() : document.updatedAt.toISOString();
   const matchingAnnotations = getMatchingAnnotations(document, filters);
+  const recipientDirectionIds = uniqueStrings(
+    document.recipients
+      .filter((recipient) => recipient.kind === "RECEIVER")
+      .map((recipient) => recipient.directionId)
+  );
+  const currentDirectionId = filters.currentDirectionId;
 
   return (
     (!filters.serviceId || authorScope.serviceId === filters.serviceId) &&
     (!filters.bureauId || archiveBureauIds.includes(filters.bureauId)) &&
+    (!filters.directionScope ||
+      filters.directionScope === "all" ||
+      (filters.directionScope === "emitted" && currentDirectionId === document.emitterDirectionId) ||
+      (filters.directionScope === "received" && Boolean(currentDirectionId && recipientDirectionIds.includes(currentDirectionId)))) &&
     (!filters.createdDate || matchesCreatedDate(document.createdAt, filters.createdDate)) &&
     matchesAnnotationState(matchingAnnotations, filters) &&
     matchesDateRange(targetDate, period)
@@ -490,7 +507,7 @@ function rankDirections(
   return Array.from(counts.values()).sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "fr"));
 }
 
-function mapSearchDocument(document: SearchableDocument): DocumentEntity {
+function mapSearchDocument(document: SearchableDocument, currentDirectionId?: string): DocumentEntity {
   const receiverDirectionIds = document.recipients
     .filter((recipient) => recipient.kind === "RECEIVER")
     .map((recipient) => recipient.directionId);
@@ -504,6 +521,28 @@ function mapSearchDocument(document: SearchableDocument): DocumentEntity {
     mimeType: attachment.mimeType,
     fileUrl: `/api/v1/attachments/${attachment.id}/download`
   }));
+  const currentDirectionMovement =
+    currentDirectionId === document.emitterDirectionId
+      ? "SORTIE"
+      : currentDirectionId && receiverDirectionIds.includes(currentDirectionId)
+        ? "ENTREE"
+        : currentDirectionId && copyDirectionIds.includes(currentDirectionId)
+          ? "ENTREE"
+          : undefined;
+  const isCurrentDirectionParticipant = Boolean(
+    currentDirectionId &&
+      (currentDirectionId === document.emitterDirectionId ||
+        receiverDirectionIds.includes(currentDirectionId) ||
+        copyDirectionIds.includes(currentDirectionId))
+  );
+  const currentDirectionArchives = currentDirectionId
+    ? document.archives.filter((archive) => archive.folder.ownerDirectionId === currentDirectionId)
+    : [];
+  const currentDirectionClassifiedArchives = currentDirectionArchives.filter((archive) => Boolean(archive.archivedAt));
+  const currentDirectionArchive = currentDirectionClassifiedArchives[0] ?? currentDirectionArchives[0];
+  const currentDirectionArchivedAt = currentDirectionClassifiedArchives
+    .map((archive) => archive.archivedAt.toISOString())
+    .sort((left, right) => Date.parse(right) - Date.parse(left))[0];
 
   return {
     id: document.id,
@@ -534,7 +573,7 @@ function mapSearchDocument(document: SearchableDocument): DocumentEntity {
     summary: document.summary ?? undefined,
     directionId: document.emitterDirectionId,
     serviceId: resolveDepartmentScope(document.author?.department ?? null).serviceId ?? undefined,
-    bureauId: document.archives[0]?.bureauId ?? undefined,
+    bureauId: currentDirectionArchive?.bureauId ?? document.archives[0]?.bureauId ?? undefined,
     authorId: document.author?.id,
     authorName:
       [document.author?.nom, document.author?.prenom].filter(Boolean).join(" ").trim() || undefined,
@@ -550,7 +589,7 @@ function mapSearchDocument(document: SearchableDocument): DocumentEntity {
     emitterDirectionId: document.emitterDirectionId,
     receiverDirectionIds,
     copyDirectionIds,
-    movementType: document.archives[0]?.movementType,
+    movementType: currentDirectionMovement ?? currentDirectionArchive?.movementType ?? document.archives[0]?.movementType,
     confidentialityLevel: document.confidentiality ?? undefined,
     status: document.status,
     keywords: [],
@@ -560,7 +599,10 @@ function mapSearchDocument(document: SearchableDocument): DocumentEntity {
     urlFileName: attachments[0]?.fileUrl,
     fileUrl: attachments[0]?.fileUrl,
     mimeType: attachments[0]?.mimeType,
-    archivedAt: document.archives[0]?.archivedAt.toISOString()
+    archivedAt: currentDirectionArchivedAt ?? currentDirectionArchive?.archivedAt.toISOString() ?? document.archives[0]?.archivedAt.toISOString(),
+    canClassify: Boolean(isCurrentDirectionParticipant && currentDirectionMovement && currentDirectionClassifiedArchives.length === 0),
+    currentDirectionMovement,
+    currentDirectionArchivedAt
   };
 }
 

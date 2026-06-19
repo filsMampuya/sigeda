@@ -1,7 +1,7 @@
 "use client";
 
-import type { Dispatch, ReactNode, SetStateAction } from "react";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import type { Dispatch, FormEvent, ReactNode, SetStateAction } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -19,23 +19,14 @@ import { confidentialityLevels, documentTypes } from "@sigeda/shared/constants";
 
 import { DocumentUploadStatus } from "@/components/documents/document-upload-status";
 import { Card } from "@/components/ui/card";
-import { getClientAuthToken } from "@/lib/client-auth-token";
+import { authorizedRequest, getDisplayableErrorMessage } from "@/lib/client-http";
 import { getPublicOnPremiseApiBaseUrl } from "@/lib/env";
 import { formatShortDate, formatStructureLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 type DocumentCreateFormProps = {
   directions: DepartementListItem[];
-  services: DepartementListItem[];
-  bureaux: DepartementListItem[];
-  users: User[];
   currentUser: AuthenticatedUser | null;
-};
-
-type EmitterScope = {
-  type: "Direction" | "Service" | "Bureau";
-  id: string;
-  label: string;
 };
 
 type CreatedDocumentSummary = {
@@ -45,14 +36,32 @@ type CreatedDocumentSummary = {
   title: string;
 };
 
+type SignerCandidateApiPayload = {
+  id: string;
+  email?: string;
+  matricule: string;
+  nom: string;
+  prenom: string;
+  isActive?: boolean;
+  role: {
+    code: string;
+    name: string;
+  };
+  directionId?: string | null;
+  serviceId?: string | null;
+  bureauId?: string | null;
+};
+
 type DirectionSelectionFieldProps = {
   directionLookup: Map<string, DepartementListItem>;
   emptyState: string;
+  helperText?: string;
   label: string;
   onRemove: (id: string) => void;
   onSearchChange: (value: string) => void;
   onSelect: (id: string) => void;
   options: DepartementListItem[];
+  readOnly?: boolean;
   searchValue: string;
   selectedIds: string[];
 };
@@ -79,9 +88,6 @@ const confidentialityToneMap: Record<(typeof confidentialityLevels)[number], str
 
 export function DocumentCreateForm({
   directions,
-  services,
-  bureaux,
-  users,
   currentUser
 }: DocumentCreateFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -98,8 +104,11 @@ export function DocumentCreateForm({
     useState<(typeof confidentialityLevels)[number]>("INTERNE");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [createdDocument, setCreatedDocument] = useState<CreatedDocumentSummary | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedEmitterDirectionId, setSelectedEmitterDirectionId] = useState(currentUser?.directionId ?? "");
+  const [signerCandidates, setSignerCandidates] = useState<User[]>([]);
+  const [signerLoadError, setSignerLoadError] = useState<string | null>(null);
+  const [isLoadingSigners, setIsLoadingSigners] = useState(false);
 
   const selectableDirections = useMemo(
     () => directions.filter((direction) => direction.type === "Direction" || direction.type === "Direction Generale"),
@@ -108,63 +117,28 @@ export function DocumentCreateForm({
   const currentDirection = selectableDirections.find((direction) => direction.id === currentUser?.directionId) ?? null;
   const selectedEmitterDirection =
     selectableDirections.find((direction) => direction.id === selectedEmitterDirectionId) ?? currentDirection ?? null;
-  const currentService = services.find((service) => service.id === currentUser?.serviceId) ?? null;
-  const currentBureau = bureaux.find((bureau) => bureau.id === currentUser?.bureauId) ?? null;
-  const emitterScope = useMemo<EmitterScope | null>(() => {
-    if (!selectedEmitterDirectionId || selectedEmitterDirectionId === currentUser?.directionId) {
-      if (currentBureau) {
-        return {
-          type: "Bureau",
-          id: currentBureau.id,
-          label: formatStructureLabel(currentBureau.code, currentBureau.designation)
-        };
-      }
-
-      if (currentService) {
-        return {
-          type: "Service",
-          id: currentService.id,
-          label: formatStructureLabel(currentService.code, currentService.designation)
-        };
-      }
-    }
-
-    if (selectedEmitterDirection) {
-      return {
-        type: "Direction",
-        id: selectedEmitterDirection.id,
-        label: formatStructureLabel(selectedEmitterDirection.code, selectedEmitterDirection.designation)
-      };
-    }
-
-    return null;
-  }, [currentBureau, currentService, currentUser?.directionId, selectedEmitterDirection, selectedEmitterDirectionId]);
-  const selectableSigners = useMemo(() => {
-    return users.filter((user) => {
-      if (user.isActive === false) {
-        return false;
-      }
-
-      if (!emitterScope) {
-        return true;
-      }
-
-      if (emitterScope.type === "Bureau") {
-        return user.bureauId === emitterScope.id;
-      }
-
-      if (emitterScope.type === "Service") {
-        return user.serviceId === emitterScope.id;
-      }
-
-      return user.directionId === emitterScope.id;
-    });
-  }, [emitterScope, users]);
-  const selectedSigners = useMemo(
-    () => selectedSignerIds.map((userId) => selectableSigners.find((user) => user.id === userId)).filter(Boolean),
-    [selectableSigners, selectedSignerIds]
-  );
   const emitterDirectionId = selectedEmitterDirectionId || currentUser?.directionId || "";
+  const isIncomingDocument = Boolean(currentUser?.directionId && emitterDirectionId && emitterDirectionId !== currentUser.directionId);
+  const selectableSigners = signerCandidates;
+  const lockedReceiverIds = isIncomingDocument && currentUser?.directionId ? [currentUser.directionId] : [];
+  const effectiveReceiverIds = isIncomingDocument ? lockedReceiverIds : selectedReceiverIds;
+  const signerSourceLabel = useMemo(() => {
+    if (!selectedEmitterDirection) {
+      return null;
+    }
+
+    if (selectedEmitterDirection.type === "Direction Generale") {
+      return selectedEmitterDirection.designation;
+    }
+
+    const parentGeneralDirection = selectableDirections.find(
+      (direction) => direction.id === selectedEmitterDirection.parentId && direction.type === "Direction Generale"
+    );
+
+    return parentGeneralDirection
+      ? `${selectedEmitterDirection.designation} + ${parentGeneralDirection.designation}`
+      : selectedEmitterDirection.designation;
+  }, [selectableDirections, selectedEmitterDirection]);
   const directionCandidates = useMemo(
     () => selectableDirections.filter((direction) => direction.id !== emitterDirectionId),
     [emitterDirectionId, selectableDirections]
@@ -207,6 +181,49 @@ export function DocumentCreateForm({
   }, [currentUser?.directionId, selectedEmitterDirectionId]);
 
   useEffect(() => {
+    if (!emitterDirectionId) {
+      setSignerCandidates([]);
+      setSignerLoadError(null);
+      setIsLoadingSigners(false);
+      return;
+    }
+
+    let isMounted = true;
+    setIsLoadingSigners(true);
+    setSignerLoadError(null);
+
+    authorizedRequest(`${apiBaseUrl}/documents/signer-candidates?emitterDirectionId=${encodeURIComponent(emitterDirectionId)}`, {
+      method: "GET"
+    })
+      .then(async (response) => {
+        const payload = (await response.json()) as SignerCandidateApiPayload[];
+
+        if (!isMounted) {
+          return;
+        }
+
+        setSignerCandidates(payload.map(mapSignerCandidateToUser));
+      })
+      .catch((error) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setSignerCandidates([]);
+        setSignerLoadError(getDisplayableErrorMessage(error));
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingSigners(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [apiBaseUrl, emitterDirectionId]);
+
+  useEffect(() => {
     const allowedIds = new Set(selectableSigners.map((user) => user.id));
     setSelectedSignerIds((current) => current.filter((userId) => allowedIds.has(userId)));
   }, [selectableSigners]);
@@ -224,6 +241,15 @@ export function DocumentCreateForm({
       return sanitized.length === current.length ? current : sanitized;
     });
   }, [directionCandidates]);
+
+  useEffect(() => {
+    if (!isIncomingDocument || !currentUser?.directionId) {
+      return;
+    }
+
+    setSelectedReceiverIds([currentUser.directionId]);
+    setReceiverSearch("");
+  }, [currentUser?.directionId, isIncomingDocument]);
 
   useEffect(() => {
     setSelectedReceiverIds((current) => current.filter((directionId) => !selectedCopyIds.includes(directionId)));
@@ -274,8 +300,7 @@ export function DocumentCreateForm({
   }
 
   async function handleSubmit(formData: FormData) {
-    const accessToken = await getClientAuthToken();
-    const normalizedReceivers = uniqueIds(selectedReceiverIds).filter((directionId) => directionId !== emitterDirectionId);
+    const normalizedReceivers = uniqueIds(effectiveReceiverIds).filter((directionId) => directionId !== emitterDirectionId);
     const normalizedCopies = uniqueIds(selectedCopyIds).filter(
       (directionId) => directionId !== emitterDirectionId && !normalizedReceivers.includes(directionId)
     );
@@ -295,10 +320,8 @@ export function DocumentCreateForm({
     payload.append("year", String(formData.get("year") ?? currentYear));
     payload.append("title", String(formData.get("title") ?? ""));
     payload.append("subject", String(formData.get("subject") ?? ""));
-    payload.append("description", String(formData.get("description") ?? ""));
     payload.append("summary", String(formData.get("summary") ?? ""));
     payload.append("type", String(formData.get("type") ?? ""));
-    payload.append("confidentialityLevel", String(formData.get("confidentialityLevel") ?? "INTERNE"));
     payload.append(
       "signers",
       JSON.stringify(
@@ -312,15 +335,6 @@ export function DocumentCreateForm({
 
             return {
               userId: signer.id,
-              fullName: signer.displayName || `${signer.personne.nom} ${signer.personne.prenom}`.trim(),
-              functionTitle: signer.profile.designation,
-              departmentId: emitterScope?.id,
-              departmentType:
-                emitterScope?.type === "Bureau"
-                  ? "BUREAU"
-                  : emitterScope?.type === "Service"
-                    ? "SERVICE"
-                    : "DIRECTION",
               signingOrder: index + 1
             };
           })
@@ -334,38 +348,11 @@ export function DocumentCreateForm({
 
     payload.append("receiverDirectionIds", JSON.stringify(normalizedReceivers));
     payload.append("copyDirectionIds", JSON.stringify(normalizedCopies));
-    payload.append(
-      "keywords",
-      JSON.stringify(
-        String(formData.get("keywords") ?? "")
-          .split(",")
-          .map((keyword) => keyword.trim())
-          .filter(Boolean)
-      )
-    );
 
-    const createResponse = await fetch(`${apiBaseUrl}/documents`, {
+    const createResponse = await authorizedRequest(`${apiBaseUrl}/documents`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`
-      },
       body: payload
     });
-
-    if (!createResponse.ok) {
-      let message = "La creation du document a echoue.";
-
-      try {
-        const errorBody = await createResponse.json();
-        if (typeof errorBody.message === "string") {
-          message = errorBody.message;
-        }
-      } catch {
-        // noop
-      }
-
-      throw new Error(message);
-    }
 
     const document = (await createResponse.json()) as {
       createdAt?: string;
@@ -384,19 +371,29 @@ export function DocumentCreateForm({
     });
   }
 
+  async function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await handleSubmit(new FormData(event.currentTarget));
+    } catch (error) {
+      setCreatedDocument(null);
+      setErrorMessage(getDisplayableErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <form
       ref={formRef}
-      action={(formData) =>
-        startTransition(async () => {
-          try {
-            await handleSubmit(formData);
-          } catch (error) {
-            setCreatedDocument(null);
-            setErrorMessage(error instanceof Error ? error.message : "Operation echouee.");
-          }
-        })
-      }
+      onSubmit={handleFormSubmit}
       className="space-y-4"
     >
       <Card className="space-y-4 p-5">
@@ -422,7 +419,7 @@ export function DocumentCreateForm({
               value={selectedEmitterDirection ? selectedEmitterDirection.designation : "A definir"}
               icon={Building2}
             />
-            <SummaryTile label="Destinataires" value={String(selectedReceiverIds.length)} icon={Users} />
+            <SummaryTile label="Destinataires" value={String(effectiveReceiverIds.length)} icon={Users} />
             <SummaryTile label="Signataires" value={String(selectedSignerIds.length)} icon={UserSquare2} />
           </div>
         </div>
@@ -528,9 +525,15 @@ export function DocumentCreateForm({
                 <p className="mt-2 text-xs text-slate-500">
                   Pre-remplie selon votre compte et modifiable directement dans le formulaire.
                 </p>
-                {emitterScope ? (
+                {signerSourceLabel ? (
                   <div className="mt-3 rounded-lg bg-white px-3 py-2 text-xs text-slate-600">
-                    <span className="font-medium text-slate-900">Perimetre signataires:</span> {emitterScope.type} {emitterScope.label}
+                    <span className="font-medium text-slate-900">Source signataires:</span> {signerSourceLabel}
+                  </div>
+                ) : null}
+                {isIncomingDocument && currentDirection ? (
+                  <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    Document entrant: la direction destinataire est verrouillee sur{" "}
+                    {formatStructureLabel(currentDirection.code, currentDirection.designation)}.
                   </div>
                 ) : null}
               </div>
@@ -539,12 +542,18 @@ export function DocumentCreateForm({
                 label="Destinataires"
                 searchValue={receiverSearch}
                 onSearchChange={setReceiverSearch}
-                selectedIds={selectedReceiverIds}
+                selectedIds={effectiveReceiverIds}
                 onSelect={(id) => toggleSelection(setSelectedReceiverIds, id)}
                 onRemove={(id) => setSelectedReceiverIds((current) => current.filter((value) => value !== id))}
                 options={filteredReceiverOptions}
                 directionLookup={directionLookup}
-                emptyState="Aucune direction disponible."
+                emptyState={isIncomingDocument ? "La direction destinataire est fixee par votre perimetre." : "Aucune direction disponible."}
+                readOnly={isIncomingDocument}
+                helperText={
+                  isIncomingDocument
+                    ? "Le document est encode comme document recu. La destination reste votre direction."
+                    : undefined
+                }
               />
 
               <DirectionSelectionField
@@ -563,6 +572,11 @@ export function DocumentCreateForm({
 
           <Card className="space-y-4 p-4">
             <SectionHeader icon={UserSquare2} title="Signataires" />
+            {signerLoadError ? (
+              <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                {signerLoadError}
+              </div>
+            ) : null}
             <SignerSelectionField
               users={filteredSignerOptions}
               selectedIds={selectedSignerIds}
@@ -572,7 +586,11 @@ export function DocumentCreateForm({
               searchValue={signerSearch}
               onSearchChange={setSignerSearch}
               userLookup={signerLookup}
-              emptyState="Aucun signataire disponible dans le perimetre emetteur."
+              emptyState={
+                isLoadingSigners
+                  ? "Chargement des signataires..."
+                  : "Aucun signataire disponible pour cette direction."
+              }
             />
           </Card>
         </div>
@@ -584,12 +602,10 @@ export function DocumentCreateForm({
               <FieldShell label="Resume">
                 <textarea name="summary" className={textareaClassName} placeholder="Synthese pour l'enregistrement rapide" />
               </FieldShell>
-              <FieldShell label="Description">
-                <textarea name="description" className={textareaClassName} placeholder="Contexte ou commentaire de traitement" />
-              </FieldShell>
-              <FieldShell label="Mots-cles">
-                <input name="keywords" className={inputClassName} placeholder="Finances, dossier, reunion" />
-              </FieldShell>
+              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                Le resume est conserve des la creation. Les enrichissements complementaires du contenu seront ajoutes
+                dans une passe metier dediee apres stabilisation de la demonstration.
+              </div>
             </div>
           </Card>
 
@@ -623,16 +639,16 @@ export function DocumentCreateForm({
             <SectionHeader icon={Shield} title="Controle avant validation" />
             <div className="space-y-2 text-sm text-slate-600">
               <ChecklistItem complete={Boolean(emitterDirectionId)}>Direction emettrice resolue</ChecklistItem>
-              <ChecklistItem complete={selectedReceiverIds.length > 0}>Au moins un destinataire selectionne</ChecklistItem>
+              <ChecklistItem complete={effectiveReceiverIds.length > 0}>Au moins un destinataire selectionne</ChecklistItem>
               <ChecklistItem complete={selectedSignerIds.length > 0}>Au moins un signataire selectionne</ChecklistItem>
               <ChecklistItem complete={Boolean(selectedFileName)}>Fichier joint</ChecklistItem>
             </div>
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isSubmitting}
               className="h-9 w-full rounded-md bg-brand-navy px-4 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isPending ? "Traitement..." : "Creer le document"}
+              {isSubmitting ? "Traitement..." : "Creer le document"}
             </button>
           </Card>
         </div>
@@ -711,11 +727,13 @@ function FieldShell({
 function DirectionSelectionField({
   directionLookup,
   emptyState,
+  helperText,
   label,
   onRemove,
   onSearchChange,
   onSelect,
   options,
+  readOnly,
   searchValue,
   selectedIds
 }: DirectionSelectionFieldProps) {
@@ -739,6 +757,7 @@ function DirectionSelectionField({
           onChange={(event) => onSearchChange(event.target.value)}
           className={cn(inputClassName, "pl-9")}
           placeholder={`Rechercher une direction`}
+          disabled={readOnly}
         />
       </div>
 
@@ -756,6 +775,7 @@ function DirectionSelectionField({
                 key={id}
                 type="button"
                 onClick={() => onRemove(id)}
+                disabled={readOnly}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700"
               >
                 <span>{formatStructureLabel(direction.code, direction.designation)}</span>
@@ -778,9 +798,11 @@ function DirectionSelectionField({
                 key={direction.id}
                 type="button"
                 onClick={() => onSelect(direction.id)}
+                disabled={readOnly}
                 className={cn(
                   "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition",
-                  selected ? "bg-brand-navy text-white" : "bg-white text-slate-700 hover:bg-slate-100"
+                  selected ? "bg-brand-navy text-white" : "bg-white text-slate-700 hover:bg-slate-100",
+                  readOnly ? "cursor-not-allowed opacity-70" : undefined
                 )}
               >
                 <span>{formatStructureLabel(direction.code, direction.designation)}</span>
@@ -792,6 +814,8 @@ function DirectionSelectionField({
           <p className="px-2 py-3 text-xs text-slate-500">{emptyState}</p>
         )}
       </div>
+
+      {helperText ? <p className="text-xs text-slate-500">{helperText}</p> : null}
     </div>
   );
 }
@@ -955,6 +979,32 @@ function matchesDirectionSearch(direction: DepartementListItem, search: string) 
     direction.code.toLowerCase().includes(normalized) ||
     direction.designation.toLowerCase().includes(normalized)
   );
+}
+
+function mapSignerCandidateToUser(candidate: SignerCandidateApiPayload): User {
+  return {
+    id: candidate.id,
+    email: candidate.email,
+    role: candidate.role.code as User["role"],
+    isActive: candidate.isActive ?? true,
+    updatedAt: Date.now(),
+    personne: {
+      nom: candidate.nom,
+      prenom: candidate.prenom
+    },
+    profile: {
+      code: candidate.role.code,
+      designation: candidate.role.name
+    },
+    matricule: candidate.matricule,
+    bureau: null,
+    dateCreation: Date.now(),
+    dateDerniereModification: Date.now(),
+    directionId: candidate.directionId ?? null,
+    serviceId: candidate.serviceId ?? null,
+    bureauId: candidate.bureauId ?? null,
+    displayName: [candidate.nom, candidate.prenom].filter(Boolean).join(" ").trim()
+  };
 }
 
 function matchesSignerSearch(user: User, search: string) {

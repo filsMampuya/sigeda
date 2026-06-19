@@ -36,6 +36,8 @@ Ce dossier permet a un nouveau developpeur, a un responsable metier, a un audite
   [vue-technique.md](./vue-technique.md)
 - Guide de prise en main :
   [prise-en-main-rapide.md](./prise-en-main-rapide.md)
+- Guide de demonstration et recette :
+  [../parcours-demo-sigeda.md](../parcours-demo-sigeda.md)
 
 ## Doctrine cle a retenir
 

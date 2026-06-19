@@ -7,12 +7,13 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Res,
   Req,
   UploadedFile,
   UseGuards,
   UseInterceptors
 } from "@nestjs/common";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CurrentUser } from "../../shared/current-user.decorator.js";
 import type { AuthenticatedPrincipal } from "../auth/auth.types.js";
@@ -20,6 +21,7 @@ import { AuthGuard } from "../auth/auth.guard.js";
 import { Roles } from "../auth/roles.decorator.js";
 import { RolesGuard } from "../auth/roles.guard.js";
 import { CreateDocumentAnnotationDto } from "./dto/create-document-annotation.dto.js";
+import { ClassifyDocumentDto } from "./dto/classify-document.dto.js";
 import { CreateDocumentDto } from "./dto/create-document.dto.js";
 import { CreateDocumentVersionDto } from "./dto/create-document-version.dto.js";
 import { DocumentsService } from "./documents.service.js";
@@ -48,6 +50,15 @@ export class DocumentsController {
   @Get()
   list() {
     return this.documents.list();
+  }
+
+  @Get("signer-candidates")
+  @Roles("ADMIN", "DIRECTEUR_GENERAL", "DIRECTEUR", "MANAGER", "AGENT")
+  signerCandidates(
+    @Query("emitterDirectionId") emitterDirectionId: string | undefined,
+    @CurrentUser() principal: AuthenticatedPrincipal
+  ) {
+    return this.documents.listSignerCandidates(principal, emitterDirectionId);
   }
 
   @Get(":id")
@@ -126,13 +137,37 @@ export class DocumentsController {
     return this.documents.getDocumentAnnotationAccessPayload(documentId, annotationId, principal, request, disposition);
   }
 
+  @Get(":documentId/annotations/:annotationId/download")
+  async downloadAnnotationFile(
+    @Param("documentId", new ParseUUIDPipe()) documentId: string,
+    @Param("annotationId", new ParseUUIDPipe()) annotationId: string,
+    @Query("disposition") disposition: "view" | "download" | undefined,
+    @CurrentUser() principal: AuthenticatedPrincipal,
+    @Req() request: Request,
+    @Res() response: Response
+  ) {
+    const accessMode = disposition === "view" ? "view" : "download";
+    const payload = await this.documents.getDocumentAnnotationDownloadPayload(
+      documentId,
+      annotationId,
+      principal,
+      request,
+      accessMode
+    );
+
+    response.setHeader("Content-Type", payload.mimeType);
+    response.setHeader("Content-Disposition", `${accessMode === "download" ? "attachment" : "inline"}; filename="${payload.fileName}"`);
+    payload.stream.pipe(response);
+  }
+
   @Post(":id/classify")
   @Roles("ADMIN", "DIRECTEUR_GENERAL", "DIRECTEUR", "MANAGER", "AGENT")
   classify(
     @Param("id", new ParseUUIDPipe()) id: string,
+    @Body() body: ClassifyDocumentDto,
     @CurrentUser() principal: AuthenticatedPrincipal
   ) {
-    return this.documents.classify(id, principal);
+    return this.documents.classify(id, principal, body);
   }
 
   @Post(":id/versions")

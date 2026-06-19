@@ -24,6 +24,7 @@ type DocumentsPageProps = {
     emitterDirectionId?: string;
     receiverDirectionId?: string;
     copyDirectionId?: string;
+    directionScope?: "all" | "emitted" | "received";
     serviceId?: string;
     bureauId?: string;
     folderId?: string;
@@ -77,6 +78,10 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
 
   if (searchParams?.copyDirectionId) {
     params.set("copyDirectionId", searchParams.copyDirectionId);
+  }
+
+  if (searchParams?.directionScope) {
+    params.set("directionScope", searchParams.directionScope);
   }
 
   if (searchParams?.serviceId) {
@@ -264,6 +269,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
         emitterDirectionId={emitterDirectionId}
         receiverDirectionId={searchParams?.receiverDirectionId}
         copyDirectionId={searchParams?.copyDirectionId}
+        directionScope={searchParams?.directionScope}
         serviceId={searchParams?.serviceId}
         bureauId={searchParams?.bureauId}
         folderId={searchParams?.folderId}

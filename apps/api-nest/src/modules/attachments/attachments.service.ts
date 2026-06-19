@@ -41,13 +41,8 @@ type AttachmentRecord = {
     id: string;
     reference: string;
     emitterDirectionId: string;
-    author: {
-      id: string;
-      department: DepartmentNode;
-    };
-    archives: Array<{
-      bureauId: string;
-      movementType: "ENTREE" | "SORTIE";
+    recipients: Array<{
+      directionId: string;
     }>;
   };
 };
@@ -55,6 +50,7 @@ type AttachmentRecord = {
 type DocumentAnnotationRecord = {
   id: string;
   documentId: string;
+  sourceDirectionId: string;
   bucket: string | null;
   objectKey: string | null;
   fileName: string | null;
@@ -204,6 +200,15 @@ export class AttachmentsService {
   }
 
   async getDownloadPayload(id: string, principal: AuthenticatedPrincipal, request: RequestLike) {
+    return this.getAttachmentStreamPayload(id, principal, request, "download");
+  }
+
+  async getAttachmentStreamPayload(
+    id: string,
+    principal: AuthenticatedPrincipal,
+    request: RequestLike,
+    disposition: "view" | "download" = "download"
+  ) {
     const { attachment, user } = await this.resolveAccessibleAttachment(id, principal);
     await this.ensureBucket();
 
@@ -216,7 +221,7 @@ export class AttachmentsService {
     }
 
     await this.logFileAudit({
-      action: "DOWNLOAD_FILE",
+      action: disposition === "download" ? "DOWNLOAD_FILE" : "VIEW_FILE",
       attachment,
       userId: user.id,
       userName: buildUserName(user),
@@ -284,6 +289,56 @@ export class AttachmentsService {
     }
   }
 
+  async getDocumentAnnotationDownloadPayload(
+    annotationId: string,
+    principal: AuthenticatedPrincipal,
+    request: RequestLike,
+    disposition: "view" | "download" = "download"
+  ) {
+    const { annotation, user } = await this.resolveAccessibleDocumentAnnotation(annotationId, principal);
+
+    if (!annotation.bucket || !annotation.objectKey || !annotation.fileName || !annotation.mimeType) {
+      throw new NotFoundException("Aucun fichier n'est associe a cette annotation.");
+    }
+
+    await this.ensureBucket();
+
+    let stream: Readable;
+
+    try {
+      stream = (await this.client.getObject(annotation.bucket, annotation.objectKey)) as Readable;
+    } catch (error) {
+      throw new InternalServerErrorException(`Unable to open annotation attachment from MinIO: ${String(error)}`);
+    }
+
+    await this.prisma.auditLog.create({
+      data: {
+        userId: user.id,
+        action: disposition === "download" ? "DOWNLOAD_FILE" : "VIEW_FILE",
+        entityType: "DOCUMENT_ANNOTATION",
+        entityId: annotation.id,
+        ipAddress: extractIpAddress(request),
+        userAgent: request.headers["user-agent"] ?? null,
+        metadata: {
+          description:
+            disposition === "download"
+              ? `Telechargement du fichier ${annotation.fileName}`
+              : `Consultation du fichier ${annotation.fileName}`,
+          userName: buildUserName(user),
+          email: user.email,
+          documentId: annotation.documentId,
+          fileName: annotation.fileName
+        }
+      }
+    });
+
+    return {
+      fileName: annotation.fileName,
+      mimeType: annotation.mimeType,
+      stream
+    };
+  }
+
   private async resolveAccessibleAttachment(id: string, principal: AuthenticatedPrincipal) {
     const [attachment, user] = await Promise.all([
       this.prisma.attachment.findUnique({
@@ -304,10 +359,9 @@ export class AttachmentsService {
                   }
                 }
               },
-              archives: {
+              recipients: {
                 select: {
-                  bureauId: true,
-                  movementType: true
+                  directionId: true
                 }
               }
             }
@@ -478,18 +532,16 @@ function canAccessDocumentAttachment(user: ScopedUser, attachment: AttachmentRec
   }
 
   const userScope = resolveDepartmentScope(user.department);
-  const authorScope = resolveDepartmentScope(attachment.document.author.department);
-  const archiveBureauIds = uniqueStrings(attachment.document.archives.map((archive) => archive.bureauId));
+  const userDirectionId = userScope.directionId;
 
-  if (user.role.code === "DIRECTEUR") {
-    return userScope.directionId === attachment.document.emitterDirectionId;
+  if (!userDirectionId) {
+    return false;
   }
 
-  if (user.role.code === "MANAGER") {
-    return Boolean(userScope.serviceId && userScope.serviceId === authorScope.serviceId);
-  }
-
-  return Boolean(userScope.bureauId && archiveBureauIds.includes(userScope.bureauId));
+  return (
+    attachment.document.emitterDirectionId === userDirectionId ||
+    attachment.document.recipients.some((recipient) => recipient.directionId === userDirectionId)
+  );
 }
 
 function buildUserName(user: ScopedUser) {
@@ -532,18 +584,17 @@ function canAccessDocumentAnnotation(user: ScopedUser, annotation: DocumentAnnot
   }
 
   const userScope = resolveDepartmentScope(user.department);
+  const userDirectionId = userScope.directionId;
 
-  if (!userScope.directionId) {
+  if (!userDirectionId) {
     return false;
   }
 
-  return (
-    annotation.document.emitterDirectionId === userScope.directionId ||
-    annotation.document.recipients.some((recipient) => recipient.directionId === userScope.directionId) ||
-    annotation.document.archives.some(
-      (archive) => archive.folder.ownerDirectionId === userScope.directionId || archive.bureauId === userScope.bureauId
-    )
-  );
+  if (annotation.document.emitterDirectionId === userDirectionId) {
+    return true;
+  }
+
+  return annotation.sourceDirectionId === userDirectionId;
 }
 
 type RequestLike = {

@@ -445,7 +445,6 @@ export interface ArchiveFolder {
 }
 
 export interface ArchiveFolderListItem extends ArchiveFolder {
-  section?: MovementType;
   ownerDirectionCode?: string;
   ownerDirectionName?: string;
   partnerDirectionCode?: string;
@@ -455,6 +454,9 @@ export interface ArchiveFolderListItem extends ArchiveFolder {
   accessibleBureauCodes?: string[];
   accessibleBureauNames?: string[];
   archiveCount: number;
+  entryArchiveCount: number;
+  outputArchiveCount: number;
+  sectionsUsed: "AUCUNE" | "ENTREE" | "SORTIE" | "ENTREE_SORTIE";
   latestArchivedAt?: string;
 }
 

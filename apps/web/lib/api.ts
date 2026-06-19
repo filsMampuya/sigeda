@@ -20,7 +20,7 @@ import type {
   User
 } from "@sigeda/shared/types";
 
-import { getServerAuthToken } from "@/lib/auth";
+import { getValidServerAuthToken } from "@/lib/server-auth";
 import { getServerApiBaseUrl, getServerOnPremiseApiBaseUrl } from "@/lib/env";
 
 export type DashboardStats = {
@@ -82,15 +82,23 @@ async function fetchOnPremiseApi<T>(path: string): Promise<T | null> {
 
 async function fetchApiFromBase<T>(baseUrl: string, path: string): Promise<T | null> {
   try {
-    const authToken = getServerAuthToken();
-    const response = await fetch(`${baseUrl}${path}`, {
-      headers: authToken
-        ? {
-            Authorization: `Bearer ${authToken}`
-          }
-        : undefined,
-      cache: "no-store"
-    });
+    async function execute(forceRefresh = false) {
+      const authToken = await getValidServerAuthToken(forceRefresh);
+      return fetch(`${baseUrl}${path}`, {
+        headers: authToken
+          ? {
+              Authorization: `Bearer ${authToken}`
+            }
+          : undefined,
+        cache: "no-store"
+      });
+    }
+
+    let response = await execute(false);
+
+    if (response.status === 401) {
+      response = await execute(true);
+    }
 
     if (!response.ok) {
       return null;
@@ -111,16 +119,24 @@ async function postOnPremiseApi<TInput, TOutput>(path: string, body: TInput): Pr
 }
 
 async function postApiToBase<TInput, TOutput>(baseUrl: string, path: string, body: TInput): Promise<TOutput | null> {
-  const authToken = getServerAuthToken();
-  const response = await fetch(`${baseUrl}${path}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
-    },
-    body: JSON.stringify(body),
-    cache: "no-store"
-  });
+  async function execute(forceRefresh = false) {
+    const authToken = await getValidServerAuthToken(forceRefresh);
+    return fetch(`${baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      },
+      body: JSON.stringify(body),
+      cache: "no-store"
+    });
+  }
+
+  let response = await execute(false);
+
+  if (response.status === 401) {
+    response = await execute(true);
+  }
 
   if (!response.ok) {
     throw new ApiError(response.status, await getResponseMessage(response));

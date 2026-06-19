@@ -28,6 +28,8 @@ export default async function ArchiveFolderDetailsPage({ params }: ArchiveFolder
 
   const { folder, items } = payload;
   const generatedAt = new Date().toISOString();
+  const entryCount = items.filter((item) => item.movementType === "ENTREE").length;
+  const outputCount = items.filter((item) => item.movementType === "SORTIE").length;
 
   return (
     <div className="space-y-4 print:space-y-0">
@@ -70,10 +72,31 @@ export default async function ArchiveFolderDetailsPage({ params }: ArchiveFolder
             <span className="font-medium text-slate-900">Statut :</span> {folder.status}
           </p>
           <p>
+            <span className="font-medium text-slate-900">Section Entree :</span> {entryCount} document(s)
+          </p>
+          <p>
+            <span className="font-medium text-slate-900">Section Sortie :</span> {outputCount} document(s)
+          </p>
+          <p>
             <span className="font-medium text-slate-900">Genere le :</span> {formatShortDate(generatedAt)}
           </p>
         </div>
       </Card>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="border-[color:var(--border)] px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Total documents</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">{items.length}</p>
+        </Card>
+        <Card className="border-[color:var(--border)] px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Section Entree</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">{entryCount}</p>
+        </Card>
+        <Card className="border-[color:var(--border)] px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Section Sortie</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">{outputCount}</p>
+        </Card>
+      </div>
 
       <ArchiveFolderDocumentsTable rows={items} />
     </div>

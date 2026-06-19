@@ -22,9 +22,16 @@ export class AuthGuard implements CanActivate {
 
     const jwksUri = process.env.KEYCLOAK_JWKS_URI ?? `${issuer}/protocol/openid-connect/certs`;
     const jwks = createRemoteJWKSet(new URL(jwksUri));
-    const { payload } = await jwtVerify(header.slice("Bearer ".length), jwks, {
-      issuer
-    });
+    let payload: Awaited<ReturnType<typeof jwtVerify>>["payload"];
+
+    try {
+      ({ payload } = await jwtVerify(header.slice("Bearer ".length), jwks, {
+        issuer
+      }));
+    } catch {
+      throw new UnauthorizedException("Invalid or expired bearer token.");
+    }
+
     const tokenAudiences = Array.isArray(payload.aud) ? payload.aud : payload.aud ? [payload.aud] : [];
     const authorizedParty = typeof payload.azp === "string" ? payload.azp : undefined;
 

@@ -2,6 +2,30 @@
 
 Ce document centralise les commandes utiles pour lancer les differentes parties du projet.
 
+## Important - environnement de demonstration
+
+Pour la branche `annotation`, l'environnement de demonstration doit rester sans documents, sans annotations et sans archives documentaires prechargees.
+
+Consequences :
+
+- `npm run test:onprem` cree des documents techniques de verification ;
+- `npm run test:functional:onprem` cree des documents et des archives de recette ;
+- ces scripts ne doivent pas etre lances juste avant une demonstration metier si vous souhaitez conserver un jeu de donnees vierge.
+
+Preparation recommandee d'un environnement de demonstration propre :
+
+```bash
+npm run db:reset-demo
+docker compose -f infra/docker/docker-compose.yml up -d --force-recreate keycloak api-nest web nginx
+```
+
+Effet attendu :
+
+- organisation prechargee ;
+- utilisateurs de demonstration precharges ;
+- classeurs annuels precharges pour l'annee de demonstration ;
+- aucun contenu documentaire precharge.
+
 ## 1) Installation des dependances
 
 Depuis la racine du projet:

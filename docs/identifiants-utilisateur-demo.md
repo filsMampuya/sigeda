@@ -24,38 +24,69 @@ Document mis a jour le `2026-06-16` pour la pile on-premise active.
 
 | Usage | Email | Mot de passe | Rattachement |
 | --- | --- | --- | --- |
+| Directeur technique | `directeur.technique@sigeda.local` | `SigedaDirTech1!` | `Direction Technique` > `Service Technique` > `Bureau Technique` |
+| Directeur commercial | `directeur.commerciale@sigeda.local` | `SigedaDirCom1!` | `Direction Commerciale` > `Service Commercial` > `Bureau Commercial` |
+| Manager technique | `manager.technique@sigeda.local` | `SigedaMngTech1!` | `Direction Technique` > `Service Technique` > `Bureau Technique` |
+| Manager commercial | `manager.commercial@sigeda.local` | `SigedaMngCom1!` | `Direction Commerciale` > `Service Commercial` > `Bureau Commercial` |
+| Agent technique | `agent.technique@sigeda.local` | `SigedaAgtTech1!` | `Direction Technique` > `Service Technique` > `Bureau Technique` |
+| Agent commercial | `agent.commercial@sigeda.local` | `SigedaAgtCom1!` | `Direction Commerciale` > `Service Commercial` > `Bureau Commercial` |
 | Agent meme service, autre bureau | `agent.annexe@sigeda.local` | `SigedaAgt2!` | `Direction des Finances` > `Service Comptabilite` > `Bureau Comptable Annexe` |
 | Agent meme direction, autre service | `agent.treso@sigeda.local` | `SigedaAgt3!` | `Direction des Finances` > `Service Tresorerie Demo` > `Bureau Tresorerie Demo` |
+| Agent administratif | `agent.administratif@sigeda.local` | `SigedaAgtAdm1!` | `Direction Administrative` > `Service Administratif` > `Bureau Administratif` |
 
 ## Rattachement organisationnel des profils principaux
 
 | Email | Role | Direction | Service | Bureau |
 | --- | --- | --- | --- | --- |
-| `admin@sigeda.local` | `ADMIN` | `Direction des Finances` | `Service Comptabilite` | `Bureau du Cadre` |
-| `dg.demo@sigeda.local` | `DIRECTEUR_GENERAL` | `Direction Generale` | `Direction Generale` | `Bureau du Directeur General` |
+| `admin@sigeda.local` | `ADMIN` | `Direction Generale` | `-` | `Bureau du Directeur General` |
+| `dg.demo@sigeda.local` | `DIRECTEUR_GENERAL` | `Direction Generale` | `-` | `Bureau du Directeur General` |
 | `directeur.finance@sigeda.local` | `DIRECTEUR` | `Direction des Finances` | `Service Comptabilite` | `Bureau du Cadre` |
 | `manager.compta@sigeda.local` | `MANAGER` | `Direction des Finances` | `Service Comptabilite` | `Bureau du Cadre` |
 | `agent.cadre@sigeda.local` | `AGENT` | `Direction des Finances` | `Service Comptabilite` | `Bureau du Cadre` |
-| `auditeur.demo@sigeda.local` | `AUDITEUR` | `Direction Generale` | `Direction Generale` | `Bureau du Directeur General` |
+| `auditeur.demo@sigeda.local` | `AUDITEUR` | `Direction Generale` | `-` | `-` |
+
+## Organisation de demonstration preparee
+
+L'environnement de demonstration prepare automatiquement :
+
+- `Direction Generale`
+- `Direction Technique`
+- `Direction Commerciale`
+- `Direction des Finances`
+- `Direction Administrative`
+- leurs services et bureaux associes
+- les utilisateurs de demonstration par profil
+- les classeurs annuels actifs pour l'annee de demonstration
+
+Annee de demonstration par defaut :
+
+- `annee courante`
+
+Regle importante :
+
+- aucun document n'est precharge ;
+- aucune annotation n'est prechargee ;
+- aucune archive documentaire n'est prechargee ;
+- aucun historique documentaire n'est injecte automatiquement.
 
 ## Verification rapide du perimetre utilisateur
 
-Controle effectue le `2026-06-16` via `GET /api/v1/users?page=1&pageSize=100` :
+Controle attendu via `GET /api/v1/users?page=1&pageSize=100` apres initialisation :
 
 | Profil | Nombre d'utilisateurs visibles |
 | --- | ---: |
-| `ADMIN` | `100` |
-| `DIRECTEUR_GENERAL` | `100` |
-| `DIRECTEUR` | `29` |
-| `MANAGER` | `28` |
-| `AGENT` | `27` |
-| `AUDITEUR` | `100` |
+| `ADMIN` | `vision globale` |
+| `DIRECTEUR_GENERAL` | `vision globale` |
+| `DIRECTEUR` | `sa direction uniquement` |
+| `MANAGER` | `son service uniquement` |
+| `AGENT` | `son bureau uniquement` |
+| `AUDITEUR` | `vision globale en lecture` |
 
 Lecture attendue :
 
-- `DIRECTEUR` voit `agent.treso@sigeda.local`, car il couvre toute la direction.
-- `MANAGER` ne voit pas `agent.treso@sigeda.local`, car cet agent est dans un autre service.
-- `AGENT` ne voit ni `agent.annexe@sigeda.local` ni `agent.treso@sigeda.local`, car ils sont hors de son bureau.
+- `directeur.finance@sigeda.local` voit `agent.treso@sigeda.local`, car il couvre toute la direction des finances.
+- `manager.compta@sigeda.local` ne voit pas `agent.treso@sigeda.local`, car cet agent est dans un autre service.
+- `agent.cadre@sigeda.local` ne voit ni `agent.annexe@sigeda.local` ni `agent.treso@sigeda.local`, car ils sont hors de son bureau.
 
 ## Compte Keycloak d'administration
 
@@ -76,3 +107,4 @@ Lecture attendue :
 
 - L'ancien compte Firebase `agent.demo.20260606@sigeda.local / SigedaDemo@2026!` ne doit plus etre utilise.
 - Les comptes ci-dessus sont provisionnes dans Keycloak et en base PostgreSQL.
+- Regle metier appliquee pour la demonstration : tout utilisateur, quel que soit son profil, est rattache a un bureau.

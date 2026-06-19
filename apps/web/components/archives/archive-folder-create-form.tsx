@@ -6,7 +6,7 @@ import type { AuthenticatedUser, Departement } from "@sigeda/shared/types";
 
 import { Card } from "@/components/ui/card";
 import { FormField } from "@/components/ui/form-field";
-import { getClientAuthToken } from "@/lib/client-auth-token";
+import { authorizedRequest, getDisplayableErrorMessage } from "@/lib/client-http";
 import { getPublicOnPremiseApiBaseUrl } from "@/lib/env";
 import { formatStructureLabel } from "@/lib/format";
 
@@ -28,25 +28,18 @@ export function ArchiveFolderCreateForm({
   const currentYear = new Date().getFullYear();
 
   async function handleSubmit(formData: FormData) {
-    const accessToken = await getClientAuthToken();
     const payload = {
       year: Number.parseInt(String(formData.get("year") ?? currentYear), 10),
       partnerDirectionId: String(formData.get("partnerDirectionId") ?? "")
     };
 
-    const response = await fetch(`${apiBaseUrl}/folders`, {
+    await authorizedRequest(`${apiBaseUrl}/folders`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
     });
-
-    if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as { message?: string } | null;
-      throw new Error(body?.message ?? "Creation du classeur impossible.");
-    }
 
     setFeedback("Classeur annuel enregistre avec succes.");
     window.location.reload();
@@ -60,7 +53,7 @@ export function ArchiveFolderCreateForm({
           try {
             await handleSubmit(formData);
           } catch (error) {
-            setFeedback(error instanceof Error ? error.message : "Operation echouee.");
+            setFeedback(getDisplayableErrorMessage(error));
           }
         })
       }

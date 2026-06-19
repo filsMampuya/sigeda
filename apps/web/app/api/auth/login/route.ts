@@ -22,7 +22,7 @@ export function GET(request: Request) {
     secure: isSecureRequest(request),
     sameSite: "lax",
     path: "/",
-    maxAge: 10 * 60
+    maxAge: 30 * 60
   });
 
   return response;

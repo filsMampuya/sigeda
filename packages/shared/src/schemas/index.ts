@@ -417,6 +417,7 @@ export const archiveFolderSchema = z.object({
   directionId: z.string().min(1).optional(),
   partnerDirectionId: z.string().min(1),
   createdAt: z.string(),
+  updatedAt: z.string().optional(),
   status: z.enum(["ACTIVE", "ARCHIVED"])
 });
 

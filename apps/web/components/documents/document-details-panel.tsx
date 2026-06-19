@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Departement, DocumentEntity } from "@sigeda/shared/types";
+import type { AuthenticatedUser, Departement, DepartementListItem, DocumentEntity } from "@sigeda/shared/types";
 
 import { DocumentCollaborationPanel } from "@/components/documents/document-collaboration-panel";
 import { DocumentClassifyButton } from "@/components/documents/document-classify-button";
@@ -11,10 +11,16 @@ import { formatShortDate, formatStructureLabel } from "@/lib/format";
 
 export function DocumentDetailsPanel({
   directions,
-  document
+  services,
+  bureaux,
+  document,
+  currentUser
 }: {
   directions: Departement[];
+  services: DepartementListItem[];
+  bureaux: DepartementListItem[];
   document: DocumentEntity | null;
+  currentUser: AuthenticatedUser | null;
 }) {
   if (!document) {
     return (
@@ -31,6 +37,24 @@ export function DocumentDetailsPanel({
   const attachmentCount = document.attachments.length;
   const primaryAttachment = document.attachments[0];
   const annotationAttachmentCount = document.annotations?.filter((annotation) => Boolean(annotation.attachment)).length ?? 0;
+  const currentDirectionId = currentUser?.directionId ?? null;
+  const participantDirectionIds = new Set(
+    [document.emitterDirectionId, ...document.receiverDirectionIds, ...document.copyDirectionIds].filter(
+      (directionId): directionId is string => Boolean(directionId)
+    )
+  );
+  const hasClassifiedArchiveForCurrentDirection = Boolean(
+    currentDirectionId &&
+      document.archiveFolders?.some(
+        (archive) => archive.ownerDirectionId === currentDirectionId && Boolean(archive.archivedAt)
+      )
+  );
+  const showClassifyButton = Boolean(
+    currentDirectionId &&
+      participantDirectionIds.has(currentDirectionId) &&
+      document.currentDirectionMovement &&
+      !hasClassifiedArchiveForCurrentDirection
+  );
 
   return (
     <div className="space-y-6">
@@ -70,8 +94,14 @@ export function DocumentDetailsPanel({
           >
             Liste des documents
           </Link>
-          {document.canClassify ? (
-            <DocumentClassifyButton documentId={document.id} reference={document.numeroReference} />
+          {showClassifyButton ? (
+            <DocumentClassifyButton
+              bureaux={bureaux}
+              currentUser={currentUser}
+              documentId={document.id}
+              reference={document.numeroReference}
+              services={services}
+            />
           ) : null}
           <a
             href="#document-annotations"
@@ -162,7 +192,7 @@ export function DocumentDetailsPanel({
             <div>
               <dt className="font-medium text-slate-900">Actions documentaires</dt>
               <dd>
-                <DocumentFileActions attachmentId={primaryAttachment?.id} />
+                <DocumentFileActions attachmentId={primaryAttachment?.id} fileName={primaryAttachment?.name} />
               </dd>
             </div>
             <div>
@@ -334,7 +364,7 @@ export function DocumentDetailsPanel({
         </div>
       </details>
 
-      <DocumentCollaborationPanel directions={directions} document={document} />
+      <DocumentCollaborationPanel directions={directions} document={document} currentUser={currentUser} />
     </div>
   );
 }

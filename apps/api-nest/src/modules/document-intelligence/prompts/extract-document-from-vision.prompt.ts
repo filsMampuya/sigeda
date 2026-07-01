@@ -1,0 +1,33 @@
+export function buildVisionExtractionPrompt() {
+  return [
+    "Tu analyses visuellement un document administratif institutionnel de SIGEDA / Hotel des Monnaies.",
+    "Objectif : extraire uniquement les informations effectivement visibles dans l'image ou le PDF.",
+    "Contraintes :",
+    "- ne rien inventer ;",
+    "- si une information est absente ou incertaine, retourner une chaine vide ou un tableau vide ;",
+    "- distinguer strictement emetteur, destinataires et copies ;",
+    "- retourner exclusivement un JSON valide ;",
+    "- ne pas entourer le JSON par du texte ;",
+    '- extractionMode doit etre "vision" ;',
+    "- rawExtractedText doit rester vide si aucun OCR n'a ete utilise.",
+    "Regles metier HDM a respecter :",
+    "1. Reference : extraire la reference officielle visible.",
+    "2. Date : extraire la date reelle du document visible sur la page.",
+    "3. Titre : extraire le titre administratif officiel visible. Le titre est distinct de l'objet. En priorite, utiliser l'intitule principal du document tel que 'NOTE A LA DIRECTION ...', 'NOTE DE SERVICE ...', 'RAPPORT ...', 'LETTRE ...'. Si seul le type 'NOTE' est visible sans intitule complet, retourner 'NOTE'.",
+    "4. Objet : la mention 'Concerne' est prioritaire pour subject. Sinon utiliser 'Objet'. subject correspond au motif ou a la finalite du document, pas a son titre administratif.",
+    "5. Destinataire : identifier la direction ou la personne ciblee dans les zones d'adresse.",
+    "6. Signataires : relever les signataires visibles dans leur ordre visuel. S'il y a deux signataires, le 2e signataire doit correspondre au signataire de droite / autorite.",
+    "7. Direction emettrice : priorite 1 = direction ou service associe au 2e signataire quand il y a deux signataires ; priorite 2 = direction ou service associe au signataire unique ; priorite 3 = code de direction dans la reference ; priorite 4 = en-tete.",
+    "8. Copies : extraire les directions visibles apres 'C.I', 'C.I:' ou 'C.I.'.",
+    "9. Confidentialite : detecter Secret, Confidentiel, Tres confidentiel, Reserve, Strictement confidentiel.",
+    "10. La mention 'Direction de Coordination' doit etre interpretee comme 'Direction Generale'.",
+    "11. En cas de doute, laisser vide et reduire confidenceScore.",
+    "12. Pour receiverDirections et copyDirections, retourner uniquement le nom canonique de la direction. Ne pas conserver des suffixes comme 'de l'Hotel des Monnaies'.",
+    "13. Pour emitterDirection, retourner uniquement la direction canonique. Ne pas inclure de suffixe tel que 'a.i.'.",
+    "14. Pour signers, retourner un element par signataire. Ne jamais fusionner deux signataires dans une seule chaine.",
+    "15. Pour documentDate, privilegier la date officielle en haut a droite et non le tampon de reception.",
+    "16. Pour reference, privilegier la reference officielle en haut a droite et non le tampon.",
+    "17. Si le document contient a la fois un titre administratif et un objet, renseigner obligatoirement les deux champs distinctement.",
+    "Champs attendus : reference, title, subject, documentDate, emitterDirection, receiverDirections, copyDirections, signers, documentType, confidentialityLevel, summary, keywords, confidenceScore, fieldConfidence, extractionMode, rawExtractedText, rawVisionNotes."
+  ].join("\n");
+}

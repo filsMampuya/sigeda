@@ -1,12 +1,21 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import { AnnotationStatus, DepartmentType, RecipientKind, type User } from "@sigeda/database";
+import {
+  AnnotationStatus,
+  DepartmentType,
+  RecipientKind,
+  RecipientTargetKind,
+  UserDirectoryStatus,
+  type User
+} from "@sigeda/database";
 import type { AuthenticatedPrincipal } from "../auth/auth.types.js";
 import { PrismaService } from "../prisma/prisma.service.js";
 import { DocumentArchivesService } from "../document-archives/document-archives.service.js";
 import { AttachmentsService } from "../attachments/attachments.service.js";
 import { PhysicalArchivesService } from "../physical-archives/physical-archives.service.js";
+import { DocumentTypesService } from "../document-types/document-types.service.js";
 import { resolveDepartmentScope } from "../../shared/department-scope.js";
+import { buildRecipientTargetLabel, recipientMatchesScope } from "../../shared/document-recipient-targets.js";
 import type { CreateDocumentAnnotationDto } from "./dto/create-document-annotation.dto.js";
 import type { ClassifyDocumentDto } from "./dto/classify-document.dto.js";
 import type { CreateDocumentDto } from "./dto/create-document.dto.js";
@@ -39,6 +48,12 @@ type AuthorWithScope = User & {
   department: DepartmentNode;
 };
 
+type ActiveAuthorWithScope = AuthorWithScope & {
+  email: string;
+  matricule: string;
+  keycloakId: string;
+};
+
 type SignerRecordInput = {
   userId?: string;
   fullName: string;
@@ -46,6 +61,12 @@ type SignerRecordInput = {
   departmentId: string;
   departmentType: DepartmentType;
   signingOrder?: number;
+};
+
+type RecipientTargetInput = {
+  targetKind: RecipientTargetKind;
+  targetDepartmentId?: string;
+  targetUserId?: string;
 };
 
 type EmitterScope = {
@@ -70,14 +91,22 @@ export class DocumentsService {
     private readonly prisma: PrismaService,
     private readonly archives: DocumentArchivesService,
     private readonly attachments: AttachmentsService,
-    private readonly physicalArchives: PhysicalArchivesService
+    private readonly physicalArchives: PhysicalArchivesService,
+    private readonly documentTypes: DocumentTypesService
   ) {}
 
   async list() {
     const documents = await this.prisma.document.findMany({
       include: {
         emitterDirection: true,
-        recipients: { include: { direction: true } },
+        documentType: true,
+        recipients: {
+          include: {
+            direction: true,
+            targetDepartment: true,
+            targetUser: true
+          }
+        },
         attachments: true,
         signers: {
           orderBy: [{ signingOrder: "asc" }, { createdAt: "asc" }]
@@ -100,7 +129,7 @@ export class DocumentsService {
     const author = await this.resolveAuthenticatedAuthor(principal);
     const authorScope = resolveEmitterScope(author);
     const emitterDirection = await this.resolveEmitterDirection(author, requestedEmitterDirectionId, authorScope);
-    const signerUsers = await this.findEligibleSignerUsersForEmitter(emitterDirection);
+    const signerUsers = await this.findEligibleSignerUsersForEmitter(emitterDirection, undefined, false);
 
     return signerUsers.map((user) => {
       const scope = resolveDepartmentScope(user.department);
@@ -214,9 +243,11 @@ export class DocumentsService {
         summary: getOptionalString(input.summary),
         type,
         confidentialityLevel: getOptionalString(input.confidentialityLevel),
+        folderId: getOptionalString(input.folderId),
         emitterDirectionId: getOptionalString(input.emitterDirectionId) ?? undefined,
         receiverDirectionIds: getStringArray(input.receiverDirectionIds),
         copyDirectionIds: getStringArray(input.copyDirectionIds),
+        copyTargets: getRecipientTargetArray(input.copyTargets),
         signerName: getOptionalString(input.signerName) ?? undefined,
         signers: getSignerArray(input.signers)
       },
@@ -226,6 +257,48 @@ export class DocumentsService {
       title,
       type,
       file
+    });
+  }
+
+  async getCreateClassificationProposal(input: CreateDocumentInput, principal: AuthenticatedPrincipal) {
+    const author = await this.resolveAuthenticatedAuthor(principal);
+    const authorScope = resolveEmitterScope(author);
+    const emitterDirection = await this.resolveEmitterDirection(author, input.emitterDirectionId, authorScope);
+    const emitterDirectionId = emitterDirection.id;
+    const authorDirectionId = authorScope.directionId ?? null;
+    const isIncomingDocument = Boolean(authorDirectionId && emitterDirectionId !== authorDirectionId);
+    const receiverDirectionIds = isIncomingDocument && authorDirectionId
+      ? [authorDirectionId]
+      : uniqueStrings(input.receiverDirectionIds ?? []).filter(Boolean);
+    const copyTargetInputs =
+      input.copyTargets?.length
+        ? input.copyTargets
+        : uniqueStrings(input.copyDirectionIds ?? [])
+            .filter((directionId) => Boolean(directionId) && !receiverDirectionIds.includes(directionId))
+            .map((directionId) => ({
+              targetKind: RecipientTargetKind.DIRECTION,
+              targetDepartmentId: directionId
+            }));
+    const copyTargets = await this.resolveCopyTargets(copyTargetInputs);
+
+    await this.validateRecipients({
+      emitterDirectionId,
+      receiverDirectionIds,
+      copyTargets
+    });
+
+    const resolvedDocumentType = await this.documentTypes.resolveDocumentType({
+      documentTypeId: input.documentTypeId,
+      type: input.type?.trim()
+    });
+
+    return this.archives.creationClassificationProposal({
+      year: input.year ?? new Date().getFullYear(),
+      bureauId: authorScope.bureauId!,
+      emitterDirectionId,
+      receiverDirectionIds,
+      copyDirectionIds: uniqueStrings(copyTargets.map((target) => target.directionId)),
+      documentTypeId: resolvedDocumentType?.id ?? null
     });
   }
 
@@ -373,13 +446,25 @@ export class DocumentsService {
 
     const latestVersion = getLatestVersion(document);
     const nextVersionNumber = (latestVersion?.version ?? 0) + 1;
-    const receiverDirectionIds = uniqueStrings(input.receiverDirectionIds?.length ? input.receiverDirectionIds : getRecipientIds(document, "RECEIVER"));
-    const copyDirectionIds = uniqueStrings(input.copyDirectionIds?.length ? input.copyDirectionIds : getRecipientIds(document, "COPY"));
+    const receiverDirectionIds = uniqueStrings(
+      input.receiverDirectionIds?.length ? input.receiverDirectionIds : getRecipientIds(document, "RECEIVER")
+    );
+    const copyTargetInputs =
+      input.copyTargets?.length
+        ? input.copyTargets
+        : input.copyDirectionIds?.length
+          ? input.copyDirectionIds.map((directionId) => ({
+              targetKind: RecipientTargetKind.DIRECTION,
+              targetDepartmentId: directionId
+            }))
+          : getRecipientTargets(document, "COPY");
+    const resolvedCopyTargets = await this.resolveCopyTargets(copyTargetInputs);
+    const copyDirectionIds = uniqueStrings(resolvedCopyTargets.map((target) => target.directionId));
 
-    await this.validateRecipientDirections({
+    await this.validateRecipients({
       emitterDirectionId: document.emitterDirectionId,
       receiverDirectionIds,
-      copyDirectionIds
+      copyTargets: resolvedCopyTargets
     });
 
     const sourceAnnotationIds = uniqueStrings(input.sourceAnnotationIds ?? []);
@@ -402,6 +487,11 @@ export class DocumentsService {
     const nextReference = input.reference?.trim() || document.reference;
     const parsedReference = parseReference(nextReference);
     const nextType = input.type?.trim() || document.type;
+    const nextDocumentType =
+      (await this.documentTypes.resolveDocumentType({
+        documentTypeId: input.documentTypeId,
+        type: nextType
+      })) ?? document.documentType ?? null;
     const nextTitle = input.title?.trim() || document.title;
     const nextSubject = normalizeNullable(input.subject, document.subject);
     const nextSummary = normalizeNullable(input.summary, document.summary);
@@ -431,9 +521,11 @@ export class DocumentsService {
       subject: nextSubject,
       summary: nextSummary,
       type: nextType,
+      documentTypeId: nextDocumentType?.id ?? document.documentTypeId ?? null,
       emitterDirectionId: document.emitterDirectionId,
       receiverDirectionIds,
       copyDirectionIds,
+      copyTargets: resolvedCopyTargets,
       signerRecords:
         document.signers?.map((signer) => ({
           userId: signer.userId ?? undefined,
@@ -458,12 +550,13 @@ export class DocumentsService {
           subject: nextSubject,
           summary: nextSummary,
           type: nextType,
+          documentTypeId: nextDocumentType?.id ?? document.documentTypeId ?? null,
           status: "EN_VALIDATION",
           recipients: {
             deleteMany: {},
             create: [
-              ...receiverDirectionIds.map((directionId) => ({ directionId, kind: "RECEIVER" as RecipientKind })),
-              ...copyDirectionIds.map((directionId) => ({ directionId, kind: "COPY" as RecipientKind }))
+              ...receiverDirectionIds.map((directionId) => buildDepartmentRecipientCreate(directionId, "RECEIVER")),
+              ...resolvedCopyTargets.map((target) => buildResolvedRecipientCreate(target, "COPY"))
             ]
           }
         }
@@ -618,11 +711,22 @@ export class DocumentsService {
   }
 
   async classify(documentId: string, principal: AuthenticatedPrincipal, input?: ClassifyDocumentDto) {
-    await this.archives.classifyDocument(documentId, principal, {
+    await this.archives.classificationProposal(documentId, principal, {
       bureauId: input?.bureauId
     });
 
+    await this.archives.classifyDocument(documentId, principal, {
+      bureauId: input?.bureauId,
+      folderId: input?.folderId
+    });
+
     return this.get(documentId, principal);
+  }
+
+  async getClassificationProposal(documentId: string, principal: AuthenticatedPrincipal, input?: ClassifyDocumentDto) {
+    return this.archives.classificationProposal(documentId, principal, {
+      bureauId: input?.bureauId
+    });
   }
 
   async getDocumentAnnotationAccessPayload(
@@ -677,7 +781,7 @@ export class DocumentsService {
 
   private async persistDocument(input: {
     input: CreateDocumentInput;
-    author: AuthorWithScope;
+    author: ActiveAuthorWithScope;
     reference: string;
     year: number;
     title: string;
@@ -699,17 +803,29 @@ export class DocumentsService {
     const receiverDirectionIds = isIncomingDocument && authorDirectionId
       ? [authorDirectionId]
       : uniqueStrings(input.input.receiverDirectionIds ?? []).filter(Boolean);
-    const copyDirectionIds = uniqueStrings(input.input.copyDirectionIds ?? []).filter(
-      (directionId) => Boolean(directionId) && !receiverDirectionIds.includes(directionId)
-    );
+    const copyTargetInputs =
+      input.input.copyTargets?.length
+        ? input.input.copyTargets
+        : uniqueStrings(input.input.copyDirectionIds ?? [])
+            .filter((directionId) => Boolean(directionId) && !receiverDirectionIds.includes(directionId))
+            .map((directionId) => ({
+              targetKind: RecipientTargetKind.DIRECTION,
+              targetDepartmentId: directionId
+            }));
+    const copyTargets = await this.resolveCopyTargets(copyTargetInputs);
+    const copyDirectionIds = uniqueStrings(copyTargets.map((target) => target.directionId));
 
-    await this.validateRecipientDirections({
+    await this.validateRecipients({
       emitterDirectionId,
       receiverDirectionIds,
-      copyDirectionIds
+      copyTargets
     });
 
     const signerRecords = await this.resolveSignerRecords(input.input, input.author, emitterDirection, signerScope);
+    const resolvedDocumentType = await this.documentTypes.resolveDocumentType({
+      documentTypeId: input.input.documentTypeId,
+      type: input.type
+    });
 
     if (!receiverDirectionIds.length) {
       throw new BadRequestException("At least one receiver direction is required.");
@@ -742,10 +858,12 @@ export class DocumentsService {
       subject: input.input.subject?.trim() || null,
       summary: input.input.summary?.trim() || null,
       type: input.type,
+      documentTypeId: resolvedDocumentType?.id ?? null,
       confidentialityLevel: input.input.confidentialityLevel?.trim() || null,
       emitterDirectionId,
       receiverDirectionIds,
       copyDirectionIds,
+      copyTargets,
       signerRecords
     });
 
@@ -760,14 +878,15 @@ export class DocumentsService {
           subject: input.input.subject?.trim() || null,
           summary: input.input.summary?.trim() || null,
           type: input.type,
+          documentTypeId: resolvedDocumentType?.id ?? null,
           confidentiality: input.input.confidentialityLevel?.trim() || null,
           status: "EN_VALIDATION",
           emitterDirectionId,
           authorId: input.author.id,
           recipients: {
             create: [
-              ...receiverDirectionIds.map((directionId) => ({ directionId, kind: "RECEIVER" as RecipientKind })),
-              ...copyDirectionIds.map((directionId) => ({ directionId, kind: "COPY" as RecipientKind }))
+              ...receiverDirectionIds.map((directionId) => buildDepartmentRecipientCreate(directionId, "RECEIVER")),
+              ...copyTargets.map((target) => buildResolvedRecipientCreate(target, "COPY"))
             ]
           },
           signers: signerRecords.length
@@ -842,6 +961,7 @@ export class DocumentsService {
               emitterDirectionId,
               receiverDirectionIds,
               copyDirectionIds,
+              copyTargets,
               signerCount: signerRecords.length,
               userName: [input.author.nom, input.author.prenom].filter(Boolean).join(" ").trim() || input.author.email,
               email: input.author.email
@@ -888,6 +1008,8 @@ export class DocumentsService {
       emitterDirectionId,
       receiverDirectionIds,
       copyDirectionIds,
+      documentTypeId: resolvedDocumentType?.id ?? null,
+      selectedFolderId: input.input.folderId?.trim() || undefined,
       archivedById: input.author.id
     });
 
@@ -933,7 +1055,7 @@ export class DocumentsService {
     });
   }
 
-  private async resolveAuthenticatedAuthor(principal: AuthenticatedPrincipal) {
+  private async resolveAuthenticatedAuthor(principal: AuthenticatedPrincipal): Promise<ActiveAuthorWithScope> {
     const author = await this.prisma.user.findFirst({
       where: {
         OR: [{ keycloakId: principal.sub }, ...(principal.email ? [{ email: principal.email }] : [])]
@@ -960,13 +1082,17 @@ export class DocumentsService {
       throw new BadRequestException("Authenticated user must be attached to an organizational department.");
     }
 
+    if (!author.email || !author.matricule || !author.keycloakId) {
+      throw new BadRequestException("Authenticated user must be fully provisioned before creating or updating documents.");
+    }
+
     const scope = resolveEmitterScope(author as AuthorWithScope);
 
     if (!scope.directionId || !scope.bureauId) {
       throw new BadRequestException("Authenticated user must be attached to a bureau within an owning direction.");
     }
 
-    return author as AuthorWithScope;
+    return author as ActiveAuthorWithScope;
   }
 
   private async getDocumentRecord(id: string) {
@@ -974,8 +1100,15 @@ export class DocumentsService {
       where: { id },
       include: {
         emitterDirection: true,
+        documentType: true,
         author: true,
-        recipients: { include: { direction: true } },
+        recipients: {
+          include: {
+            direction: true,
+            targetDepartment: true,
+            targetUser: true
+          }
+        },
         archives: {
           include: {
             bureau: {
@@ -1144,7 +1277,7 @@ export class DocumentsService {
       throw new BadRequestException("At least one signer user must be selected.");
     }
 
-    const signerUsers = await this.findEligibleSignerUsersForEmitter(emitterDirection, signerUserIds);
+    const signerUsers = await this.findEligibleSignerUsersForEmitter(emitterDirection, signerUserIds, true);
 
     if (signerUsers.length !== signerUserIds.length) {
       throw new BadRequestException("One or more selected signers could not be found.");
@@ -1169,7 +1302,7 @@ export class DocumentsService {
 
       return {
         userId: user.id,
-        fullName: [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email,
+        fullName: [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email || user.id,
         functionTitle: user.role.name,
         departmentId: user.department.id,
         departmentType: user.department.type,
@@ -1178,12 +1311,29 @@ export class DocumentsService {
     });
   }
 
-  private async findEligibleSignerUsersForEmitter(emitterDirection: EmitterDirectionNode, signerUserIds?: string[]) {
+  private async findEligibleSignerUsersForEmitter(
+    emitterDirection: EmitterDirectionNode,
+    signerUserIds?: string[],
+    includePending = false
+  ) {
     const eligibleDirectionIds = getSignerCandidateDirectionIds(emitterDirection);
     const signerRoleCodes = ["AGENT", "MANAGER", "DIRECTEUR", "DIRECTEUR_GENERAL"] as const;
     const users = await this.prisma.user.findMany({
       where: {
-        isActive: true,
+        ...(includePending
+          ? {
+              OR: [
+                {
+                  isActive: true
+                },
+                {
+                  directoryStatus: UserDirectoryStatus.PENDING_COMPLETION
+                }
+              ]
+            }
+          : {
+              isActive: true
+            }),
         role: {
           code: {
             in: [...signerRoleCodes]
@@ -1231,18 +1381,24 @@ export class DocumentsService {
     return users;
   }
 
-  private async validateRecipientDirections(input: {
+  private async validateRecipients(input: {
     emitterDirectionId: string;
     receiverDirectionIds: string[];
-    copyDirectionIds: string[];
+    copyTargets: ResolvedRecipientTarget[];
   }) {
-    const overlap = input.receiverDirectionIds.filter((directionId) => input.copyDirectionIds.includes(directionId));
+    const copyDirectionIds = input.copyTargets
+      .filter((target) =>
+        target.targetKind === RecipientTargetKind.DIRECTION ||
+        target.targetKind === RecipientTargetKind.DIRECTION_GENERALE
+      )
+      .map((target) => target.directionId);
+    const overlap = input.receiverDirectionIds.filter((directionId) => copyDirectionIds.includes(directionId));
 
     if (overlap.length > 0) {
       throw new BadRequestException("Une meme direction ne peut pas etre a la fois destinataire et en copie.");
     }
 
-    const allTargetIds = uniqueStrings([...input.receiverDirectionIds, ...input.copyDirectionIds]);
+    const allTargetIds = uniqueStrings([...input.receiverDirectionIds, ...copyDirectionIds]);
 
     if (allTargetIds.includes(input.emitterDirectionId)) {
       throw new BadRequestException("La direction emettrice ne peut pas etre selectionnee comme destinataire ou copie.");
@@ -1270,6 +1426,124 @@ export class DocumentsService {
       throw new BadRequestException("Une ou plusieurs directions cibles sont invalides.");
     }
   }
+
+  private async resolveCopyTargets(inputs: Array<RecipientTargetInput | null | undefined>) {
+    const sanitized = inputs
+      .filter((value): value is RecipientTargetInput => Boolean(value?.targetKind))
+      .map((value) => ({
+        targetKind: value.targetKind,
+        targetDepartmentId: value.targetDepartmentId?.trim() || undefined,
+        targetUserId: value.targetUserId?.trim() || undefined
+      }));
+
+    if (!sanitized.length) {
+      return [] as ResolvedRecipientTarget[];
+    }
+
+    const departmentIds = uniqueStrings(sanitized.map((value) => value.targetDepartmentId));
+    const userIds = uniqueStrings(sanitized.map((value) => value.targetUserId));
+
+    const [departments, users] = await Promise.all([
+      departmentIds.length
+        ? this.prisma.department.findMany({
+            where: {
+              id: {
+                in: departmentIds
+              }
+            }
+          })
+        : Promise.resolve([]),
+      userIds.length
+        ? this.prisma.user.findMany({
+            where: {
+              id: {
+                in: userIds
+              },
+              directoryStatus: {
+                not: UserDirectoryStatus.PENDING_COMPLETION
+              }
+            },
+            include: {
+              department: {
+                include: {
+                  parent: {
+                    include: {
+                      parent: true
+                    }
+                  }
+                }
+              }
+            }
+          })
+        : Promise.resolve([])
+    ]);
+
+    const departmentsById = new Map(departments.map((department) => [department.id, department]));
+    const usersById = new Map(users.map((user) => [user.id, user]));
+    const resolved: ResolvedRecipientTarget[] = [];
+
+    for (const input of sanitized) {
+      if (input.targetKind === RecipientTargetKind.USER) {
+        const targetUser = input.targetUserId ? usersById.get(input.targetUserId) : null;
+
+        if (!targetUser) {
+          throw new BadRequestException("Un utilisateur cible de copie est invalide.");
+        }
+
+        const scope = resolveDepartmentScope(targetUser.department);
+
+        if (!scope.directionId) {
+          throw new BadRequestException("L'utilisateur cible doit etre rattache a une direction.");
+        }
+
+        resolved.push({
+          directionId: scope.directionId,
+          targetKind: RecipientTargetKind.USER,
+          targetUserId: targetUser.id,
+          targetUser,
+          label: buildRecipientTargetLabel({
+            targetKind: RecipientTargetKind.USER,
+            targetUserId: targetUser.id,
+            targetUser
+          })
+        });
+        continue;
+      }
+
+      const department = input.targetDepartmentId ? departmentsById.get(input.targetDepartmentId) : null;
+
+      if (!department) {
+        throw new BadRequestException("Une structure cible de copie est invalide.");
+      }
+
+      const expectedKind = mapDepartmentTypeToRecipientTargetKind(department.type);
+
+      if (expectedKind !== input.targetKind) {
+        throw new BadRequestException("Le type de destinataire en copie ne correspond pas a la structure selectionnee.");
+      }
+
+      const scope = resolveDepartmentScope(department);
+
+      if (!scope.directionId) {
+        throw new BadRequestException("Impossible de determiner la direction de la structure cible.");
+      }
+
+      resolved.push({
+        directionId: scope.directionId,
+        targetKind: expectedKind,
+        targetDepartmentId: department.id,
+        targetDepartment: department,
+        label: buildRecipientTargetLabel({
+          targetKind: expectedKind,
+          directionId: scope.directionId,
+          targetDepartmentId: department.id,
+          targetDepartment: department
+        })
+      });
+    }
+
+    return dedupeResolvedRecipientTargets(resolved);
+  }
 }
 
 type CreateDocumentInput = {
@@ -1281,10 +1555,13 @@ type CreateDocumentInput = {
   subject?: string;
   summary?: string;
   type?: string;
+  documentTypeId?: string;
+  folderId?: string;
   confidentialityLevel?: string;
   emitterDirectionId?: string;
   receiverDirectionIds?: string[];
   copyDirectionIds?: string[];
+  copyTargets?: RecipientTargetInput[];
   signerName?: string;
   signers?: Array<{
     userId?: string;
@@ -1294,6 +1571,28 @@ type CreateDocumentInput = {
     departmentType?: DepartmentType;
     signingOrder?: number;
   }>;
+};
+
+type ResolvedRecipientTarget = {
+  directionId: string;
+  targetKind: RecipientTargetKind;
+  targetDepartmentId?: string;
+  targetDepartment?: {
+    id: string;
+    code: string;
+    designation: string;
+    type: DepartmentType;
+    parentId: string | null;
+    directionId: string | null;
+    serviceId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  targetUserId?: string;
+  targetUser?: User & {
+    department: DepartmentNode;
+  };
+  label: string;
 };
 
 function resolveSignerScope(authorScope: EmitterScope, emitterDirectionId: string): EmitterScope {
@@ -1329,13 +1628,24 @@ function serializeDocument(document: any, includeLifecycle = false, validationEv
 
   const currentScope = currentUser ? resolveEmitterScope(currentUser) : null;
   const currentDirectionId = currentScope?.directionId ?? null;
-  const targetDirectionIds = [
-    ...document.recipients.filter((recipient: any) => recipient.kind === "RECEIVER").map((recipient: any) => recipient.directionId),
-    ...document.recipients.filter((recipient: any) => recipient.kind === "COPY").map((recipient: any) => recipient.directionId)
-  ];
+  const targetDirectionIds = document.recipients?.map((recipient: any) => recipient.directionId) ?? [];
+  const isCurrentUserRecipient = Boolean(
+    currentUser &&
+      currentScope &&
+      document.recipients?.some((recipient: any) =>
+        recipient.kind === "RECEIVER" || recipient.kind === "COPY"
+          ? recipientMatchesScope(recipient, {
+              id: currentUser.id,
+              directionId: currentScope.directionId,
+              serviceId: currentScope.serviceId,
+              bureauId: currentScope.bureauId
+            })
+          : false
+      )
+  );
   const isCurrentDirectionParticipant = Boolean(
     currentDirectionId &&
-      (currentDirectionId === document.emitterDirectionId || targetDirectionIds.includes(currentDirectionId))
+      (currentDirectionId === document.emitterDirectionId || isCurrentUserRecipient)
   );
   const currentDirectionArchives =
     currentDirectionId
@@ -1355,9 +1665,16 @@ function serializeDocument(document: any, includeLifecycle = false, validationEv
 
   return {
     ...document,
+    documentTypeId: document.documentTypeId ?? undefined,
+    documentTypeCode: document.documentType?.code ?? undefined,
+    documentTypeLabel: document.documentType?.label ?? undefined,
     version: latestVersion?.version ?? document.versions?.length ?? 1,
     signerName: serializedSigners[0]?.fullName,
-    signers: serializedSigners,
+      signers: serializedSigners,
+    copyTargets:
+      document.recipients
+        ?.filter((recipient: any) => recipient.kind === "COPY")
+        .map((recipient: any) => serializeRecipientTarget(recipient)) ?? [],
     attachments: document.attachments?.map((attachment: any) => ({
       ...attachment,
       sizeBytes: Number(attachment.sizeBytes)
@@ -1428,15 +1745,23 @@ function canAccessDocumentForUser(document: any, user: AuthorWithScope | null) {
   }
 
   const userScope = resolveEmitterScope(user);
-  const userDirectionId = userScope.directionId;
-
-  if (!userDirectionId) {
+  if (!userScope.directionId) {
     return false;
   }
 
-  const recipientDirectionIds = uniqueStrings(document.recipients?.map((recipient: any) => recipient.directionId) ?? []);
-
-  return document.emitterDirectionId === userDirectionId || recipientDirectionIds.includes(userDirectionId);
+  return (
+    document.emitterDirectionId === userScope.directionId ||
+    Boolean(
+      document.recipients?.some((recipient: any) =>
+        recipientMatchesScope(recipient, {
+          id: user.id,
+          directionId: userScope.directionId,
+          serviceId: userScope.serviceId,
+          bureauId: userScope.bureauId
+        })
+      )
+    )
+  );
 }
 
 function canAccessDocumentArchiveForUser(archive: any, user: AuthorWithScope | null) {
@@ -1635,10 +1960,12 @@ function buildDocumentSnapshot(input: {
   subject?: string | null;
   summary?: string | null;
   type: string;
+  documentTypeId?: string | null;
   confidentialityLevel?: string | null;
   emitterDirectionId: string;
   receiverDirectionIds: string[];
   copyDirectionIds: string[];
+  copyTargets: ResolvedRecipientTarget[];
   signerRecords: SignerRecordInput[];
 }) {
   return {
@@ -1650,10 +1977,18 @@ function buildDocumentSnapshot(input: {
     subject: input.subject ?? null,
     summary: input.summary ?? null,
     type: input.type,
+    documentTypeId: input.documentTypeId ?? null,
     confidentialityLevel: input.confidentialityLevel ?? null,
     emitterDirectionId: input.emitterDirectionId,
     receiverDirectionIds: input.receiverDirectionIds,
     copyDirectionIds: input.copyDirectionIds,
+    copyTargets: input.copyTargets.map((target) => ({
+      targetKind: target.targetKind,
+      directionId: target.directionId,
+      targetDepartmentId: target.targetDepartmentId ?? null,
+      targetUserId: target.targetUserId ?? null,
+      label: target.label
+    })),
     signers: input.signerRecords
   };
 }
@@ -1668,6 +2003,82 @@ function getLatestVersion(document: any) {
 
 function getRecipientIds(document: any, kind: RecipientKind) {
   return document.recipients.filter((recipient: any) => recipient.kind === kind).map((recipient: any) => recipient.directionId);
+}
+
+function getRecipientTargets(document: any, kind: RecipientKind): RecipientTargetInput[] {
+  return (document.recipients ?? [])
+    .filter((recipient: any) => recipient.kind === kind)
+    .map((recipient: any) => ({
+      targetKind: recipient.targetKind ?? RecipientTargetKind.DIRECTION,
+      targetDepartmentId: recipient.targetDepartmentId ?? undefined,
+      targetUserId: recipient.targetUserId ?? undefined
+    }));
+}
+
+function buildDepartmentRecipientCreate(directionId: string, kind: RecipientKind) {
+  return {
+    directionId,
+    kind,
+    targetKind: RecipientTargetKind.DIRECTION,
+    targetDepartmentId: directionId
+  };
+}
+
+function buildResolvedRecipientCreate(target: ResolvedRecipientTarget, kind: RecipientKind) {
+  return {
+    directionId: target.directionId,
+    kind,
+    targetKind: target.targetKind,
+    targetDepartmentId: target.targetDepartmentId,
+    targetUserId: target.targetUserId
+  };
+}
+
+function mapDepartmentTypeToRecipientTargetKind(type: DepartmentType) {
+  switch (type) {
+    case DepartmentType.DIRECTION_GENERALE:
+      return RecipientTargetKind.DIRECTION_GENERALE;
+    case DepartmentType.DIRECTION:
+      return RecipientTargetKind.DIRECTION;
+    case DepartmentType.SERVICE:
+      return RecipientTargetKind.SERVICE;
+    case DepartmentType.BUREAU:
+      return RecipientTargetKind.BUREAU;
+  }
+}
+
+function dedupeResolvedRecipientTargets(targets: ResolvedRecipientTarget[]) {
+  const seen = new Set<string>();
+
+  return targets.filter((target) => {
+    const key = `${target.targetKind}:${target.targetDepartmentId ?? ""}:${target.targetUserId ?? ""}`;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
+function serializeRecipientTarget(recipient: any) {
+  const label = buildRecipientTargetLabel(recipient);
+
+  return {
+    kind: recipient.targetKind ?? RecipientTargetKind.DIRECTION,
+    directionId: recipient.directionId,
+    directionCode: recipient.direction?.code ?? undefined,
+    directionName: recipient.direction?.designation ?? undefined,
+    departmentId: recipient.targetDepartmentId ?? undefined,
+    departmentCode: recipient.targetDepartment?.code ?? undefined,
+    departmentName: recipient.targetDepartment?.designation ?? undefined,
+    userId: recipient.targetUserId ?? undefined,
+    userName:
+      [recipient.targetUser?.nom, recipient.targetUser?.prenom].filter(Boolean).join(" ").trim() || undefined,
+    userEmail: recipient.targetUser?.email ?? undefined,
+    label
+  };
 }
 
 function normalizeNullable(nextValue: string | undefined, currentValue: string | null) {
@@ -1754,6 +2165,43 @@ function getStringArray(value: unknown) {
   }
 
   return [];
+}
+
+function getRecipientTargetArray(value: unknown): RecipientTargetInput[] {
+  if (Array.isArray(value)) {
+    return value.filter(isRecord).map(mapRecipientTargetRecord).filter(Boolean) as RecipientTargetInput[];
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      return getRecipientTargetArray(parsed);
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function mapRecipientTargetRecord(value: Record<string, unknown>): RecipientTargetInput | null {
+  const targetKind = getString(value.targetKind) as RecipientTargetKind;
+
+  if (!targetKind) {
+    return null;
+  }
+
+  return {
+    targetKind,
+    targetDepartmentId: getOptionalString(value.targetDepartmentId),
+    targetUserId: getOptionalString(value.targetUserId)
+  };
 }
 
 type RequestLike = {

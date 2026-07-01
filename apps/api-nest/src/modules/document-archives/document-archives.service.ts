@@ -1,6 +1,8 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { FolderStatus, MovementType, type Department, type DocumentArchive, type User } from "@sigeda/database";
 import type {
+  ClassificationFolderOption,
+  DocumentClassificationProposal,
   DocumentArchiveDetails,
   DocumentArchiveListItem,
   PaginatedResult
@@ -11,6 +13,7 @@ import { DepartmentsService } from "../departments/departments.service.js";
 import { PhysicalArchivesService } from "../physical-archives/physical-archives.service.js";
 import type { AuthenticatedPrincipal } from "../auth/auth.types.js";
 import { resolveDepartmentScope } from "../../shared/department-scope.js";
+import { recipientMatchesScope } from "../../shared/document-recipient-targets.js";
 import type { ListDocumentArchivesQueryDto } from "./dto/list-document-archives-query.dto.js";
 
 type DepartmentNode = Parameters<typeof resolveDepartmentScope>[0];
@@ -48,10 +51,29 @@ type ArchiveWithRelations = DocumentArchive & {
     id: string;
     status: "ACTIVE" | "ARCHIVED";
     ownerDirectionId: string;
-    partnerDirectionId: string;
+    partnerDirectionId: string | null;
     ownerDirection: Department;
   };
   bureau: Department;
+};
+
+type RecommendationFolderRecord = {
+  id: string;
+  folderType: "CORRESPONDANCE" | "DOCUMENTAIRE" | "AUTRE";
+  label: string | null;
+  description: string | null;
+  bureauId: string;
+  ownerDirectionId: string;
+  partnerDirectionId: string | null;
+  bureau: Department;
+  ownerDirection: Department;
+  partnerDirection: Department | null;
+  documentTypes: Array<{
+    documentType: {
+      id: string;
+      label: string;
+    };
+  }>;
 };
 
 type ArchiveSortField =
@@ -238,14 +260,287 @@ export class DocumentArchivesService {
     principal: AuthenticatedPrincipal,
     input?: {
       bureauId?: string;
+      folderId?: string;
     }
+  ) {
+    const context = await this.resolveDocumentClassificationContext(documentId, principal, input?.bureauId);
+    const recommendation = await this.buildClassificationProposal(context);
+
+    try {
+      const archives = [] as DocumentArchive[];
+      const selectedFolderId = input?.folderId?.trim();
+
+      if (selectedFolderId) {
+        const selectedFolder = await this.folders.getActiveForClassification(selectedFolderId);
+
+        if (!selectedFolder) {
+          throw new ConflictException("Le classeur selectionne est introuvable ou inactif.");
+        }
+
+        if (selectedFolder.bureauId !== context.targetBureauId) {
+          throw new ForbiddenException("Le classeur selectionne n'appartient pas au bureau de classement choisi.");
+        }
+
+        const classifiedArchive = await this.prisma.documentArchive.upsert({
+          where: {
+            documentId_bureauId_folderId_movementType: {
+              documentId: context.document.id,
+              bureauId: context.targetBureauId,
+              folderId: selectedFolder.id,
+              movementType: context.movementType
+            }
+          },
+          update: {
+            archivedById: context.user.id
+          },
+          create: {
+            documentId: context.document.id,
+            bureauId: context.targetBureauId,
+            folderId: selectedFolder.id,
+            movementType: context.movementType,
+            archivedById: context.user.id
+          }
+        });
+
+        archives.push(classifiedArchive);
+
+        await this.prisma.auditLog.create({
+          data: {
+            userId: context.user.id,
+            action: "CLASSIFY_DOCUMENT_ARCHIVE",
+            entityType: "DOCUMENT_ARCHIVE",
+            entityId: classifiedArchive.id,
+            metadata: {
+              description: `Classement manuel du document ${context.document.reference} dans le classeur ${selectedFolder.id}`,
+              documentId: context.document.id,
+              documentReference: context.document.reference,
+              targetBureauId: context.targetBureauId,
+              targetFolderId: selectedFolder.id,
+              movementType: context.movementType,
+              archiveMode:
+                recommendation.recommendedFolder?.id === selectedFolder.id ? "RECOMMENDED_ACCEPTED" : "MANUAL_OVERRIDE",
+              recommendedFolderId: recommendation.recommendedFolder?.id ?? null,
+              userName: buildUserName(context.user),
+              email: context.user.email
+            }
+          }
+        });
+
+        await this.physicalArchives.ensureAutomaticForDocumentArchives({
+          documentId: context.document.id,
+          emitterDirectionId: context.document.emitterDirectionId,
+          year: context.document.year,
+          documentArchives: archives.map((archive) => ({
+            id: archive.id,
+            documentId: archive.documentId,
+            folderId: archive.folderId,
+            movementType: archive.movementType
+          }))
+        });
+
+        return archives;
+      }
+
+      if (!context.partnerDirectionIds.length) {
+        if (!recommendation.recommendedFolder) {
+          throw new ConflictException("Aucun classeur recommande n'a ete trouve pour ce document.");
+        }
+
+        const classifiedArchive = await this.prisma.documentArchive.upsert({
+          where: {
+            documentId_bureauId_folderId_movementType: {
+              documentId: context.document.id,
+              bureauId: context.targetBureauId,
+              folderId: recommendation.recommendedFolder.id,
+              movementType: context.movementType
+            }
+          },
+          update: {
+            archivedById: context.user.id
+          },
+          create: {
+            documentId: context.document.id,
+            bureauId: context.targetBureauId,
+            folderId: recommendation.recommendedFolder.id,
+            movementType: context.movementType,
+            archivedById: context.user.id
+          }
+        });
+
+        archives.push(classifiedArchive);
+
+        await this.prisma.auditLog.create({
+          data: {
+            userId: context.user.id,
+            action: "CLASSIFY_DOCUMENT_ARCHIVE",
+            entityType: "DOCUMENT_ARCHIVE",
+            entityId: classifiedArchive.id,
+            metadata: {
+              description: `Classement du document ${context.document.reference} dans le classeur ${recommendation.recommendedFolder.id}`,
+              documentId: context.document.id,
+              documentReference: context.document.reference,
+              targetBureauId: context.targetBureauId,
+              targetFolderId: recommendation.recommendedFolder.id,
+              movementType: context.movementType,
+              archiveMode: "RECOMMENDED_DOCUMENTARY",
+              recommendedFolderId: recommendation.recommendedFolder.id,
+              userName: buildUserName(context.user),
+              email: context.user.email
+            }
+          }
+        });
+
+        await this.physicalArchives.ensureAutomaticForDocumentArchives({
+          documentId: context.document.id,
+          emitterDirectionId: context.document.emitterDirectionId,
+          year: context.document.year,
+          documentArchives: archives.map((archive) => ({
+            id: archive.id,
+            documentId: archive.documentId,
+            folderId: archive.folderId,
+            movementType: archive.movementType
+          }))
+        });
+
+        return archives;
+      }
+
+      for (const partnerDirectionId of context.partnerDirectionIds) {
+        const targetFolder = await this.folders.findActiveForArchiving({
+          year: context.document.year,
+          bureauId: context.targetBureauId,
+          partnerDirectionId
+        });
+
+        const classifiedArchive = await this.prisma.documentArchive.upsert({
+          where: {
+            documentId_bureauId_folderId_movementType: {
+              documentId: context.document.id,
+              bureauId: context.targetBureauId,
+              folderId: targetFolder.id,
+              movementType: context.movementType
+            }
+          },
+          update: {
+            archivedById: context.user.id
+          },
+          create: {
+            documentId: context.document.id,
+            bureauId: context.targetBureauId,
+            folderId: targetFolder.id,
+            movementType: context.movementType,
+            archivedById: context.user.id
+          }
+        });
+
+        archives.push(classifiedArchive);
+
+        await this.prisma.auditLog.create({
+          data: {
+            userId: context.user.id,
+            action: "CLASSIFY_DOCUMENT_ARCHIVE",
+            entityType: "DOCUMENT_ARCHIVE",
+            entityId: classifiedArchive.id,
+            metadata: {
+              description: `Classement du document ${context.document.reference} dans le classeur ${targetFolder.id}`,
+              documentId: context.document.id,
+              documentReference: context.document.reference,
+              targetBureauId: context.targetBureauId,
+              targetFolderId: targetFolder.id,
+              partnerDirectionId,
+              movementType: context.movementType,
+              archiveMode: "DOCUMENT_CLASSIFICATION",
+              recommendedFolderId: recommendation.recommendedFolder?.id ?? null,
+              userName: buildUserName(context.user),
+              email: context.user.email
+            }
+          }
+        });
+      }
+
+      await this.physicalArchives.ensureAutomaticForDocumentArchives({
+        documentId: context.document.id,
+        emitterDirectionId: context.document.emitterDirectionId,
+        year: context.document.year,
+        documentArchives: archives.map((archive) => ({
+          id: archive.id,
+          documentId: archive.documentId,
+          folderId: archive.folderId,
+          movementType: archive.movementType
+        }))
+      });
+
+      return archives;
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw new ConflictException(
+          "Aucun classeur actif correspondant n'a ete trouve dans votre bureau. Veuillez contacter votre responsable ou creer le classeur approprie."
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  async classificationProposal(
+    documentId: string,
+    principal: AuthenticatedPrincipal,
+    input?: {
+      bureauId?: string;
+    }
+  ): Promise<DocumentClassificationProposal> {
+    const context = await this.resolveDocumentClassificationContext(documentId, principal, input?.bureauId);
+    return this.buildClassificationProposal(context);
+  }
+
+  async creationClassificationProposal(input: {
+    year: number;
+    bureauId: string;
+    emitterDirectionId: string;
+    receiverDirectionIds: string[];
+    copyDirectionIds: string[];
+    documentTypeId?: string | null;
+  }): Promise<DocumentClassificationProposal> {
+    const ownerDirection = await this.departments.resolveOwnerDirectionFromBureau(input.bureauId);
+    const isEmitterDirection = ownerDirection.id === input.emitterDirectionId;
+    const movementType: MovementType = isEmitterDirection ? MovementType.SORTIE : MovementType.ENTREE;
+    const partnerDirectionIds = resolvePartnerDirectionIdsForClassification({
+      emitterDirectionId: input.emitterDirectionId,
+      receiverDirectionIds: input.receiverDirectionIds,
+      copyDirectionIds: input.copyDirectionIds,
+      isEmitterDirection
+    });
+
+    return this.buildClassificationProposal({
+      document: {
+        id: "__draft__",
+        year: input.year,
+        documentTypeId: input.documentTypeId ?? null,
+        emitterDirectionId: input.emitterDirectionId
+      },
+      targetBureauId: input.bureauId,
+      movementType,
+      partnerDirectionIds
+    });
+  }
+
+  private async resolveDocumentClassificationContext(
+    documentId: string,
+    principal: AuthenticatedPrincipal,
+    requestedBureauId?: string
   ) {
     const [document, user] = await Promise.all([
       this.prisma.document.findUnique({
         where: { id: documentId },
         include: {
           emitterDirection: true,
-          recipients: true
+          recipients: {
+            include: {
+              direction: true,
+              targetDepartment: true,
+              targetUser: true
+            }
+          }
         }
       }),
       this.resolvePrincipalUser(principal)
@@ -270,7 +565,14 @@ export class DocumentArchivesService {
     const copyDirectionIds = document.recipients.filter((recipient) => recipient.kind === "COPY").map((recipient) => recipient.directionId);
 
     const isEmitterDirection = currentDirectionId === document.emitterDirectionId;
-    const isRecipientDirection = [...receiverDirectionIds, ...copyDirectionIds].includes(currentDirectionId);
+    const isRecipientDirection = document.recipients.some((recipient) =>
+      recipientMatchesScope(recipient, {
+        id: user.id,
+        directionId: scope.directionId,
+        serviceId: scope.serviceId,
+        bureauId: scope.bureauId
+      })
+    );
 
     if (!isEmitterDirection && !isRecipientDirection) {
       throw new ForbiddenException("Vous n'etes pas autorise a classer ce document depuis votre direction.");
@@ -283,89 +585,55 @@ export class DocumentArchivesService {
       copyDirectionIds,
       isEmitterDirection
     });
+    const targetBureauId = await this.resolveClassificationBureauId(user, requestedBureauId);
 
-    if (!partnerDirectionIds.length) {
-      throw new BadRequestException("Aucune direction partenaire n'a ete determinee pour le classement.");
-    }
+    return {
+      document,
+      user,
+      targetBureauId,
+      movementType,
+      partnerDirectionIds
+    };
+  }
 
-    try {
-      const targetBureauId = await this.resolveClassificationBureauId(user, input?.bureauId);
-      const archives = [] as DocumentArchive[];
+  private async buildClassificationProposal(input: {
+    document: {
+      id: string;
+      year: number;
+      documentTypeId: string | null;
+      emitterDirectionId: string;
+    };
+    targetBureauId: string;
+    movementType: MovementType;
+    partnerDirectionIds: string[];
+  }): Promise<DocumentClassificationProposal> {
+    const activeFolders = await this.folders.listActiveForClassification(input.targetBureauId);
+    const recommendedFolderRecord =
+      input.partnerDirectionIds[0]
+        ? await this.folders.recommendForArchiving({
+            year: input.document.year,
+            bureauId: input.targetBureauId,
+            partnerDirectionId: input.partnerDirectionIds[0]
+          })
+        : await this.folders.recommendForArchiving({
+            year: input.document.year,
+            bureauId: input.targetBureauId,
+            documentTypeId: input.document.documentTypeId
+          });
+    const recommendedFolder = recommendedFolderRecord
+      ? mapFolderOption(recommendedFolderRecord as RecommendationFolderRecord)
+      : null;
 
-      for (const partnerDirectionId of partnerDirectionIds) {
-        const targetFolder = await this.folders.findActiveForArchiving({
-          year: document.year,
-          bureauId: targetBureauId,
-          partnerDirectionId
-        });
-
-        const classifiedArchive = await this.prisma.documentArchive.upsert({
-          where: {
-            documentId_bureauId_folderId_movementType: {
-              documentId: document.id,
-              bureauId: targetBureauId,
-              folderId: targetFolder.id,
-              movementType
-            }
-          },
-          update: {
-            archivedById: user.id
-          },
-          create: {
-            documentId: document.id,
-            bureauId: targetBureauId,
-            folderId: targetFolder.id,
-            movementType,
-            archivedById: user.id
-          }
-        });
-
-        archives.push(classifiedArchive);
-
-        await this.prisma.auditLog.create({
-          data: {
-            userId: user.id,
-            action: "CLASSIFY_DOCUMENT_ARCHIVE",
-            entityType: "DOCUMENT_ARCHIVE",
-            entityId: classifiedArchive.id,
-            metadata: {
-              description: `Classement du document ${document.reference} dans le classeur ${targetFolder.id}`,
-              documentId: document.id,
-              documentReference: document.reference,
-              targetBureauId,
-              targetFolderId: targetFolder.id,
-              partnerDirectionId,
-              movementType,
-              archiveMode: "DOCUMENT_CLASSIFICATION",
-              userName: buildUserName(user),
-              email: user.email
-            }
-          }
-        });
-      }
-
-      await this.physicalArchives.ensureAutomaticForDocumentArchives({
-        documentId: document.id,
-        emitterDirectionId: document.emitterDirectionId,
-        year: document.year,
-        documentArchives: archives.map((archive) => ({
-          id: archive.id,
-          documentId: archive.documentId,
-          folderId: archive.folderId,
-          movementType: archive.movementType
-        }))
-      });
-
-      return archives;
-    } catch (error) {
-      if (error instanceof ConflictException) {
-        throw new ConflictException(
-          "Aucun classeur actif correspondant n'a ete trouve dans votre bureau. Veuillez contacter votre responsable ou creer le classeur approprie."
-        );
-      }
-
-      throw error;
-    }
+    return {
+      documentId: input.document.id,
+      bureauId: input.targetBureauId,
+      movementType: input.movementType,
+      section: input.movementType,
+      recommendedFolder,
+      recommendedReason: buildClassificationReason(input.partnerDirectionIds, recommendedFolder),
+      availableFolders: activeFolders,
+      canOverride: activeFolders.length > 0
+    };
   }
 
   private async resolveClassificationBureauId(user: ScopedUser, requestedBureauId?: string) {
@@ -413,6 +681,8 @@ export class DocumentArchivesService {
     emitterDirectionId: string;
     receiverDirectionIds: string[];
     copyDirectionIds: string[];
+    documentTypeId?: string | null;
+    selectedFolderId?: string;
     archivedById: string;
   }) {
     const ownerDirection = await this.departments.resolveOwnerDirectionFromBureau(input.bureauId);
@@ -435,12 +705,82 @@ export class DocumentArchivesService {
       documentId: string;
       year: number;
       bureauId: string;
+      documentTypeId?: string | null;
+      selectedFolderId?: string;
       archivedById: string;
     },
     partnerDirectionIds: string[],
     movementType: MovementType
   ) {
     const archives = [];
+
+    const selectedFolderId = input.selectedFolderId?.trim();
+
+    if (selectedFolderId) {
+      const selectedFolder = await this.folders.getActiveForClassification(selectedFolderId);
+
+      if (!selectedFolder) {
+        throw new ConflictException("Le classeur selectionne est introuvable ou inactif.");
+      }
+
+      if (selectedFolder.bureauId !== input.bureauId) {
+        throw new ForbiddenException("Le classeur selectionne n'appartient pas au bureau de classement propose.");
+      }
+
+      archives.push(
+        await this.prisma.documentArchive.upsert({
+          where: {
+            documentId_bureauId_folderId_movementType: {
+              documentId: input.documentId,
+              bureauId: input.bureauId,
+              folderId: selectedFolder.id,
+              movementType
+            }
+          },
+          update: {},
+          create: {
+            documentId: input.documentId,
+            bureauId: input.bureauId,
+            folderId: selectedFolder.id,
+            movementType,
+            archivedById: input.archivedById
+          }
+        })
+      );
+
+      return archives;
+    }
+
+    if (!partnerDirectionIds.length && input.documentTypeId) {
+      const folder = await this.folders.findActiveDocumentaryForArchiving({
+        year: input.year,
+        bureauId: input.bureauId,
+        documentTypeId: input.documentTypeId
+      });
+
+      archives.push(
+        await this.prisma.documentArchive.upsert({
+          where: {
+            documentId_bureauId_folderId_movementType: {
+              documentId: input.documentId,
+              bureauId: input.bureauId,
+              folderId: folder.id,
+              movementType
+            }
+          },
+          update: {},
+          create: {
+            documentId: input.documentId,
+            bureauId: input.bureauId,
+            folderId: folder.id,
+            movementType,
+            archivedById: input.archivedById
+          }
+        })
+      );
+
+      return archives;
+    }
 
     for (const partnerDirectionId of partnerDirectionIds) {
       const folder = await this.folders.findActiveForArchiving({
@@ -713,8 +1053,64 @@ function buildUserName(user: ScopedUser) {
   return [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email;
 }
 
-function buildFolderLabel(ownerDirectionCode: string | undefined, partnerDirectionId: string, folderId: string) {
+function buildFolderLabel(ownerDirectionCode: string | undefined, partnerDirectionId: string | null | undefined, folderId: string) {
   return [ownerDirectionCode, partnerDirectionId, folderId].filter(Boolean).join(" / ");
+}
+
+function mapFolderOption(folder: RecommendationFolderRecord): ClassificationFolderOption {
+  return {
+    id: folder.id,
+    folderType: folder.folderType,
+    label: folder.label,
+    description: folder.description,
+    bureauId: folder.bureauId,
+    bureauCode: folder.bureau.code,
+    bureauName: folder.bureau.designation,
+    ownerDirectionId: folder.ownerDirectionId,
+    ownerDirectionCode: folder.ownerDirection.code,
+    ownerDirectionName: folder.ownerDirection.designation,
+    partnerDirectionId: folder.partnerDirectionId,
+    partnerDirectionCode: folder.partnerDirection?.code,
+    partnerDirectionName: folder.partnerDirection?.designation,
+    documentTypeIds: folder.documentTypes.map((item) => item.documentType.id),
+    documentTypeLabels: folder.documentTypes.map((item) => item.documentType.label),
+    displayLabel: buildRecommendationFolderLabel(folder)
+  };
+}
+
+function buildRecommendationFolderLabel(folder: RecommendationFolderRecord) {
+  if (folder.folderType === "CORRESPONDANCE") {
+    return `Correspondance - ${folder.partnerDirection?.designation ?? folder.partnerDirection?.code ?? folder.id}`;
+  }
+
+  if (folder.folderType === "DOCUMENTAIRE") {
+    return `Documentaire - ${folder.label ?? folder.id}`;
+  }
+
+  return `Autre - ${folder.label ?? folder.id}`;
+}
+
+function buildClassificationReason(
+  partnerDirectionIds: string[],
+  recommendedFolder: ClassificationFolderOption | null
+) {
+  if (recommendedFolder?.folderType === "CORRESPONDANCE" && partnerDirectionIds.length > 0) {
+    return "Le document comporte une direction partenaire. Un classeur de correspondance a donc ete propose en priorite.";
+  }
+
+  if (recommendedFolder?.folderType === "DOCUMENTAIRE") {
+    return "Aucune direction partenaire exploitable n'a ete retenue. Un classeur documentaire compatible a donc ete propose.";
+  }
+
+  if (recommendedFolder?.folderType === "AUTRE") {
+    return "Aucun classeur standard n'etait prioritaire. Le moteur propose un classeur libre actif dans votre bureau.";
+  }
+
+  if (partnerDirectionIds.length > 0) {
+    return "Le moteur n'a trouve aucun classeur de correspondance actif correspondant. Vous pouvez choisir un autre classeur de votre perimetre.";
+  }
+
+  return "Le moteur n'a trouve aucun classeur recommande. Vous pouvez choisir un autre classeur actif de votre perimetre.";
 }
 
 function applyArchiveFilters(archives: DocumentArchiveListItem[], query: ListDocumentArchivesQueryDto) {

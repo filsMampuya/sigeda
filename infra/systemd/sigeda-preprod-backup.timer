@@ -1,0 +1,10 @@
+[Unit]
+Description=Run SIGEDA preproduction backup every day
+
+[Timer]
+OnCalendar=*-*-* 22:30:00
+Persistent=true
+Unit=sigeda-preprod-backup.service
+
+[Install]
+WantedBy=timers.target

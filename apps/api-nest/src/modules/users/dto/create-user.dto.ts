@@ -1,8 +1,18 @@
 import { Transform, type TransformFnParams } from "class-transformer";
-import { IsEmail, IsString, Matches, MaxLength } from "class-validator";
+import { IsEmail, IsIn, IsOptional, IsString, Matches, MaxLength } from "class-validator";
 import { trimString } from "../../../shared/transformers.js";
 
 export class CreateUserDto {
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsIn(["CREATE", "COMPLETE"])
+  mode?: "CREATE" | "COMPLETE";
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  pendingUserId?: string;
+
   @Transform(({ value }: TransformFnParams) => trimString(value))
   @IsString()
   @MaxLength(40)
@@ -22,6 +32,12 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(120)
   prenom!: string;
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  functionTitle?: string;
 
   @Transform(({ value }: TransformFnParams) => trimString(value))
   @IsString()

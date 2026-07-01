@@ -35,6 +35,22 @@ function getRequestCookieValue(request: Request, name: string) {
   }
 }
 
+function getAuthorizationHeaderToken(request: Request) {
+  const authorizationHeader = request.headers.get("authorization") ?? request.headers.get("Authorization");
+
+  if (!authorizationHeader) {
+    return null;
+  }
+
+  const [scheme, token] = authorizationHeader.split(" ");
+
+  if (scheme?.toLowerCase() !== "bearer" || !token) {
+    return null;
+  }
+
+  return token.trim();
+}
+
 function isSecureRequest(request: Request) {
   const forwardedProtocol = request.headers.get("x-forwarded-proto");
 
@@ -73,8 +89,17 @@ export async function ensureServerAccessToken(
     forceRefresh?: boolean;
   }
 ) {
-  const accessToken = getRequestCookieValue(request, authCookieName);
   const forceRefresh = options?.forceRefresh ?? false;
+  const authorizationToken = getAuthorizationHeaderToken(request);
+
+  if (!forceRefresh && isTokenUsable(authorizationToken)) {
+    return {
+      accessToken: authorizationToken,
+      refreshedSession: null
+    };
+  }
+
+  const accessToken = getRequestCookieValue(request, authCookieName);
 
   if (!forceRefresh && isTokenUsable(accessToken)) {
     return {

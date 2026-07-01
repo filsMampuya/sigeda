@@ -16,6 +16,7 @@ export const departmentTypes = ["DIRECTION_GENERALE", "DIRECTION", "SERVICE", "B
 export const onPremiseRoles = ["ADMIN", "DIRECTEUR_GENERAL", "DIRECTEUR", "MANAGER", "AGENT", "AUDITEUR"] as const;
 
 export const folderStatuses = ["ACTIVE", "ARCHIVED"] as const;
+export const folderTypes = ["CORRESPONDANCE", "DOCUMENTAIRE", "AUTRE"] as const;
 
 export type Role = (typeof roles)[number];
 export function isRole(value: string): value is Role {

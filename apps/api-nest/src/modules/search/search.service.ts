@@ -4,6 +4,7 @@ import type { ConfidentialityLevel, DocumentAnnotationReport, DocumentEntity, Pa
 import { PrismaService } from "../prisma/prisma.service.js";
 import type { AuthenticatedPrincipal } from "../auth/auth.types.js";
 import { resolveDepartmentScope } from "../../shared/department-scope.js";
+import { buildRecipientTargetLabel, recipientMatchesScope } from "../../shared/document-recipient-targets.js";
 import type { SearchDocumentsQueryDto } from "./dto/search-documents-query.dto.js";
 
 type DepartmentNode = Parameters<typeof resolveDepartmentScope>[0];
@@ -17,6 +18,12 @@ type SearchableDocument = {
   subject: string | null;
   summary: string | null;
   type: string;
+  documentTypeId: string | null;
+  documentType: {
+    id: string;
+    code: string;
+    label: string;
+  } | null;
   status: DocumentStatus;
   confidentiality: ConfidentialityLevel | null;
   createdAt: Date;
@@ -35,6 +42,16 @@ type SearchableDocument = {
     directionId: string;
     kind: "RECEIVER" | "COPY";
     direction: Department;
+    targetKind: "DIRECTION_GENERALE" | "DIRECTION" | "SERVICE" | "BUREAU" | "USER";
+    targetDepartmentId: string | null;
+    targetDepartment: Department | null;
+    targetUserId: string | null;
+    targetUser: {
+      id: string;
+      email: string | null;
+      nom: string;
+      prenom: string;
+    } | null;
   }>;
   signers: Array<{
     userId: string | null;
@@ -67,14 +84,14 @@ type SearchableDocument = {
     folderId: string;
     movementType: "ENTREE" | "SORTIE";
     archivedAt: Date;
-    folder: {
-      id: string;
-      bureauId: string;
-      ownerDirectionId: string;
-      partnerDirectionId: string;
-      status: "ACTIVE" | "ARCHIVED";
-    };
-  }>;
+      folder: {
+        id: string;
+        bureauId: string;
+        ownerDirectionId: string;
+        partnerDirectionId: string | null;
+        status: "ACTIVE" | "ARCHIVED";
+      };
+    }>;
 };
 
 type UserWithScope = User & {
@@ -131,8 +148,12 @@ export class SearchService {
     query: SearchDocumentsQueryDto,
     principal: AuthenticatedPrincipal
   ): Promise<PaginatedResult<DocumentEntity>> {
-    const { documents, filters, currentDirectionId } = await this.buildSearchContext(query, principal);
-    const items = sortDocuments(documents.map((document) => mapSearchDocument(document, currentDirectionId)), filters.sortBy, filters.sortDir);
+    const { documents, filters, currentDirectionId, user } = await this.buildSearchContext(query, principal);
+    const items = sortDocuments(
+      documents.map((document) => mapSearchDocument(document, currentDirectionId, user)),
+      filters.sortBy,
+      filters.sortDir
+    );
     const page = Math.max(query.page ?? 1, 1);
     const pageSize = Math.max(query.pageSize ?? 10, 1);
     const total = items.length;
@@ -253,6 +274,26 @@ export class SearchService {
               }
             }
           : {}),
+        ...(filters.copyTargetDepartmentId
+          ? {
+              recipients: {
+                some: {
+                  kind: "COPY",
+                  targetDepartmentId: filters.copyTargetDepartmentId
+                }
+              }
+            }
+          : {}),
+        ...(filters.copyTargetUserId
+          ? {
+              recipients: {
+                some: {
+                  kind: "COPY",
+                  targetUserId: filters.copyTargetUserId
+                }
+              }
+            }
+          : {}),
         ...(filters.folderId
           ? {
               archives: {
@@ -293,6 +334,13 @@ export class SearchService {
       },
       include: {
         emitterDirection: true,
+        documentType: {
+          select: {
+            id: true,
+            code: true,
+            label: true
+          }
+        },
         author: {
           include: {
             department: {
@@ -308,7 +356,16 @@ export class SearchService {
         },
         recipients: {
           include: {
-            direction: true
+            direction: true,
+            targetDepartment: true,
+            targetUser: {
+              select: {
+                id: true,
+                email: true,
+                nom: true,
+                prenom: true
+              }
+            }
           }
         },
         signers: {
@@ -356,7 +413,7 @@ export class SearchService {
       })
     );
 
-    return { documents: filtered, filters, currentDirectionId: userDirectionId };
+    return { documents: filtered, filters, currentDirectionId: userDirectionId, user };
   }
 }
 
@@ -368,6 +425,8 @@ function parseFilters(query: SearchDocumentsQueryDto) {
     emitterDirectionId: normalizeString(query.emitterDirectionId ?? query.directionId),
     receiverDirectionId: normalizeString(query.receiverDirectionId),
     copyDirectionId: normalizeString(query.copyDirectionId),
+    copyTargetDepartmentId: normalizeString(query.copyTargetDepartmentId),
+    copyTargetUserId: normalizeString(query.copyTargetUserId),
     directionScope: query.directionScope ?? "all",
     bureauId: normalizeString(query.bureauId),
     folderId: normalizeString(query.folderId),
@@ -401,15 +460,22 @@ function canAccessDocument(document: SearchableDocument, user: UserWithScope | n
   }
 
   const userScope = resolveDepartmentScope(user.department);
-  const userDirectionId = userScope.directionId;
 
-  if (!userDirectionId) {
+  if (!userScope.directionId) {
     return false;
   }
 
-  const recipientDirectionIds = uniqueStrings(document.recipients.map((recipient) => recipient.directionId));
-
-  return document.emitterDirectionId === userDirectionId || recipientDirectionIds.includes(userDirectionId);
+  return (
+    document.emitterDirectionId === userScope.directionId ||
+    document.recipients.some((recipient) =>
+      recipientMatchesScope(recipient, {
+        id: user.id,
+        directionId: userScope.directionId,
+        serviceId: userScope.serviceId,
+        bureauId: userScope.bureauId
+      })
+    )
+  );
 }
 
 function matchesDerivedFilters(
@@ -507,13 +573,32 @@ function rankDirections(
   return Array.from(counts.values()).sort((left, right) => right.count - left.count || left.name.localeCompare(right.name, "fr"));
 }
 
-function mapSearchDocument(document: SearchableDocument, currentDirectionId?: string): DocumentEntity {
+function mapSearchDocument(document: SearchableDocument, currentDirectionId?: string, currentUser?: UserWithScope | null): DocumentEntity {
   const receiverDirectionIds = document.recipients
     .filter((recipient) => recipient.kind === "RECEIVER")
     .map((recipient) => recipient.directionId);
   const copyDirectionIds = document.recipients
     .filter((recipient) => recipient.kind === "COPY")
     .map((recipient) => recipient.directionId);
+  const receiverDirectionNames = document.recipients
+    .filter((recipient) => recipient.kind === "RECEIVER")
+    .map((recipient) => buildRecipientTargetLabel(recipient));
+  const copyTargets = document.recipients
+    .filter((recipient) => recipient.kind === "COPY")
+    .map((recipient) => ({
+      kind: recipient.targetKind,
+      directionId: recipient.directionId,
+      directionCode: recipient.direction.code,
+      directionName: recipient.direction.designation,
+      departmentId: recipient.targetDepartmentId ?? undefined,
+      departmentCode: recipient.targetDepartment?.code ?? undefined,
+      departmentName: recipient.targetDepartment?.designation ?? undefined,
+      userId: recipient.targetUserId ?? undefined,
+      userName: [recipient.targetUser?.nom, recipient.targetUser?.prenom].filter(Boolean).join(" ").trim() || undefined,
+      userEmail: recipient.targetUser?.email ?? undefined,
+      label: buildRecipientTargetLabel(recipient)
+    }));
+  const copyDirectionNames = copyTargets.map((target) => target.label);
   const attachments = document.attachments.map((attachment) => ({
     id: attachment.id,
     name: attachment.fileName,
@@ -521,19 +606,26 @@ function mapSearchDocument(document: SearchableDocument, currentDirectionId?: st
     mimeType: attachment.mimeType,
     fileUrl: `/api/v1/attachments/${attachment.id}/download`
   }));
+  const currentScope = currentUser ? resolveDepartmentScope(currentUser.department) : null;
+  const isCurrentUserRecipient = Boolean(
+    currentUser &&
+      document.recipients.some((recipient) =>
+        recipientMatchesScope(recipient, {
+          id: currentUser.id,
+          directionId: currentScope?.directionId,
+          serviceId: currentScope?.serviceId,
+          bureauId: currentScope?.bureauId
+        })
+      )
+  );
   const currentDirectionMovement =
     currentDirectionId === document.emitterDirectionId
       ? "SORTIE"
-      : currentDirectionId && receiverDirectionIds.includes(currentDirectionId)
+      : isCurrentUserRecipient
         ? "ENTREE"
-        : currentDirectionId && copyDirectionIds.includes(currentDirectionId)
-          ? "ENTREE"
-          : undefined;
+        : undefined;
   const isCurrentDirectionParticipant = Boolean(
-    currentDirectionId &&
-      (currentDirectionId === document.emitterDirectionId ||
-        receiverDirectionIds.includes(currentDirectionId) ||
-        copyDirectionIds.includes(currentDirectionId))
+    currentDirectionId && (currentDirectionId === document.emitterDirectionId || isCurrentUserRecipient)
   );
   const currentDirectionArchives = currentDirectionId
     ? document.archives.filter((archive) => archive.folder.ownerDirectionId === currentDirectionId)
@@ -563,6 +655,9 @@ function mapSearchDocument(document: SearchableDocument, currentDirectionId?: st
       email: document.author?.email
     },
     type: document.type,
+    documentTypeId: document.documentTypeId ?? undefined,
+    documentTypeCode: document.documentType?.code ?? undefined,
+    documentTypeLabel: document.documentType?.label ?? undefined,
     direction: {
       id: document.emitterDirection.id,
       code: document.emitterDirection.code,
@@ -589,6 +684,9 @@ function mapSearchDocument(document: SearchableDocument, currentDirectionId?: st
     emitterDirectionId: document.emitterDirectionId,
     receiverDirectionIds,
     copyDirectionIds,
+    receiverDirectionNames,
+    copyDirectionNames,
+    copyTargets,
     movementType: currentDirectionMovement ?? currentDirectionArchive?.movementType ?? document.archives[0]?.movementType,
     confidentialityLevel: document.confidentiality ?? undefined,
     status: document.status,

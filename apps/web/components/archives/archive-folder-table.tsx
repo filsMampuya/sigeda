@@ -15,6 +15,7 @@ import { formatShortDate } from "@/lib/format";
 
 type FolderColumnId =
   | "year"
+  | "folderType"
   | "sectionsUsed"
   | "direction"
   | "partner"
@@ -29,6 +30,7 @@ type FolderColumnId =
 
 const allColumns: Array<{ id: FolderColumnId; label: string }> = [
   { id: "year", label: "Annee" },
+  { id: "folderType", label: "Type" },
   { id: "sectionsUsed", label: "Sections utilisees" },
   { id: "direction", label: "Direction" },
   { id: "partner", label: "Direction partenaire" },
@@ -44,6 +46,7 @@ const allColumns: Array<{ id: FolderColumnId; label: string }> = [
 
 const defaultVisibleColumns: FolderColumnId[] = [
   "year",
+  "folderType",
   "sectionsUsed",
   "direction",
   "partner",
@@ -110,6 +113,9 @@ export function ArchiveFolderTable({
       [
         row.ownerDirectionName,
         row.partnerDirectionName,
+        row.label,
+        row.description,
+        row.folderType,
         row.bureauName,
         row.accessibleBureauNames?.join(", "),
         String(row.year),
@@ -172,6 +178,9 @@ export function ArchiveFolderTable({
               {isVisible("year") ? (
                 <th className="w-[7%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Annee</th>
               ) : null}
+              {isVisible("folderType") ? (
+                <th className="w-[9%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Type</th>
+              ) : null}
               {isVisible("sectionsUsed") ? (
                 <th className="w-[11%] px-5 py-3 text-xs font-semibold uppercase tracking-[0.12em]">Sections</th>
               ) : null}
@@ -219,6 +228,21 @@ export function ArchiveFolderTable({
             {filteredRows.map((row) => (
               <tr key={row.id} className="align-top hover:bg-slate-50/80">
                 {isVisible("year") ? <td className="px-5 py-3.5">{row.year}</td> : null}
+                {isVisible("folderType") ? (
+                  <td className="px-5 py-3.5">
+                    <LongText
+                      value={
+                        row.folderType === "DOCUMENTAIRE"
+                          ? "Documentaire"
+                          : row.folderType === "AUTRE"
+                            ? "Autre"
+                            : "Correspondance"
+                      }
+                      label="Type de classeur"
+                      className="font-medium text-brand-navy"
+                    />
+                  </td>
+                ) : null}
                 {isVisible("sectionsUsed") ? (
                   <td className="px-5 py-3.5">
                     <LongText value={formatSectionsUsed(row.sectionsUsed)} label="Sections utilisees" className="font-medium text-brand-navy" />
@@ -235,9 +259,26 @@ export function ArchiveFolderTable({
                 {isVisible("partner") ? (
                   <td className="px-5 py-3.5">
                     <LongText
-                      value={formatDirection(row.partnerDirectionCode, row.partnerDirectionName, row.partnerDirectionId)}
-                      label="Direction partenaire"
+                      value={
+                        row.folderType === "CORRESPONDANCE"
+                          ? formatDirection(row.partnerDirectionCode, row.partnerDirectionName, row.partnerDirectionId ?? undefined)
+                          : row.label ?? row.description ?? "-"
+                      }
+                      label={
+                        row.folderType === "CORRESPONDANCE"
+                          ? "Direction partenaire"
+                          : row.folderType === "DOCUMENTAIRE"
+                            ? "Libelle documentaire"
+                            : "Designation"
+                      }
                     />
+                    {row.description ? (
+                      <LongText
+                        value={row.description}
+                        label="Description"
+                        className="mt-1 text-xs text-slate-500"
+                      />
+                    ) : null}
                   </td>
                 ) : null}
                 {isVisible("bureau") ? (

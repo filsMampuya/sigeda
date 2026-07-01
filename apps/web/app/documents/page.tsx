@@ -236,7 +236,10 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
       ? {
           key: "folder",
           label: "Classeur",
-          value: formatStructureLabel(folder.partnerDirectionCode, folder.partnerDirectionName, folder.id)
+          value:
+            folder.folderType === "CORRESPONDANCE"
+              ? formatStructureLabel(folder.partnerDirectionCode, folder.partnerDirectionName, folder.id)
+              : folder.label ?? folder.description ?? folder.id
         }
       : null,
     currentUser?.user?.role

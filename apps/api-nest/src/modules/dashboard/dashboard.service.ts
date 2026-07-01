@@ -214,7 +214,7 @@ function scopeDocuments<T extends { author: { department: DepartmentNode } }>(do
 
 function toAuthenticatedUser(user: {
   id: string;
-  email: string;
+  email: string | null;
   nom: string;
   prenom: string;
   role: { code: string };
@@ -224,8 +224,8 @@ function toAuthenticatedUser(user: {
 
   return {
     id: user.id,
-    email: user.email,
-    displayName: [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email,
+    email: user.email ?? "",
+    displayName: [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email || user.id,
     role: normalizeRole(user.role.code),
     directionId: scope.directionId,
     serviceId: scope.serviceId,

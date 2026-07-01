@@ -1,0 +1,31 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]
+
+  - job_name: sigeda-api-health
+    metrics_path: /api/v1/health
+    static_configs:
+      - targets: ["api-nest:4100"]
+
+  - job_name: sigeda-web-login
+    metrics_path: /login
+    static_configs:
+      - targets: ["web:3000"]
+
+  - job_name: keycloak-health
+    metrics_path: /auth/health/ready
+    static_configs:
+      - targets: ["keycloak:8080"]

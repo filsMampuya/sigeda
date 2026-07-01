@@ -186,7 +186,7 @@ export class AttachmentsService {
         attachment,
         userId: user.id,
         userName: buildUserName(user),
-        email: user.email,
+        email: user.email ?? "",
         request
       });
 
@@ -225,7 +225,7 @@ export class AttachmentsService {
       attachment,
       userId: user.id,
       userName: buildUserName(user),
-      email: user.email,
+      email: user.email ?? "",
       request
     });
 
@@ -545,7 +545,7 @@ function canAccessDocumentAttachment(user: ScopedUser, attachment: AttachmentRec
 }
 
 function buildUserName(user: ScopedUser) {
-  return [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email;
+  return [user.nom, user.prenom].filter(Boolean).join(" ").trim() || user.email || user.id;
 }
 
 function extractIpAddress(request: RequestLike) {

@@ -40,6 +40,16 @@ export class SearchDocumentsQueryDto {
   @IsString()
   copyDirectionId?: string;
 
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  copyTargetDepartmentId?: string;
+
+  @Transform(({ value }: TransformFnParams) => trimString(value))
+  @IsOptional()
+  @IsString()
+  copyTargetUserId?: string;
+
   @IsOptional()
   @IsEnum(["all", "emitted", "received"] as const)
   directionScope?: "all" | "emitted" | "received";

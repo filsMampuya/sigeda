@@ -1,0 +1,13 @@
+[Unit]
+Description=SIGEDA preproduction backup
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/sigeda/app/repo
+ExecStart=/usr/bin/bash /opt/sigeda/app/repo/infra/docker/scripts/preprod-backup.sh
+ExecStartPost=/usr/bin/bash /opt/sigeda/app/repo/infra/docker/scripts/preprod-backup-prune.sh 7
+
+[Install]
+WantedBy=multi-user.target

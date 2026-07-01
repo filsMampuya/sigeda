@@ -1,4 +1,12 @@
-import { PrismaClient, DepartmentType, FolderStatus } from "@prisma/client";
+import {
+  PrismaClient,
+  DepartmentType,
+  DocumentType as PrismaDocumentType,
+  FolderStatus,
+  FolderType,
+  UserDirectorySource,
+  UserDirectoryStatus
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 const demoYear = Number.parseInt(process.env.SIGEDA_DEMO_YEAR ?? String(new Date().getFullYear()), 10);
@@ -11,6 +19,21 @@ const roleDefinitions = [
   ["AGENT", "Agent"],
   ["AUDITEUR", "Auditeur"]
 ] as const;
+
+const documentTypeDefinitions = [
+  ["COURRIER", "Courrier", "Courrier administratif standard"],
+  ["NOTE", "Note", "Note administrative ou de service"],
+  ["RAPPORT", "Rapport", "Rapport d'activite, d'analyse ou de mission"],
+  ["PV_REUNION", "Proces-verbal de reunion", "Proces-verbal et compte rendu officiel"],
+  ["DECISION", "Decision", "Decision officielle ou acte signe"],
+  ["CONTRAT", "Contrat", "Contrat, convention ou protocole"],
+  ["DOSSIER_TECHNIQUE", "Dossier technique", "Documentation technique ou dossier d'exploitation"],
+  ["DOCUMENT_ADMINISTRATIF", "Document administratif", "Piece administrative generale"],
+  ["DOCUMENT_FINANCIER", "Document financier", "Document budgetaire, comptable ou financier"],
+  ["DOCUMENT_PRODUCTION", "Document de production", "Document lie a la production ou a l'exploitation"],
+  ["DOCUMENT_SECURITE", "Document de securite", "Document de surete, controle ou securite"],
+  ["AUTRE", "Autre", "Type documentaire non encore classe"]
+] as const satisfies ReadonlyArray<readonly [PrismaDocumentType["code"], string, string]>;
 
 const departmentDefinitions = {
   dg: {
@@ -261,6 +284,7 @@ async function main() {
   }
 
   const departments = await seedDepartments();
+  await seedDocumentTypes();
   await seedUsers(roles, departments);
   await seedFolders(departments);
 
@@ -435,11 +459,14 @@ async function seedUsers(
       update: {
         keycloakId: definition.keycloakId,
         matricule: definition.matricule,
+        email: definition.email,
         nom: definition.nom,
         prenom: definition.prenom,
         roleId: role.id,
         departmentId: department.id,
-        isActive: true
+        isActive: true,
+        directoryStatus: UserDirectoryStatus.ACTIVE,
+        directorySource: UserDirectorySource.KEYCLOAK_PROVISIONED
       },
       create: {
         keycloakId: definition.keycloakId,
@@ -449,7 +476,9 @@ async function seedUsers(
         prenom: definition.prenom,
         roleId: role.id,
         departmentId: department.id,
-        isActive: true
+        isActive: true,
+        directoryStatus: UserDirectoryStatus.ACTIVE,
+        directorySource: UserDirectorySource.KEYCLOAK_PROVISIONED
       }
     });
   }
@@ -472,21 +501,33 @@ async function seedFolders(departments: Map<string, { id: string; code: string; 
         continue;
       }
 
-      await prisma.folder.upsert({
+      const existingFolder = await prisma.folder.findFirst({
         where: {
-          year_bureauId_ownerDirectionId_partnerDirectionId: {
-            year: demoYear,
-            bureauId: bureau.id,
-            ownerDirectionId,
-            partnerDirectionId: partnerDirection.id
-          }
-        },
-        update: {
-          accessibleBureauIds: [bureau.id],
-          status: FolderStatus.ACTIVE
-        },
-        create: {
           year: demoYear,
+          bureauId: bureau.id,
+          ownerDirectionId,
+          partnerDirectionId: partnerDirection.id,
+          folderType: FolderType.CORRESPONDANCE
+        },
+        select: { id: true }
+      });
+
+      if (existingFolder) {
+        await prisma.folder.update({
+          where: { id: existingFolder.id },
+          data: {
+            folderType: FolderType.CORRESPONDANCE,
+            accessibleBureauIds: [bureau.id],
+            status: FolderStatus.ACTIVE
+          }
+        });
+        continue;
+      }
+
+      await prisma.folder.create({
+        data: {
+          year: demoYear,
+          folderType: FolderType.CORRESPONDANCE,
           bureauId: bureau.id,
           accessibleBureauIds: [bureau.id],
           ownerDirectionId,
@@ -495,6 +536,25 @@ async function seedFolders(departments: Map<string, { id: string; code: string; 
         }
       });
     }
+  }
+}
+
+async function seedDocumentTypes() {
+  for (const [code, label, description] of documentTypeDefinitions) {
+    await prisma.documentType.upsert({
+      where: { code },
+      update: {
+        label,
+        description,
+        isActive: true
+      },
+      create: {
+        code,
+        label,
+        description,
+        isActive: true
+      }
+    });
   }
 }
 

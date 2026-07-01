@@ -48,6 +48,17 @@ enum AttachmentStorageProvider {
   MINIO
 }
 
+enum DocumentIntelligenceJobStatus {
+  PENDING
+  UPLOADED
+  VISION_RUNNING
+  OCR_RUNNING
+  LLM_RUNNING
+  COMPLETED
+  LOW_CONFIDENCE
+  FAILED
+}
+
 model Department {
   id                      String                 @id @default(uuid()) @db.Uuid
   code                    String                 @unique
@@ -115,26 +126,27 @@ model RolePermission {
 }
 
 model User {
-  id                   String                 @id @default(uuid()) @db.Uuid
-  keycloakId           String                 @unique @map("keycloak_id")
-  matricule            String                 @unique
-  email                String                 @unique
-  nom                  String
-  prenom               String
-  roleId               String                 @map("role_id") @db.Uuid
-  role                 Role                   @relation(fields: [roleId], references: [id])
-  departmentId         String?                @map("department_id") @db.Uuid
-  department           Department?            @relation(fields: [departmentId], references: [id])
-  isActive             Boolean                @default(true) @map("is_active")
-  documents            Document[]
-  documentSigners      DocumentSigner[]
-  archives             DocumentArchive[]      @relation("ArchiveActor")
-  createdAnnotations   DocumentAnnotation[]   @relation("DocumentAnnotationAuthor")
-  createdVersions      DocumentVersion[]      @relation("DocumentVersionAuthor")
-  createdTransmissions DocumentTransmission[] @relation("DocumentTransmissionAuthor")
-  auditLogs            AuditLog[]
-  createdAt            DateTime               @default(now()) @map("created_at")
-  updatedAt            DateTime               @updatedAt @map("updated_at")
+  id                       String                    @id @default(uuid()) @db.Uuid
+  keycloakId               String                    @unique @map("keycloak_id")
+  matricule                String                    @unique
+  email                    String                    @unique
+  nom                      String
+  prenom                   String
+  roleId                   String                    @map("role_id") @db.Uuid
+  role                     Role                      @relation(fields: [roleId], references: [id])
+  departmentId             String?                   @map("department_id") @db.Uuid
+  department               Department?               @relation(fields: [departmentId], references: [id])
+  isActive                 Boolean                   @default(true) @map("is_active")
+  documents                Document[]
+  documentSigners          DocumentSigner[]
+  archives                 DocumentArchive[]         @relation("ArchiveActor")
+  createdAnnotations       DocumentAnnotation[]      @relation("DocumentAnnotationAuthor")
+  createdVersions          DocumentVersion[]         @relation("DocumentVersionAuthor")
+  createdTransmissions     DocumentTransmission[]    @relation("DocumentTransmissionAuthor")
+  documentIntelligenceJobs DocumentIntelligenceJob[]
+  auditLogs                AuditLog[]
+  createdAt                DateTime                  @default(now()) @map("created_at")
+  updatedAt                DateTime                  @updatedAt @map("updated_at")
 
   @@map("users")
 }
@@ -351,6 +363,37 @@ model DocumentTransmission {
   @@index([documentId, sentAt])
   @@index([documentVersionId, targetDirectionId])
   @@map("document_transmissions")
+}
+
+model DocumentIntelligenceJob {
+  id               String                        @id @default(uuid()) @db.Uuid
+  userId           String                        @map("user_id") @db.Uuid
+  user             User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalFileName String                        @map("original_file_name")
+  bucket           String
+  objectKey        String                        @map("object_key")
+  mimeType         String                        @map("mime_type")
+  sizeBytes        BigInt                        @map("size_bytes")
+  requestedMode    String                        @map("requested_mode")
+  effectiveMode    String?                       @map("effective_mode")
+  status           DocumentIntelligenceJobStatus
+  ocrProvider      String?                       @map("ocr_provider")
+  llmProvider      String?                       @map("llm_provider")
+  modelName        String?                       @map("model_name")
+  extractedJson    Json?                         @map("extracted_json")
+  rawExtractedText String?                       @map("raw_extracted_text")
+  confidenceScore  Decimal?                      @map("confidence_score") @db.Decimal(5, 4)
+  errorCode        String?                       @map("error_code")
+  errorMessage     String?                       @map("error_message")
+  startedAt        DateTime?                     @map("started_at")
+  finishedAt       DateTime?                     @map("finished_at")
+  createdAt        DateTime                      @default(now()) @map("created_at")
+  updatedAt        DateTime                      @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("document_intelligence_jobs")
 }
 
 model AuditLog {

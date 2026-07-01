@@ -51,6 +51,8 @@ export async function createUserAction(
 ): Promise<CreateUserActionState> {
   try {
     const payload = createUserSchema.parse({
+      mode: getString(formData, "mode") || "CREATE",
+      pendingUserId: getString(formData, "pendingUserId") || undefined,
       personne: {
         nom: getString(formData, "nom"),
         prenom: getString(formData, "postnom")
@@ -58,6 +60,7 @@ export async function createUserAction(
       profile: getReference(formData, "profile"),
       email: getString(formData, "email"),
       matricule: getString(formData, "matricule"),
+      functionTitle: getString(formData, "functionTitle") || undefined,
       bureau: getReference(formData, "bureau")
     });
 
@@ -66,7 +69,10 @@ export async function createUserAction(
 
     return {
       status: "success",
-      message: "Utilisateur cree avec succes.",
+      message:
+        result?.operation === "COMPLETED_PENDING"
+          ? "Agent a completer finalise avec succes."
+          : "Utilisateur cree avec succes.",
       defaultPassword: result?.defaultPassword ?? null
     } satisfies CreateUserActionState;
   } catch (error) {

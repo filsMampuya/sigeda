@@ -20,6 +20,12 @@ enum FolderStatus {
   ARCHIVED
 }
 
+enum FolderType {
+  CORRESPONDANCE
+  DOCUMENTAIRE
+  AUTRE
+}
+
 enum MovementType {
   ENTREE
   SORTIE
@@ -38,6 +44,14 @@ enum RecipientKind {
   COPY
 }
 
+enum RecipientTargetKind {
+  DIRECTION_GENERALE
+  DIRECTION
+  SERVICE
+  BUREAU
+  USER
+}
+
 enum AnnotationStatus {
   PENDING
   APPLIED
@@ -46,6 +60,29 @@ enum AnnotationStatus {
 
 enum AttachmentStorageProvider {
   MINIO
+}
+
+enum UserDirectoryStatus {
+  ACTIVE
+  PENDING_COMPLETION
+  INACTIVE
+}
+
+enum UserDirectorySource {
+  MANUAL
+  DOCUMENT_INTELLIGENCE
+  KEYCLOAK_PROVISIONED
+}
+
+enum DocumentIntelligenceJobStatus {
+  PENDING
+  UPLOADED
+  VISION_RUNNING
+  OCR_RUNNING
+  LLM_RUNNING
+  COMPLETED
+  LOW_CONFIDENCE
+  FAILED
 }
 
 model Department {
@@ -65,6 +102,7 @@ model Department {
   users       User[]
   documents   Document[]     @relation("EmitterDirection")
   recipients  DocumentRecipient[] @relation("RecipientDirection")
+  targetedRecipients DocumentRecipient[] @relation("RecipientTargetDepartment")
   folders     Folder[]       @relation("OwnerDirection")
   bureauFolders Folder[]     @relation("BureauFolders")
   partnerFolders Folder[]    @relation("PartnerDirection")
@@ -116,22 +154,27 @@ model RolePermission {
 
 model User {
   id             String       @id @default(uuid()) @db.Uuid
-  keycloakId     String       @unique @map("keycloak_id")
-  matricule      String       @unique
-  email          String       @unique
+  keycloakId     String?      @unique @map("keycloak_id")
+  matricule      String?      @unique
+  email          String?      @unique
   nom            String
   prenom         String
+  functionTitle  String?      @map("function_title")
   roleId         String       @map("role_id") @db.Uuid
   role           Role         @relation(fields: [roleId], references: [id])
   departmentId   String?      @map("department_id") @db.Uuid
   department     Department?  @relation(fields: [departmentId], references: [id])
   isActive       Boolean      @default(true) @map("is_active")
+  directoryStatus UserDirectoryStatus @default(ACTIVE) @map("directory_status")
+  directorySource UserDirectorySource @default(MANUAL) @map("directory_source")
   documents      Document[]
   documentSigners DocumentSigner[]
+  targetedDocumentRecipients DocumentRecipient[] @relation("RecipientTargetUser")
   archives       DocumentArchive[] @relation("ArchiveActor")
   createdAnnotations DocumentAnnotation[] @relation("DocumentAnnotationAuthor")
   createdVersions  DocumentVersion[] @relation("DocumentVersionAuthor")
   createdTransmissions DocumentTransmission[] @relation("DocumentTransmissionAuthor")
+  documentIntelligenceJobs DocumentIntelligenceJob[]
   auditLogs      AuditLog[]
   createdAt      DateTime     @default(now()) @map("created_at")
   updatedAt      DateTime     @updatedAt @map("updated_at")
@@ -148,6 +191,8 @@ model Document {
   subject            String?
   summary            String?
   type               String
+  documentTypeId     String?             @map("document_type_id") @db.Uuid
+  documentType       DocumentType?       @relation(fields: [documentTypeId], references: [id])
   status             DocumentStatus      @default(BROUILLON)
   confidentiality    String?
   emitterDirectionId String              @map("emitter_direction_id") @db.Uuid
@@ -189,36 +234,71 @@ model DocumentSigner {
 }
 
 model DocumentRecipient {
-  id           String        @id @default(uuid()) @db.Uuid
-  documentId   String        @map("document_id") @db.Uuid
-  document     Document      @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  directionId  String        @map("direction_id") @db.Uuid
-  direction    Department    @relation("RecipientDirection", fields: [directionId], references: [id])
-  kind         RecipientKind
-  createdAt    DateTime      @default(now()) @map("created_at")
+  id                 String              @id @default(uuid()) @db.Uuid
+  documentId         String              @map("document_id") @db.Uuid
+  document           Document            @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  directionId        String              @map("direction_id") @db.Uuid
+  direction          Department          @relation("RecipientDirection", fields: [directionId], references: [id])
+  kind               RecipientKind
+  targetKind         RecipientTargetKind @default(DIRECTION) @map("target_kind")
+  targetDepartmentId String?             @map("target_department_id") @db.Uuid
+  targetDepartment   Department?         @relation("RecipientTargetDepartment", fields: [targetDepartmentId], references: [id])
+  targetUserId       String?             @map("target_user_id") @db.Uuid
+  targetUser         User?               @relation("RecipientTargetUser", fields: [targetUserId], references: [id])
+  createdAt          DateTime            @default(now()) @map("created_at")
 
-  @@unique([documentId, directionId, kind])
+  @@index([documentId, kind])
+  @@index([targetDepartmentId])
+  @@index([targetUserId])
   @@map("document_recipients")
 }
 
 model Folder {
   id                 String       @id @default(uuid()) @db.Uuid
   year               Int
+  folderType         FolderType   @default(CORRESPONDANCE) @map("folder_type")
+  label              String?
+  description        String?
   bureauId           String       @map("bureau_id") @db.Uuid
   bureau             Department   @relation("BureauFolders", fields: [bureauId], references: [id])
   accessibleBureauIds String[]    @default([]) @map("accessible_bureau_ids")
   ownerDirectionId   String       @map("owner_direction_id") @db.Uuid
   ownerDirection     Department   @relation("OwnerDirection", fields: [ownerDirectionId], references: [id])
-  partnerDirectionId String       @map("partner_direction_id") @db.Uuid
-  partnerDirection   Department   @relation("PartnerDirection", fields: [partnerDirectionId], references: [id])
+  partnerDirectionId String?      @map("partner_direction_id") @db.Uuid
+  partnerDirection   Department?  @relation("PartnerDirection", fields: [partnerDirectionId], references: [id])
+  documentTypes      FolderDocumentType[]
   status             FolderStatus @default(ACTIVE)
   archives           DocumentArchive[]
   physicalArchives   PhysicalArchive[]
   createdAt          DateTime     @default(now()) @map("created_at")
   updatedAt          DateTime     @updatedAt @map("updated_at")
 
-  @@unique([year, bureauId, ownerDirectionId, partnerDirectionId])
   @@map("folders")
+}
+
+model DocumentType {
+  id          String               @id @default(uuid()) @db.Uuid
+  code        String               @unique
+  label       String
+  description String?
+  isActive    Boolean              @default(true) @map("is_active")
+  documents   Document[]
+  folders     FolderDocumentType[]
+  createdAt   DateTime             @default(now()) @map("created_at")
+  updatedAt   DateTime             @updatedAt @map("updated_at")
+
+  @@map("document_types")
+}
+
+model FolderDocumentType {
+  folderId       String       @map("folder_id") @db.Uuid
+  documentTypeId String       @map("document_type_id") @db.Uuid
+  folder         Folder       @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  documentType   DocumentType @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@id([folderId, documentTypeId])
+  @@map("folder_document_types")
 }
 
 model DocumentArchive {
@@ -351,6 +431,37 @@ model DocumentTransmission {
   @@index([documentId, sentAt])
   @@index([documentVersionId, targetDirectionId])
   @@map("document_transmissions")
+}
+
+model DocumentIntelligenceJob {
+  id               String                       @id @default(uuid()) @db.Uuid
+  userId           String                       @map("user_id") @db.Uuid
+  user             User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalFileName String                       @map("original_file_name")
+  bucket           String
+  objectKey        String                       @map("object_key")
+  mimeType         String                       @map("mime_type")
+  sizeBytes        BigInt                       @map("size_bytes")
+  requestedMode    String                       @map("requested_mode")
+  effectiveMode    String?                      @map("effective_mode")
+  status           DocumentIntelligenceJobStatus
+  ocrProvider      String?                      @map("ocr_provider")
+  llmProvider      String?                      @map("llm_provider")
+  modelName        String?                      @map("model_name")
+  extractedJson    Json?                        @map("extracted_json")
+  rawExtractedText String?                      @map("raw_extracted_text")
+  confidenceScore  Decimal?                     @map("confidence_score") @db.Decimal(5, 4)
+  errorCode        String?                      @map("error_code")
+  errorMessage     String?                      @map("error_message")
+  startedAt        DateTime?                    @map("started_at")
+  finishedAt       DateTime?                    @map("finished_at")
+  createdAt        DateTime                     @default(now()) @map("created_at")
+  updatedAt        DateTime                     @updatedAt @map("updated_at")
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+  @@map("document_intelligence_jobs")
 }
 
 model AuditLog {

@@ -71,6 +71,41 @@ services:
     volumes:
       - opensearch-data:/usr/share/opensearch/data
 
+  ollama:
+    image: ollama/ollama:latest
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    entrypoint:
+      - /bin/sh
+      - -lc
+    restart: on-failure
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      VISION_MODEL: ${SIGEDA_DOCUMENT_AI_VISION_MODEL:-moondream}
+      TEXT_MODEL: ${SIGEDA_DOCUMENT_AI_TEXT_MODEL:-qwen2.5:0.5b}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command:
+      - |
+        set -e
+        ollama pull "$$VISION_MODEL"
+        if [ "$$TEXT_MODEL" != "$$VISION_MODEL" ]; then
+          ollama pull "$$TEXT_MODEL"
+        fi
+
   api-nest:
     build:
       context: ../..
@@ -94,6 +129,25 @@ services:
       CORS_ORIGIN: ${SIGEDA_CORS_ORIGIN:-http://localhost:8088,http://localhost:3000}
       HTTP_BODY_LIMIT: ${SIGEDA_HTTP_BODY_LIMIT:-10mb}
       MAX_DOCUMENT_UPLOAD_BYTES: ${SIGEDA_MAX_DOCUMENT_UPLOAD_BYTES:-26214400}
+      DOCUMENT_AI_MODE: ${SIGEDA_DOCUMENT_AI_MODE:-ocr}
+      DOCUMENT_AI_TIMEOUT_MS: ${SIGEDA_DOCUMENT_AI_TIMEOUT_MS:-180000}
+      DOCUMENT_AI_OLLAMA_KEEP_ALIVE: ${SIGEDA_DOCUMENT_AI_OLLAMA_KEEP_ALIVE:-15m}
+      DOCUMENT_AI_OLLAMA_TEMPERATURE: ${SIGEDA_DOCUMENT_AI_OLLAMA_TEMPERATURE:-0}
+      DOCUMENT_AI_OLLAMA_NUM_PREDICT: ${SIGEDA_DOCUMENT_AI_OLLAMA_NUM_PREDICT:-160}
+      DOCUMENT_AI_MAX_OCR_TEXT_CHARS: ${SIGEDA_DOCUMENT_AI_MAX_OCR_TEXT_CHARS:-4000}
+      DOCUMENT_AI_VISION_BASE_URL: ${SIGEDA_DOCUMENT_AI_VISION_BASE_URL:-http://ollama:11434}
+      DOCUMENT_AI_VISION_MODEL: ${SIGEDA_DOCUMENT_AI_VISION_MODEL:-moondream}
+      DOCUMENT_AI_TEXT_BASE_URL: ${SIGEDA_DOCUMENT_AI_TEXT_BASE_URL:-http://ollama:11434}
+      DOCUMENT_AI_TEXT_MODEL: ${SIGEDA_DOCUMENT_AI_TEXT_MODEL:-qwen2.5:0.5b}
+      DOCUMENT_AI_LOW_CONFIDENCE_THRESHOLD: ${SIGEDA_DOCUMENT_AI_LOW_CONFIDENCE_THRESHOLD:-0.70}
+      DOCUMENT_AI_DEBUG: ${SIGEDA_DOCUMENT_AI_DEBUG:-true}
+      DOCUMENT_AI_TEMP_BUCKET_PREFIX: ${SIGEDA_DOCUMENT_AI_TEMP_BUCKET_PREFIX:-tmp/document-intelligence}
+      OCR_PROVIDER: ${SIGEDA_OCR_PROVIDER:-tesseract-cli}
+      OCR_LANGUAGE: ${SIGEDA_OCR_LANGUAGE:-fra+eng}
+      OCR_IMAGE_COPY_WIDTH_PERCENT: ${SIGEDA_OCR_IMAGE_COPY_WIDTH_PERCENT:-41}
+      OCR_IMAGE_COPY_HEIGHT_PERCENT: ${SIGEDA_OCR_IMAGE_COPY_HEIGHT_PERCENT:-29}
+      OCR_TIMEOUT_MS: ${SIGEDA_OCR_TIMEOUT_MS:-60000}
+      OCR_TEMP_DIR: ${SIGEDA_OCR_TEMP_DIR:-/tmp/sigeda-ocr}
     depends_on:
       postgres:
         condition: service_healthy
@@ -124,6 +178,7 @@ services:
       NEXT_PUBLIC_KEYCLOAK_URL: ${SIGEDA_KEYCLOAK_URL:-http://localhost:8080}
       NEXT_PUBLIC_KEYCLOAK_REALM: ${SIGEDA_KEYCLOAK_REALM:-sigeda}
       NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${SIGEDA_KEYCLOAK_CLIENT_ID:-sigeda-web}
+      DOCUMENT_AI_DEBUG: ${SIGEDA_DOCUMENT_AI_DEBUG:-true}
     depends_on:
       - api-nest
   nginx:
@@ -141,3 +196,4 @@ volumes:
   pgadmin-data:
   minio-data:
   opensearch-data:
+  ollama-data:

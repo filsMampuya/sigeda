@@ -1,0 +1,294 @@
+name: sigeda-preprod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${SIGEDA_POSTGRES_DB}
+      POSTGRES_USER: ${SIGEDA_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${SIGEDA_POSTGRES_PASSWORD}
+    volumes:
+      - ${SIGEDA_DATA_ROOT}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SIGEDA_POSTGRES_USER} -d ${SIGEDA_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+  postgres-keycloak:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${SIGEDA_KEYCLOAK_DB}
+      POSTGRES_USER: ${SIGEDA_KEYCLOAK_DB_USER}
+      POSTGRES_PASSWORD: ${SIGEDA_KEYCLOAK_DB_PASSWORD}
+    volumes:
+      - ${SIGEDA_DATA_ROOT}/postgres-keycloak:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SIGEDA_KEYCLOAK_DB_USER} -d ${SIGEDA_KEYCLOAK_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${SIGEDA_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${SIGEDA_MINIO_ROOT_PASSWORD}
+    volumes:
+      - ${SIGEDA_DATA_ROOT}/minio:/data
+    expose:
+      - "9000"
+      - "9001"
+    networks:
+      - backend
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    restart: unless-stopped
+    command:
+      - start
+      - --http-enabled=true
+      - --http-port=8080
+      - --hostname=${SIGEDA_PREPROD_HOSTNAME}
+      - --proxy-headers=xforwarded
+      - --http-relative-path=/auth
+      - --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/${SIGEDA_KEYCLOAK_DB}
+      KC_DB_USERNAME: ${SIGEDA_KEYCLOAK_DB_USER}
+      KC_DB_PASSWORD: ${SIGEDA_KEYCLOAK_DB_PASSWORD}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+      KEYCLOAK_ADMIN: ${SIGEDA_KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${SIGEDA_KEYCLOAK_ADMIN_PASSWORD}
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    volumes:
+      - ./keycloak/sigeda-realm.json:/opt/keycloak/data/import/sigeda-realm.json:ro
+    expose:
+      - "8080"
+    networks:
+      - backend
+
+  opensearch:
+    image: opensearchproject/opensearch:2.15.0
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: ${SIGEDA_OPENSEARCH_SECURITY_DISABLED}
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${SIGEDA_OPENSEARCH_ADMIN_PASSWORD}
+      OPENSEARCH_JAVA_OPTS: ${SIGEDA_OPENSEARCH_JAVA_OPTS}
+    volumes:
+      - ${SIGEDA_DATA_ROOT}/opensearch:/usr/share/opensearch/data
+    expose:
+      - "9200"
+      - "9600"
+    networks:
+      - backend
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    environment:
+      OLLAMA_HOST: 0.0.0.0:11434
+    volumes:
+      - ${SIGEDA_DATA_ROOT}/ollama:/root/.ollama
+    expose:
+      - "11434"
+    healthcheck:
+      test: ["CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+    networks:
+      - backend
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    restart: on-failure
+    entrypoint:
+      - /bin/sh
+      - -lc
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      VISION_MODEL: ${SIGEDA_DOCUMENT_AI_VISION_MODEL}
+      TEXT_MODEL: ${SIGEDA_DOCUMENT_AI_TEXT_MODEL}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    command:
+      - |
+        set -e
+        ollama pull "$$VISION_MODEL"
+        if [ "$$TEXT_MODEL" != "$$VISION_MODEL" ]; then
+          ollama pull "$$TEXT_MODEL"
+        fi
+    networks:
+      - backend
+
+  api-nest:
+    build:
+      context: ../..
+      dockerfile: apps/api-nest/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 4100
+      DATABASE_URL: postgresql://${SIGEDA_POSTGRES_USER}:${SIGEDA_POSTGRES_PASSWORD}@postgres:5432/${SIGEDA_POSTGRES_DB}
+      KEYCLOAK_ISSUER: ${SIGEDA_KEYCLOAK_ISSUER}
+      KEYCLOAK_JWKS_URI: http://keycloak:8080/auth/realms/${SIGEDA_KEYCLOAK_REALM}/protocol/openid-connect/certs
+      KEYCLOAK_AUDIENCE: ${SIGEDA_KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_REALM: ${SIGEDA_KEYCLOAK_REALM}
+      KEYCLOAK_ADMIN_BASE_URL: http://keycloak:8080/auth
+      KEYCLOAK_ADMIN_USERNAME: ${SIGEDA_KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${SIGEDA_KEYCLOAK_ADMIN_PASSWORD}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${SIGEDA_MINIO_PUBLIC_ENDPOINT}
+      MINIO_REGION: ${SIGEDA_MINIO_REGION}
+      MINIO_BUCKET: ${SIGEDA_MINIO_BUCKET}
+      MINIO_ACCESS_KEY: ${SIGEDA_MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${SIGEDA_MINIO_ROOT_PASSWORD}
+      OPENSEARCH_NODE: http://opensearch:9200
+      OPENSEARCH_INDEX_DOCUMENTS: ${SIGEDA_OPENSEARCH_INDEX_DOCUMENTS}
+      CORS_ORIGIN: ${SIGEDA_CORS_ORIGIN}
+      HTTP_BODY_LIMIT: ${SIGEDA_HTTP_BODY_LIMIT}
+      MAX_DOCUMENT_UPLOAD_BYTES: ${SIGEDA_MAX_DOCUMENT_UPLOAD_BYTES}
+      DOCUMENT_AI_MODE: ${SIGEDA_DOCUMENT_AI_MODE}
+      DOCUMENT_AI_TIMEOUT_MS: ${SIGEDA_DOCUMENT_AI_TIMEOUT_MS}
+      DOCUMENT_AI_OLLAMA_KEEP_ALIVE: ${SIGEDA_DOCUMENT_AI_OLLAMA_KEEP_ALIVE}
+      DOCUMENT_AI_OLLAMA_TEMPERATURE: ${SIGEDA_DOCUMENT_AI_OLLAMA_TEMPERATURE}
+      DOCUMENT_AI_OLLAMA_NUM_PREDICT: ${SIGEDA_DOCUMENT_AI_OLLAMA_NUM_PREDICT}
+      DOCUMENT_AI_MAX_OCR_TEXT_CHARS: ${SIGEDA_DOCUMENT_AI_MAX_OCR_TEXT_CHARS}
+      DOCUMENT_AI_VISION_BASE_URL: http://ollama:11434
+      DOCUMENT_AI_VISION_MODEL: ${SIGEDA_DOCUMENT_AI_VISION_MODEL}
+      DOCUMENT_AI_TEXT_BASE_URL: http://ollama:11434
+      DOCUMENT_AI_TEXT_MODEL: ${SIGEDA_DOCUMENT_AI_TEXT_MODEL}
+      DOCUMENT_AI_LOW_CONFIDENCE_THRESHOLD: ${SIGEDA_DOCUMENT_AI_LOW_CONFIDENCE_THRESHOLD}
+      DOCUMENT_AI_DEBUG: ${SIGEDA_DOCUMENT_AI_DEBUG}
+      DOCUMENT_AI_TEMP_BUCKET_PREFIX: ${SIGEDA_DOCUMENT_AI_TEMP_BUCKET_PREFIX}
+      OCR_PROVIDER: ${SIGEDA_OCR_PROVIDER}
+      OCR_LANGUAGE: ${SIGEDA_OCR_LANGUAGE}
+      OCR_IMAGE_COPY_WIDTH_PERCENT: ${SIGEDA_OCR_IMAGE_COPY_WIDTH_PERCENT}
+      OCR_IMAGE_COPY_HEIGHT_PERCENT: ${SIGEDA_OCR_IMAGE_COPY_HEIGHT_PERCENT}
+      OCR_TIMEOUT_MS: ${SIGEDA_OCR_TIMEOUT_MS}
+      OCR_TEMP_DIR: ${SIGEDA_OCR_TEMP_DIR}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      minio:
+        condition: service_started
+      opensearch:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:4100/api/v1/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+    expose:
+      - "4100"
+    networks:
+      - backend
+
+  web:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      SIGEDA_API_URL: http://api-nest:4100
+      NEXT_PUBLIC_SIGEDA_API_URL: ${SIGEDA_PUBLIC_BASE_URL}
+      SIGEDA_ON_PREMISE_API_URL: http://api-nest:4100/api/v1
+      NEXT_PUBLIC_SIGEDA_ON_PREMISE_API_URL: ${SIGEDA_PUBLIC_BASE_URL}/api/v1
+      KEYCLOAK_URL: ${SIGEDA_KEYCLOAK_URL}
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080/auth
+      KEYCLOAK_REALM: ${SIGEDA_KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_ID: ${SIGEDA_KEYCLOAK_CLIENT_ID}
+      NEXT_PUBLIC_KEYCLOAK_URL: ${SIGEDA_KEYCLOAK_URL}
+      NEXT_PUBLIC_KEYCLOAK_REALM: ${SIGEDA_KEYCLOAK_REALM}
+      NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: ${SIGEDA_KEYCLOAK_CLIENT_ID}
+      DOCUMENT_AI_DEBUG: ${SIGEDA_DOCUMENT_AI_DEBUG}
+    depends_on:
+      api-nest:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000/login').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        ]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+    expose:
+      - "3000"
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "${SIGEDA_NGINX_HTTP_PORT}:80"
+    depends_on:
+      api-nest:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    volumes:
+      - ./nginx/${SIGEDA_NGINX_CONFIG_FILE:-preprod.conf}:/etc/nginx/conf.d/default.conf:ro
+      - ${SIGEDA_CERTS_DIR}:/etc/nginx/certs:ro
+      - ${SIGEDA_DATA_ROOT}/logs/nginx:/var/log/nginx
+    networks:
+      - edge
+      - backend
+
+  pgadmin:
+    image: dpage/pgadmin4
+    profiles:
+      - admin
+    container_name: sigeda-pgadmin-preprod
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${SIGEDA_PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${SIGEDA_PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "True"
+      PGADMIN_CONFIG_LOGIN_BANNER: "'SIGEDA PostgreSQL Administration'"
+      PGADMIN_CONFIG_CONSOLE_LOG_LEVEL: 20
+    ports:
+      - "127.0.0.1:${SIGEDA_PGADMIN_PORT}:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
+      - ./pgadmin/pgpass:/pgpass:ro
+      - ${SIGEDA_DATA_ROOT}/pgadmin:/var/lib/pgadmin
+    networks:
+      - backend
+
+networks:
+  edge:
+  backend:
+    internal: true

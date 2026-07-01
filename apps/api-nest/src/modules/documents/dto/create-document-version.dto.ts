@@ -1,6 +1,7 @@
 import { Transform, type TransformFnParams } from "class-transformer";
 import { ArrayUnique, IsArray, IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
-import { optionalTrimmedString, parseStringArray } from "../../../shared/transformers.js";
+import { optionalTrimmedString, parseJsonArray, parseStringArray } from "../../../shared/transformers.js";
+import { CreateDocumentRecipientTargetDto } from "./create-document.dto.js";
 
 export class CreateDocumentVersionDto {
   @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
@@ -38,6 +39,11 @@ export class CreateDocumentVersionDto {
   @MaxLength(60)
   type?: string;
 
+  @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
+  @IsOptional()
+  @IsUUID()
+  documentTypeId?: string;
+
   @Transform(({ value }: TransformFnParams) => parseStringArray(value))
   @IsOptional()
   @IsArray()
@@ -51,6 +57,11 @@ export class CreateDocumentVersionDto {
   @ArrayUnique()
   @IsUUID("4", { each: true })
   copyDirectionIds?: string[];
+
+  @Transform(({ value }: TransformFnParams) => parseJsonArray<CreateDocumentRecipientTargetDto>(value))
+  @IsOptional()
+  @IsArray()
+  copyTargets?: CreateDocumentRecipientTargetDto[];
 
   @Transform(({ value }: TransformFnParams) => parseStringArray(value))
   @IsOptional()

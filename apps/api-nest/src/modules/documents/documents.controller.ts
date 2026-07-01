@@ -61,6 +61,15 @@ export class DocumentsController {
     return this.documents.listSignerCandidates(principal, emitterDirectionId);
   }
 
+  @Post("classification-proposal")
+  @Roles("ADMIN", "DIRECTEUR_GENERAL", "DIRECTEUR", "MANAGER", "AGENT")
+  createClassificationProposal(
+    @Body() body: CreateDocumentDto,
+    @CurrentUser() principal: AuthenticatedPrincipal
+  ) {
+    return this.documents.getCreateClassificationProposal(body, principal);
+  }
+
   @Get(":id")
   get(@Param("id", new ParseUUIDPipe()) id: string, @CurrentUser() principal: AuthenticatedPrincipal) {
     return this.documents.get(id, principal);
@@ -168,6 +177,16 @@ export class DocumentsController {
     @CurrentUser() principal: AuthenticatedPrincipal
   ) {
     return this.documents.classify(id, principal, body);
+  }
+
+  @Post(":id/classification-proposal")
+  @Roles("ADMIN", "DIRECTEUR_GENERAL", "DIRECTEUR", "MANAGER", "AGENT")
+  classificationProposal(
+    @Param("id", new ParseUUIDPipe()) id: string,
+    @Body() body: ClassifyDocumentDto,
+    @CurrentUser() principal: AuthenticatedPrincipal
+  ) {
+    return this.documents.getClassificationProposal(id, principal, body);
   }
 
   @Post(":id/versions")

@@ -573,7 +573,10 @@ function renderCriterionValueInput(input: {
         placeholder="Selectionner un classeur"
         options={folders.map((folder) => ({
           value: folder.id,
-          label: `${folder.year} - ${formatStructureLabel(folder.partnerDirectionCode, folder.partnerDirectionName, folder.id)}`
+          label:
+            folder.folderType === "CORRESPONDANCE"
+              ? `${folder.year} - ${formatStructureLabel(folder.partnerDirectionCode, folder.partnerDirectionName, folder.id)}`
+              : `${folder.year} - ${folder.label ?? folder.description ?? folder.id}`
         }))}
       />
     );

@@ -89,6 +89,11 @@ export type DocumentAnnotation = $Result.DefaultSelection<Prisma.$DocumentAnnota
  */
 export type DocumentTransmission = $Result.DefaultSelection<Prisma.$DocumentTransmissionPayload>
 /**
+ * Model DocumentIntelligenceJob
+ * 
+ */
+export type DocumentIntelligenceJob = $Result.DefaultSelection<Prisma.$DocumentIntelligenceJobPayload>
+/**
  * Model AuditLog
  * 
  */
@@ -158,6 +163,20 @@ export const AnnotationStatus: {
 
 export type AnnotationStatus = (typeof AnnotationStatus)[keyof typeof AnnotationStatus]
 
+
+export const DocumentIntelligenceJobStatus: {
+  PENDING: 'PENDING',
+  UPLOADED: 'UPLOADED',
+  VISION_RUNNING: 'VISION_RUNNING',
+  OCR_RUNNING: 'OCR_RUNNING',
+  LLM_RUNNING: 'LLM_RUNNING',
+  COMPLETED: 'COMPLETED',
+  LOW_CONFIDENCE: 'LOW_CONFIDENCE',
+  FAILED: 'FAILED'
+};
+
+export type DocumentIntelligenceJobStatus = (typeof DocumentIntelligenceJobStatus)[keyof typeof DocumentIntelligenceJobStatus]
+
 }
 
 export type DepartmentType = $Enums.DepartmentType
@@ -187,6 +206,10 @@ export const AttachmentStorageProvider: typeof $Enums.AttachmentStorageProvider
 export type AnnotationStatus = $Enums.AnnotationStatus
 
 export const AnnotationStatus: typeof $Enums.AnnotationStatus
+
+export type DocumentIntelligenceJobStatus = $Enums.DocumentIntelligenceJobStatus
+
+export const DocumentIntelligenceJobStatus: typeof $Enums.DocumentIntelligenceJobStatus
 
 /**
  * ##  Prisma Client ʲˢ
@@ -460,6 +483,16 @@ export class PrismaClient<
     * ```
     */
   get documentTransmission(): Prisma.DocumentTransmissionDelegate<ExtArgs>;
+
+  /**
+   * `prisma.documentIntelligenceJob`: Exposes CRUD operations for the **DocumentIntelligenceJob** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DocumentIntelligenceJobs
+    * const documentIntelligenceJobs = await prisma.documentIntelligenceJob.findMany()
+    * ```
+    */
+  get documentIntelligenceJob(): Prisma.DocumentIntelligenceJobDelegate<ExtArgs>;
 
   /**
    * `prisma.auditLog`: Exposes CRUD operations for the **AuditLog** model.
@@ -926,6 +959,7 @@ export namespace Prisma {
     DocumentVersion: 'DocumentVersion',
     DocumentAnnotation: 'DocumentAnnotation',
     DocumentTransmission: 'DocumentTransmission',
+    DocumentIntelligenceJob: 'DocumentIntelligenceJob',
     AuditLog: 'AuditLog'
   };
 
@@ -942,7 +976,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "department" | "role" | "permission" | "rolePermission" | "user" | "document" | "documentSigner" | "documentRecipient" | "folder" | "documentArchive" | "physicalArchive" | "attachment" | "documentVersion" | "documentAnnotation" | "documentTransmission" | "auditLog"
+      modelProps: "department" | "role" | "permission" | "rolePermission" | "user" | "document" | "documentSigner" | "documentRecipient" | "folder" | "documentArchive" | "physicalArchive" | "attachment" | "documentVersion" | "documentAnnotation" | "documentTransmission" | "documentIntelligenceJob" | "auditLog"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1996,6 +2030,76 @@ export namespace Prisma {
           }
         }
       }
+      DocumentIntelligenceJob: {
+        payload: Prisma.$DocumentIntelligenceJobPayload<ExtArgs>
+        fields: Prisma.DocumentIntelligenceJobFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DocumentIntelligenceJobFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DocumentIntelligenceJobFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload>
+          }
+          findFirst: {
+            args: Prisma.DocumentIntelligenceJobFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DocumentIntelligenceJobFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload>
+          }
+          findMany: {
+            args: Prisma.DocumentIntelligenceJobFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload>[]
+          }
+          create: {
+            args: Prisma.DocumentIntelligenceJobCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload>
+          }
+          createMany: {
+            args: Prisma.DocumentIntelligenceJobCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DocumentIntelligenceJobCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload>[]
+          }
+          delete: {
+            args: Prisma.DocumentIntelligenceJobDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload>
+          }
+          update: {
+            args: Prisma.DocumentIntelligenceJobUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload>
+          }
+          deleteMany: {
+            args: Prisma.DocumentIntelligenceJobDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DocumentIntelligenceJobUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.DocumentIntelligenceJobUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DocumentIntelligenceJobPayload>
+          }
+          aggregate: {
+            args: Prisma.DocumentIntelligenceJobAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDocumentIntelligenceJob>
+          }
+          groupBy: {
+            args: Prisma.DocumentIntelligenceJobGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DocumentIntelligenceJobGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DocumentIntelligenceJobCountArgs<ExtArgs>
+            result: $Utils.Optional<DocumentIntelligenceJobCountAggregateOutputType> | number
+          }
+        }
+      }
       AuditLog: {
         payload: Prisma.$AuditLogPayload<ExtArgs>
         fields: Prisma.AuditLogFieldRefs
@@ -2470,6 +2574,7 @@ export namespace Prisma {
     createdAnnotations: number
     createdVersions: number
     createdTransmissions: number
+    documentIntelligenceJobs: number
     auditLogs: number
   }
 
@@ -2480,6 +2585,7 @@ export namespace Prisma {
     createdAnnotations?: boolean | UserCountOutputTypeCountCreatedAnnotationsArgs
     createdVersions?: boolean | UserCountOutputTypeCountCreatedVersionsArgs
     createdTransmissions?: boolean | UserCountOutputTypeCountCreatedTransmissionsArgs
+    documentIntelligenceJobs?: boolean | UserCountOutputTypeCountDocumentIntelligenceJobsArgs
     auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
   }
 
@@ -2534,6 +2640,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountCreatedTransmissionsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: DocumentTransmissionWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountDocumentIntelligenceJobsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DocumentIntelligenceJobWhereInput
   }
 
   /**
@@ -7220,6 +7333,7 @@ export namespace Prisma {
     createdAnnotations?: boolean | User$createdAnnotationsArgs<ExtArgs>
     createdVersions?: boolean | User$createdVersionsArgs<ExtArgs>
     createdTransmissions?: boolean | User$createdTransmissionsArgs<ExtArgs>
+    documentIntelligenceJobs?: boolean | User$documentIntelligenceJobsArgs<ExtArgs>
     auditLogs?: boolean | User$auditLogsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
@@ -7263,6 +7377,7 @@ export namespace Prisma {
     createdAnnotations?: boolean | User$createdAnnotationsArgs<ExtArgs>
     createdVersions?: boolean | User$createdVersionsArgs<ExtArgs>
     createdTransmissions?: boolean | User$createdTransmissionsArgs<ExtArgs>
+    documentIntelligenceJobs?: boolean | User$documentIntelligenceJobsArgs<ExtArgs>
     auditLogs?: boolean | User$auditLogsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -7282,6 +7397,7 @@ export namespace Prisma {
       createdAnnotations: Prisma.$DocumentAnnotationPayload<ExtArgs>[]
       createdVersions: Prisma.$DocumentVersionPayload<ExtArgs>[]
       createdTransmissions: Prisma.$DocumentTransmissionPayload<ExtArgs>[]
+      documentIntelligenceJobs: Prisma.$DocumentIntelligenceJobPayload<ExtArgs>[]
       auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -7668,6 +7784,7 @@ export namespace Prisma {
     createdAnnotations<T extends User$createdAnnotationsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdAnnotationsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentAnnotationPayload<ExtArgs>, T, "findMany"> | Null>
     createdVersions<T extends User$createdVersionsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdVersionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentVersionPayload<ExtArgs>, T, "findMany"> | Null>
     createdTransmissions<T extends User$createdTransmissionsArgs<ExtArgs> = {}>(args?: Subset<T, User$createdTransmissionsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentTransmissionPayload<ExtArgs>, T, "findMany"> | Null>
+    documentIntelligenceJobs<T extends User$documentIntelligenceJobsArgs<ExtArgs> = {}>(args?: Subset<T, User$documentIntelligenceJobsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "findMany"> | Null>
     auditLogs<T extends User$auditLogsArgs<ExtArgs> = {}>(args?: Subset<T, User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -8159,6 +8276,26 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: DocumentTransmissionScalarFieldEnum | DocumentTransmissionScalarFieldEnum[]
+  }
+
+  /**
+   * User.documentIntelligenceJobs
+   */
+  export type User$documentIntelligenceJobsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    where?: DocumentIntelligenceJobWhereInput
+    orderBy?: DocumentIntelligenceJobOrderByWithRelationInput | DocumentIntelligenceJobOrderByWithRelationInput[]
+    cursor?: DocumentIntelligenceJobWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DocumentIntelligenceJobScalarFieldEnum | DocumentIntelligenceJobScalarFieldEnum[]
   }
 
   /**
@@ -18936,6 +19073,1177 @@ export namespace Prisma {
 
 
   /**
+   * Model DocumentIntelligenceJob
+   */
+
+  export type AggregateDocumentIntelligenceJob = {
+    _count: DocumentIntelligenceJobCountAggregateOutputType | null
+    _avg: DocumentIntelligenceJobAvgAggregateOutputType | null
+    _sum: DocumentIntelligenceJobSumAggregateOutputType | null
+    _min: DocumentIntelligenceJobMinAggregateOutputType | null
+    _max: DocumentIntelligenceJobMaxAggregateOutputType | null
+  }
+
+  export type DocumentIntelligenceJobAvgAggregateOutputType = {
+    sizeBytes: number | null
+    confidenceScore: Decimal | null
+  }
+
+  export type DocumentIntelligenceJobSumAggregateOutputType = {
+    sizeBytes: bigint | null
+    confidenceScore: Decimal | null
+  }
+
+  export type DocumentIntelligenceJobMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    originalFileName: string | null
+    bucket: string | null
+    objectKey: string | null
+    mimeType: string | null
+    sizeBytes: bigint | null
+    requestedMode: string | null
+    effectiveMode: string | null
+    status: $Enums.DocumentIntelligenceJobStatus | null
+    ocrProvider: string | null
+    llmProvider: string | null
+    modelName: string | null
+    rawExtractedText: string | null
+    confidenceScore: Decimal | null
+    errorCode: string | null
+    errorMessage: string | null
+    startedAt: Date | null
+    finishedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type DocumentIntelligenceJobMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    originalFileName: string | null
+    bucket: string | null
+    objectKey: string | null
+    mimeType: string | null
+    sizeBytes: bigint | null
+    requestedMode: string | null
+    effectiveMode: string | null
+    status: $Enums.DocumentIntelligenceJobStatus | null
+    ocrProvider: string | null
+    llmProvider: string | null
+    modelName: string | null
+    rawExtractedText: string | null
+    confidenceScore: Decimal | null
+    errorCode: string | null
+    errorMessage: string | null
+    startedAt: Date | null
+    finishedAt: Date | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type DocumentIntelligenceJobCountAggregateOutputType = {
+    id: number
+    userId: number
+    originalFileName: number
+    bucket: number
+    objectKey: number
+    mimeType: number
+    sizeBytes: number
+    requestedMode: number
+    effectiveMode: number
+    status: number
+    ocrProvider: number
+    llmProvider: number
+    modelName: number
+    extractedJson: number
+    rawExtractedText: number
+    confidenceScore: number
+    errorCode: number
+    errorMessage: number
+    startedAt: number
+    finishedAt: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type DocumentIntelligenceJobAvgAggregateInputType = {
+    sizeBytes?: true
+    confidenceScore?: true
+  }
+
+  export type DocumentIntelligenceJobSumAggregateInputType = {
+    sizeBytes?: true
+    confidenceScore?: true
+  }
+
+  export type DocumentIntelligenceJobMinAggregateInputType = {
+    id?: true
+    userId?: true
+    originalFileName?: true
+    bucket?: true
+    objectKey?: true
+    mimeType?: true
+    sizeBytes?: true
+    requestedMode?: true
+    effectiveMode?: true
+    status?: true
+    ocrProvider?: true
+    llmProvider?: true
+    modelName?: true
+    rawExtractedText?: true
+    confidenceScore?: true
+    errorCode?: true
+    errorMessage?: true
+    startedAt?: true
+    finishedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type DocumentIntelligenceJobMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    originalFileName?: true
+    bucket?: true
+    objectKey?: true
+    mimeType?: true
+    sizeBytes?: true
+    requestedMode?: true
+    effectiveMode?: true
+    status?: true
+    ocrProvider?: true
+    llmProvider?: true
+    modelName?: true
+    rawExtractedText?: true
+    confidenceScore?: true
+    errorCode?: true
+    errorMessage?: true
+    startedAt?: true
+    finishedAt?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type DocumentIntelligenceJobCountAggregateInputType = {
+    id?: true
+    userId?: true
+    originalFileName?: true
+    bucket?: true
+    objectKey?: true
+    mimeType?: true
+    sizeBytes?: true
+    requestedMode?: true
+    effectiveMode?: true
+    status?: true
+    ocrProvider?: true
+    llmProvider?: true
+    modelName?: true
+    extractedJson?: true
+    rawExtractedText?: true
+    confidenceScore?: true
+    errorCode?: true
+    errorMessage?: true
+    startedAt?: true
+    finishedAt?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type DocumentIntelligenceJobAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DocumentIntelligenceJob to aggregate.
+     */
+    where?: DocumentIntelligenceJobWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DocumentIntelligenceJobs to fetch.
+     */
+    orderBy?: DocumentIntelligenceJobOrderByWithRelationInput | DocumentIntelligenceJobOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DocumentIntelligenceJobWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DocumentIntelligenceJobs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DocumentIntelligenceJobs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DocumentIntelligenceJobs
+    **/
+    _count?: true | DocumentIntelligenceJobCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: DocumentIntelligenceJobAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: DocumentIntelligenceJobSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DocumentIntelligenceJobMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DocumentIntelligenceJobMaxAggregateInputType
+  }
+
+  export type GetDocumentIntelligenceJobAggregateType<T extends DocumentIntelligenceJobAggregateArgs> = {
+        [P in keyof T & keyof AggregateDocumentIntelligenceJob]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDocumentIntelligenceJob[P]>
+      : GetScalarType<T[P], AggregateDocumentIntelligenceJob[P]>
+  }
+
+
+
+
+  export type DocumentIntelligenceJobGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DocumentIntelligenceJobWhereInput
+    orderBy?: DocumentIntelligenceJobOrderByWithAggregationInput | DocumentIntelligenceJobOrderByWithAggregationInput[]
+    by: DocumentIntelligenceJobScalarFieldEnum[] | DocumentIntelligenceJobScalarFieldEnum
+    having?: DocumentIntelligenceJobScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DocumentIntelligenceJobCountAggregateInputType | true
+    _avg?: DocumentIntelligenceJobAvgAggregateInputType
+    _sum?: DocumentIntelligenceJobSumAggregateInputType
+    _min?: DocumentIntelligenceJobMinAggregateInputType
+    _max?: DocumentIntelligenceJobMaxAggregateInputType
+  }
+
+  export type DocumentIntelligenceJobGroupByOutputType = {
+    id: string
+    userId: string
+    originalFileName: string
+    bucket: string
+    objectKey: string
+    mimeType: string
+    sizeBytes: bigint
+    requestedMode: string
+    effectiveMode: string | null
+    status: $Enums.DocumentIntelligenceJobStatus
+    ocrProvider: string | null
+    llmProvider: string | null
+    modelName: string | null
+    extractedJson: JsonValue | null
+    rawExtractedText: string | null
+    confidenceScore: Decimal | null
+    errorCode: string | null
+    errorMessage: string | null
+    startedAt: Date | null
+    finishedAt: Date | null
+    createdAt: Date
+    updatedAt: Date
+    _count: DocumentIntelligenceJobCountAggregateOutputType | null
+    _avg: DocumentIntelligenceJobAvgAggregateOutputType | null
+    _sum: DocumentIntelligenceJobSumAggregateOutputType | null
+    _min: DocumentIntelligenceJobMinAggregateOutputType | null
+    _max: DocumentIntelligenceJobMaxAggregateOutputType | null
+  }
+
+  type GetDocumentIntelligenceJobGroupByPayload<T extends DocumentIntelligenceJobGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DocumentIntelligenceJobGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DocumentIntelligenceJobGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DocumentIntelligenceJobGroupByOutputType[P]>
+            : GetScalarType<T[P], DocumentIntelligenceJobGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DocumentIntelligenceJobSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    originalFileName?: boolean
+    bucket?: boolean
+    objectKey?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    requestedMode?: boolean
+    effectiveMode?: boolean
+    status?: boolean
+    ocrProvider?: boolean
+    llmProvider?: boolean
+    modelName?: boolean
+    extractedJson?: boolean
+    rawExtractedText?: boolean
+    confidenceScore?: boolean
+    errorCode?: boolean
+    errorMessage?: boolean
+    startedAt?: boolean
+    finishedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["documentIntelligenceJob"]>
+
+  export type DocumentIntelligenceJobSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    originalFileName?: boolean
+    bucket?: boolean
+    objectKey?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    requestedMode?: boolean
+    effectiveMode?: boolean
+    status?: boolean
+    ocrProvider?: boolean
+    llmProvider?: boolean
+    modelName?: boolean
+    extractedJson?: boolean
+    rawExtractedText?: boolean
+    confidenceScore?: boolean
+    errorCode?: boolean
+    errorMessage?: boolean
+    startedAt?: boolean
+    finishedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["documentIntelligenceJob"]>
+
+  export type DocumentIntelligenceJobSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    originalFileName?: boolean
+    bucket?: boolean
+    objectKey?: boolean
+    mimeType?: boolean
+    sizeBytes?: boolean
+    requestedMode?: boolean
+    effectiveMode?: boolean
+    status?: boolean
+    ocrProvider?: boolean
+    llmProvider?: boolean
+    modelName?: boolean
+    extractedJson?: boolean
+    rawExtractedText?: boolean
+    confidenceScore?: boolean
+    errorCode?: boolean
+    errorMessage?: boolean
+    startedAt?: boolean
+    finishedAt?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type DocumentIntelligenceJobInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type DocumentIntelligenceJobIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $DocumentIntelligenceJobPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DocumentIntelligenceJob"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      originalFileName: string
+      bucket: string
+      objectKey: string
+      mimeType: string
+      sizeBytes: bigint
+      requestedMode: string
+      effectiveMode: string | null
+      status: $Enums.DocumentIntelligenceJobStatus
+      ocrProvider: string | null
+      llmProvider: string | null
+      modelName: string | null
+      extractedJson: Prisma.JsonValue | null
+      rawExtractedText: string | null
+      confidenceScore: Prisma.Decimal | null
+      errorCode: string | null
+      errorMessage: string | null
+      startedAt: Date | null
+      finishedAt: Date | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["documentIntelligenceJob"]>
+    composites: {}
+  }
+
+  type DocumentIntelligenceJobGetPayload<S extends boolean | null | undefined | DocumentIntelligenceJobDefaultArgs> = $Result.GetResult<Prisma.$DocumentIntelligenceJobPayload, S>
+
+  type DocumentIntelligenceJobCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<DocumentIntelligenceJobFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: DocumentIntelligenceJobCountAggregateInputType | true
+    }
+
+  export interface DocumentIntelligenceJobDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DocumentIntelligenceJob'], meta: { name: 'DocumentIntelligenceJob' } }
+    /**
+     * Find zero or one DocumentIntelligenceJob that matches the filter.
+     * @param {DocumentIntelligenceJobFindUniqueArgs} args - Arguments to find a DocumentIntelligenceJob
+     * @example
+     * // Get one DocumentIntelligenceJob
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DocumentIntelligenceJobFindUniqueArgs>(args: SelectSubset<T, DocumentIntelligenceJobFindUniqueArgs<ExtArgs>>): Prisma__DocumentIntelligenceJobClient<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one DocumentIntelligenceJob that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {DocumentIntelligenceJobFindUniqueOrThrowArgs} args - Arguments to find a DocumentIntelligenceJob
+     * @example
+     * // Get one DocumentIntelligenceJob
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DocumentIntelligenceJobFindUniqueOrThrowArgs>(args: SelectSubset<T, DocumentIntelligenceJobFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DocumentIntelligenceJobClient<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first DocumentIntelligenceJob that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentIntelligenceJobFindFirstArgs} args - Arguments to find a DocumentIntelligenceJob
+     * @example
+     * // Get one DocumentIntelligenceJob
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DocumentIntelligenceJobFindFirstArgs>(args?: SelectSubset<T, DocumentIntelligenceJobFindFirstArgs<ExtArgs>>): Prisma__DocumentIntelligenceJobClient<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first DocumentIntelligenceJob that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentIntelligenceJobFindFirstOrThrowArgs} args - Arguments to find a DocumentIntelligenceJob
+     * @example
+     * // Get one DocumentIntelligenceJob
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DocumentIntelligenceJobFindFirstOrThrowArgs>(args?: SelectSubset<T, DocumentIntelligenceJobFindFirstOrThrowArgs<ExtArgs>>): Prisma__DocumentIntelligenceJobClient<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more DocumentIntelligenceJobs that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentIntelligenceJobFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DocumentIntelligenceJobs
+     * const documentIntelligenceJobs = await prisma.documentIntelligenceJob.findMany()
+     * 
+     * // Get first 10 DocumentIntelligenceJobs
+     * const documentIntelligenceJobs = await prisma.documentIntelligenceJob.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const documentIntelligenceJobWithIdOnly = await prisma.documentIntelligenceJob.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DocumentIntelligenceJobFindManyArgs>(args?: SelectSubset<T, DocumentIntelligenceJobFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a DocumentIntelligenceJob.
+     * @param {DocumentIntelligenceJobCreateArgs} args - Arguments to create a DocumentIntelligenceJob.
+     * @example
+     * // Create one DocumentIntelligenceJob
+     * const DocumentIntelligenceJob = await prisma.documentIntelligenceJob.create({
+     *   data: {
+     *     // ... data to create a DocumentIntelligenceJob
+     *   }
+     * })
+     * 
+     */
+    create<T extends DocumentIntelligenceJobCreateArgs>(args: SelectSubset<T, DocumentIntelligenceJobCreateArgs<ExtArgs>>): Prisma__DocumentIntelligenceJobClient<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many DocumentIntelligenceJobs.
+     * @param {DocumentIntelligenceJobCreateManyArgs} args - Arguments to create many DocumentIntelligenceJobs.
+     * @example
+     * // Create many DocumentIntelligenceJobs
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DocumentIntelligenceJobCreateManyArgs>(args?: SelectSubset<T, DocumentIntelligenceJobCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DocumentIntelligenceJobs and returns the data saved in the database.
+     * @param {DocumentIntelligenceJobCreateManyAndReturnArgs} args - Arguments to create many DocumentIntelligenceJobs.
+     * @example
+     * // Create many DocumentIntelligenceJobs
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DocumentIntelligenceJobs and only return the `id`
+     * const documentIntelligenceJobWithIdOnly = await prisma.documentIntelligenceJob.createManyAndReturn({ 
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DocumentIntelligenceJobCreateManyAndReturnArgs>(args?: SelectSubset<T, DocumentIntelligenceJobCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "createManyAndReturn">>
+
+    /**
+     * Delete a DocumentIntelligenceJob.
+     * @param {DocumentIntelligenceJobDeleteArgs} args - Arguments to delete one DocumentIntelligenceJob.
+     * @example
+     * // Delete one DocumentIntelligenceJob
+     * const DocumentIntelligenceJob = await prisma.documentIntelligenceJob.delete({
+     *   where: {
+     *     // ... filter to delete one DocumentIntelligenceJob
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DocumentIntelligenceJobDeleteArgs>(args: SelectSubset<T, DocumentIntelligenceJobDeleteArgs<ExtArgs>>): Prisma__DocumentIntelligenceJobClient<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one DocumentIntelligenceJob.
+     * @param {DocumentIntelligenceJobUpdateArgs} args - Arguments to update one DocumentIntelligenceJob.
+     * @example
+     * // Update one DocumentIntelligenceJob
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DocumentIntelligenceJobUpdateArgs>(args: SelectSubset<T, DocumentIntelligenceJobUpdateArgs<ExtArgs>>): Prisma__DocumentIntelligenceJobClient<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more DocumentIntelligenceJobs.
+     * @param {DocumentIntelligenceJobDeleteManyArgs} args - Arguments to filter DocumentIntelligenceJobs to delete.
+     * @example
+     * // Delete a few DocumentIntelligenceJobs
+     * const { count } = await prisma.documentIntelligenceJob.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DocumentIntelligenceJobDeleteManyArgs>(args?: SelectSubset<T, DocumentIntelligenceJobDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DocumentIntelligenceJobs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentIntelligenceJobUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DocumentIntelligenceJobs
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DocumentIntelligenceJobUpdateManyArgs>(args: SelectSubset<T, DocumentIntelligenceJobUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one DocumentIntelligenceJob.
+     * @param {DocumentIntelligenceJobUpsertArgs} args - Arguments to update or create a DocumentIntelligenceJob.
+     * @example
+     * // Update or create a DocumentIntelligenceJob
+     * const documentIntelligenceJob = await prisma.documentIntelligenceJob.upsert({
+     *   create: {
+     *     // ... data to create a DocumentIntelligenceJob
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DocumentIntelligenceJob we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DocumentIntelligenceJobUpsertArgs>(args: SelectSubset<T, DocumentIntelligenceJobUpsertArgs<ExtArgs>>): Prisma__DocumentIntelligenceJobClient<$Result.GetResult<Prisma.$DocumentIntelligenceJobPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of DocumentIntelligenceJobs.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentIntelligenceJobCountArgs} args - Arguments to filter DocumentIntelligenceJobs to count.
+     * @example
+     * // Count the number of DocumentIntelligenceJobs
+     * const count = await prisma.documentIntelligenceJob.count({
+     *   where: {
+     *     // ... the filter for the DocumentIntelligenceJobs we want to count
+     *   }
+     * })
+    **/
+    count<T extends DocumentIntelligenceJobCountArgs>(
+      args?: Subset<T, DocumentIntelligenceJobCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DocumentIntelligenceJobCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DocumentIntelligenceJob.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentIntelligenceJobAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DocumentIntelligenceJobAggregateArgs>(args: Subset<T, DocumentIntelligenceJobAggregateArgs>): Prisma.PrismaPromise<GetDocumentIntelligenceJobAggregateType<T>>
+
+    /**
+     * Group by DocumentIntelligenceJob.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DocumentIntelligenceJobGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DocumentIntelligenceJobGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DocumentIntelligenceJobGroupByArgs['orderBy'] }
+        : { orderBy?: DocumentIntelligenceJobGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DocumentIntelligenceJobGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDocumentIntelligenceJobGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DocumentIntelligenceJob model
+   */
+  readonly fields: DocumentIntelligenceJobFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DocumentIntelligenceJob.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DocumentIntelligenceJobClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DocumentIntelligenceJob model
+   */ 
+  interface DocumentIntelligenceJobFieldRefs {
+    readonly id: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly userId: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly originalFileName: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly bucket: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly objectKey: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly mimeType: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly sizeBytes: FieldRef<"DocumentIntelligenceJob", 'BigInt'>
+    readonly requestedMode: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly effectiveMode: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly status: FieldRef<"DocumentIntelligenceJob", 'DocumentIntelligenceJobStatus'>
+    readonly ocrProvider: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly llmProvider: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly modelName: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly extractedJson: FieldRef<"DocumentIntelligenceJob", 'Json'>
+    readonly rawExtractedText: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly confidenceScore: FieldRef<"DocumentIntelligenceJob", 'Decimal'>
+    readonly errorCode: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly errorMessage: FieldRef<"DocumentIntelligenceJob", 'String'>
+    readonly startedAt: FieldRef<"DocumentIntelligenceJob", 'DateTime'>
+    readonly finishedAt: FieldRef<"DocumentIntelligenceJob", 'DateTime'>
+    readonly createdAt: FieldRef<"DocumentIntelligenceJob", 'DateTime'>
+    readonly updatedAt: FieldRef<"DocumentIntelligenceJob", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DocumentIntelligenceJob findUnique
+   */
+  export type DocumentIntelligenceJobFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentIntelligenceJob to fetch.
+     */
+    where: DocumentIntelligenceJobWhereUniqueInput
+  }
+
+  /**
+   * DocumentIntelligenceJob findUniqueOrThrow
+   */
+  export type DocumentIntelligenceJobFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentIntelligenceJob to fetch.
+     */
+    where: DocumentIntelligenceJobWhereUniqueInput
+  }
+
+  /**
+   * DocumentIntelligenceJob findFirst
+   */
+  export type DocumentIntelligenceJobFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentIntelligenceJob to fetch.
+     */
+    where?: DocumentIntelligenceJobWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DocumentIntelligenceJobs to fetch.
+     */
+    orderBy?: DocumentIntelligenceJobOrderByWithRelationInput | DocumentIntelligenceJobOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DocumentIntelligenceJobs.
+     */
+    cursor?: DocumentIntelligenceJobWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DocumentIntelligenceJobs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DocumentIntelligenceJobs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DocumentIntelligenceJobs.
+     */
+    distinct?: DocumentIntelligenceJobScalarFieldEnum | DocumentIntelligenceJobScalarFieldEnum[]
+  }
+
+  /**
+   * DocumentIntelligenceJob findFirstOrThrow
+   */
+  export type DocumentIntelligenceJobFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentIntelligenceJob to fetch.
+     */
+    where?: DocumentIntelligenceJobWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DocumentIntelligenceJobs to fetch.
+     */
+    orderBy?: DocumentIntelligenceJobOrderByWithRelationInput | DocumentIntelligenceJobOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DocumentIntelligenceJobs.
+     */
+    cursor?: DocumentIntelligenceJobWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DocumentIntelligenceJobs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DocumentIntelligenceJobs.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DocumentIntelligenceJobs.
+     */
+    distinct?: DocumentIntelligenceJobScalarFieldEnum | DocumentIntelligenceJobScalarFieldEnum[]
+  }
+
+  /**
+   * DocumentIntelligenceJob findMany
+   */
+  export type DocumentIntelligenceJobFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * Filter, which DocumentIntelligenceJobs to fetch.
+     */
+    where?: DocumentIntelligenceJobWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DocumentIntelligenceJobs to fetch.
+     */
+    orderBy?: DocumentIntelligenceJobOrderByWithRelationInput | DocumentIntelligenceJobOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DocumentIntelligenceJobs.
+     */
+    cursor?: DocumentIntelligenceJobWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DocumentIntelligenceJobs from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DocumentIntelligenceJobs.
+     */
+    skip?: number
+    distinct?: DocumentIntelligenceJobScalarFieldEnum | DocumentIntelligenceJobScalarFieldEnum[]
+  }
+
+  /**
+   * DocumentIntelligenceJob create
+   */
+  export type DocumentIntelligenceJobCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DocumentIntelligenceJob.
+     */
+    data: XOR<DocumentIntelligenceJobCreateInput, DocumentIntelligenceJobUncheckedCreateInput>
+  }
+
+  /**
+   * DocumentIntelligenceJob createMany
+   */
+  export type DocumentIntelligenceJobCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DocumentIntelligenceJobs.
+     */
+    data: DocumentIntelligenceJobCreateManyInput | DocumentIntelligenceJobCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DocumentIntelligenceJob createManyAndReturn
+   */
+  export type DocumentIntelligenceJobCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * The data used to create many DocumentIntelligenceJobs.
+     */
+    data: DocumentIntelligenceJobCreateManyInput | DocumentIntelligenceJobCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DocumentIntelligenceJob update
+   */
+  export type DocumentIntelligenceJobUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DocumentIntelligenceJob.
+     */
+    data: XOR<DocumentIntelligenceJobUpdateInput, DocumentIntelligenceJobUncheckedUpdateInput>
+    /**
+     * Choose, which DocumentIntelligenceJob to update.
+     */
+    where: DocumentIntelligenceJobWhereUniqueInput
+  }
+
+  /**
+   * DocumentIntelligenceJob updateMany
+   */
+  export type DocumentIntelligenceJobUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DocumentIntelligenceJobs.
+     */
+    data: XOR<DocumentIntelligenceJobUpdateManyMutationInput, DocumentIntelligenceJobUncheckedUpdateManyInput>
+    /**
+     * Filter which DocumentIntelligenceJobs to update
+     */
+    where?: DocumentIntelligenceJobWhereInput
+  }
+
+  /**
+   * DocumentIntelligenceJob upsert
+   */
+  export type DocumentIntelligenceJobUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DocumentIntelligenceJob to update in case it exists.
+     */
+    where: DocumentIntelligenceJobWhereUniqueInput
+    /**
+     * In case the DocumentIntelligenceJob found by the `where` argument doesn't exist, create a new DocumentIntelligenceJob with this data.
+     */
+    create: XOR<DocumentIntelligenceJobCreateInput, DocumentIntelligenceJobUncheckedCreateInput>
+    /**
+     * In case the DocumentIntelligenceJob was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DocumentIntelligenceJobUpdateInput, DocumentIntelligenceJobUncheckedUpdateInput>
+  }
+
+  /**
+   * DocumentIntelligenceJob delete
+   */
+  export type DocumentIntelligenceJobDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+    /**
+     * Filter which DocumentIntelligenceJob to delete.
+     */
+    where: DocumentIntelligenceJobWhereUniqueInput
+  }
+
+  /**
+   * DocumentIntelligenceJob deleteMany
+   */
+  export type DocumentIntelligenceJobDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DocumentIntelligenceJobs to delete
+     */
+    where?: DocumentIntelligenceJobWhereInput
+  }
+
+  /**
+   * DocumentIntelligenceJob without action
+   */
+  export type DocumentIntelligenceJobDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DocumentIntelligenceJob
+     */
+    select?: DocumentIntelligenceJobSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DocumentIntelligenceJobInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model AuditLog
    */
 
@@ -20170,6 +21478,34 @@ export namespace Prisma {
   export type DocumentTransmissionScalarFieldEnum = (typeof DocumentTransmissionScalarFieldEnum)[keyof typeof DocumentTransmissionScalarFieldEnum]
 
 
+  export const DocumentIntelligenceJobScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    originalFileName: 'originalFileName',
+    bucket: 'bucket',
+    objectKey: 'objectKey',
+    mimeType: 'mimeType',
+    sizeBytes: 'sizeBytes',
+    requestedMode: 'requestedMode',
+    effectiveMode: 'effectiveMode',
+    status: 'status',
+    ocrProvider: 'ocrProvider',
+    llmProvider: 'llmProvider',
+    modelName: 'modelName',
+    extractedJson: 'extractedJson',
+    rawExtractedText: 'rawExtractedText',
+    confidenceScore: 'confidenceScore',
+    errorCode: 'errorCode',
+    errorMessage: 'errorMessage',
+    startedAt: 'startedAt',
+    finishedAt: 'finishedAt',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type DocumentIntelligenceJobScalarFieldEnum = (typeof DocumentIntelligenceJobScalarFieldEnum)[keyof typeof DocumentIntelligenceJobScalarFieldEnum]
+
+
   export const AuditLogScalarFieldEnum: {
     id: 'id',
     userId: 'userId',
@@ -20403,6 +21739,34 @@ export namespace Prisma {
    * Reference to a field of type 'AnnotationStatus[]'
    */
   export type ListEnumAnnotationStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'AnnotationStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'DocumentIntelligenceJobStatus'
+   */
+  export type EnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentIntelligenceJobStatus'>
+    
+
+
+  /**
+   * Reference to a field of type 'DocumentIntelligenceJobStatus[]'
+   */
+  export type ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DocumentIntelligenceJobStatus[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal'
+   */
+  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal[]'
+   */
+  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
     
 
 
@@ -20732,6 +22096,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationListRelationFilter
     createdVersions?: DocumentVersionListRelationFilter
     createdTransmissions?: DocumentTransmissionListRelationFilter
+    documentIntelligenceJobs?: DocumentIntelligenceJobListRelationFilter
     auditLogs?: AuditLogListRelationFilter
   }
 
@@ -20755,6 +22120,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationOrderByRelationAggregateInput
     createdVersions?: DocumentVersionOrderByRelationAggregateInput
     createdTransmissions?: DocumentTransmissionOrderByRelationAggregateInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobOrderByRelationAggregateInput
     auditLogs?: AuditLogOrderByRelationAggregateInput
   }
 
@@ -20781,6 +22147,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationListRelationFilter
     createdVersions?: DocumentVersionListRelationFilter
     createdTransmissions?: DocumentTransmissionListRelationFilter
+    documentIntelligenceJobs?: DocumentIntelligenceJobListRelationFilter
     auditLogs?: AuditLogListRelationFilter
   }, "id" | "keycloakId" | "matricule" | "email">
 
@@ -21775,6 +23142,148 @@ export namespace Prisma {
     respondedAt?: DateTimeNullableWithAggregatesFilter<"DocumentTransmission"> | Date | string | null
   }
 
+  export type DocumentIntelligenceJobWhereInput = {
+    AND?: DocumentIntelligenceJobWhereInput | DocumentIntelligenceJobWhereInput[]
+    OR?: DocumentIntelligenceJobWhereInput[]
+    NOT?: DocumentIntelligenceJobWhereInput | DocumentIntelligenceJobWhereInput[]
+    id?: UuidFilter<"DocumentIntelligenceJob"> | string
+    userId?: UuidFilter<"DocumentIntelligenceJob"> | string
+    originalFileName?: StringFilter<"DocumentIntelligenceJob"> | string
+    bucket?: StringFilter<"DocumentIntelligenceJob"> | string
+    objectKey?: StringFilter<"DocumentIntelligenceJob"> | string
+    mimeType?: StringFilter<"DocumentIntelligenceJob"> | string
+    sizeBytes?: BigIntFilter<"DocumentIntelligenceJob"> | bigint | number
+    requestedMode?: StringFilter<"DocumentIntelligenceJob"> | string
+    effectiveMode?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    status?: EnumDocumentIntelligenceJobStatusFilter<"DocumentIntelligenceJob"> | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    llmProvider?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    modelName?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    extractedJson?: JsonNullableFilter<"DocumentIntelligenceJob">
+    rawExtractedText?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    confidenceScore?: DecimalNullableFilter<"DocumentIntelligenceJob"> | Decimal | DecimalJsLike | number | string | null
+    errorCode?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    errorMessage?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    startedAt?: DateTimeNullableFilter<"DocumentIntelligenceJob"> | Date | string | null
+    finishedAt?: DateTimeNullableFilter<"DocumentIntelligenceJob"> | Date | string | null
+    createdAt?: DateTimeFilter<"DocumentIntelligenceJob"> | Date | string
+    updatedAt?: DateTimeFilter<"DocumentIntelligenceJob"> | Date | string
+    user?: XOR<UserRelationFilter, UserWhereInput>
+  }
+
+  export type DocumentIntelligenceJobOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    originalFileName?: SortOrder
+    bucket?: SortOrder
+    objectKey?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    requestedMode?: SortOrder
+    effectiveMode?: SortOrderInput | SortOrder
+    status?: SortOrder
+    ocrProvider?: SortOrderInput | SortOrder
+    llmProvider?: SortOrderInput | SortOrder
+    modelName?: SortOrderInput | SortOrder
+    extractedJson?: SortOrderInput | SortOrder
+    rawExtractedText?: SortOrderInput | SortOrder
+    confidenceScore?: SortOrderInput | SortOrder
+    errorCode?: SortOrderInput | SortOrder
+    errorMessage?: SortOrderInput | SortOrder
+    startedAt?: SortOrderInput | SortOrder
+    finishedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type DocumentIntelligenceJobWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: DocumentIntelligenceJobWhereInput | DocumentIntelligenceJobWhereInput[]
+    OR?: DocumentIntelligenceJobWhereInput[]
+    NOT?: DocumentIntelligenceJobWhereInput | DocumentIntelligenceJobWhereInput[]
+    userId?: UuidFilter<"DocumentIntelligenceJob"> | string
+    originalFileName?: StringFilter<"DocumentIntelligenceJob"> | string
+    bucket?: StringFilter<"DocumentIntelligenceJob"> | string
+    objectKey?: StringFilter<"DocumentIntelligenceJob"> | string
+    mimeType?: StringFilter<"DocumentIntelligenceJob"> | string
+    sizeBytes?: BigIntFilter<"DocumentIntelligenceJob"> | bigint | number
+    requestedMode?: StringFilter<"DocumentIntelligenceJob"> | string
+    effectiveMode?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    status?: EnumDocumentIntelligenceJobStatusFilter<"DocumentIntelligenceJob"> | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    llmProvider?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    modelName?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    extractedJson?: JsonNullableFilter<"DocumentIntelligenceJob">
+    rawExtractedText?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    confidenceScore?: DecimalNullableFilter<"DocumentIntelligenceJob"> | Decimal | DecimalJsLike | number | string | null
+    errorCode?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    errorMessage?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    startedAt?: DateTimeNullableFilter<"DocumentIntelligenceJob"> | Date | string | null
+    finishedAt?: DateTimeNullableFilter<"DocumentIntelligenceJob"> | Date | string | null
+    createdAt?: DateTimeFilter<"DocumentIntelligenceJob"> | Date | string
+    updatedAt?: DateTimeFilter<"DocumentIntelligenceJob"> | Date | string
+    user?: XOR<UserRelationFilter, UserWhereInput>
+  }, "id">
+
+  export type DocumentIntelligenceJobOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    originalFileName?: SortOrder
+    bucket?: SortOrder
+    objectKey?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    requestedMode?: SortOrder
+    effectiveMode?: SortOrderInput | SortOrder
+    status?: SortOrder
+    ocrProvider?: SortOrderInput | SortOrder
+    llmProvider?: SortOrderInput | SortOrder
+    modelName?: SortOrderInput | SortOrder
+    extractedJson?: SortOrderInput | SortOrder
+    rawExtractedText?: SortOrderInput | SortOrder
+    confidenceScore?: SortOrderInput | SortOrder
+    errorCode?: SortOrderInput | SortOrder
+    errorMessage?: SortOrderInput | SortOrder
+    startedAt?: SortOrderInput | SortOrder
+    finishedAt?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: DocumentIntelligenceJobCountOrderByAggregateInput
+    _avg?: DocumentIntelligenceJobAvgOrderByAggregateInput
+    _max?: DocumentIntelligenceJobMaxOrderByAggregateInput
+    _min?: DocumentIntelligenceJobMinOrderByAggregateInput
+    _sum?: DocumentIntelligenceJobSumOrderByAggregateInput
+  }
+
+  export type DocumentIntelligenceJobScalarWhereWithAggregatesInput = {
+    AND?: DocumentIntelligenceJobScalarWhereWithAggregatesInput | DocumentIntelligenceJobScalarWhereWithAggregatesInput[]
+    OR?: DocumentIntelligenceJobScalarWhereWithAggregatesInput[]
+    NOT?: DocumentIntelligenceJobScalarWhereWithAggregatesInput | DocumentIntelligenceJobScalarWhereWithAggregatesInput[]
+    id?: UuidWithAggregatesFilter<"DocumentIntelligenceJob"> | string
+    userId?: UuidWithAggregatesFilter<"DocumentIntelligenceJob"> | string
+    originalFileName?: StringWithAggregatesFilter<"DocumentIntelligenceJob"> | string
+    bucket?: StringWithAggregatesFilter<"DocumentIntelligenceJob"> | string
+    objectKey?: StringWithAggregatesFilter<"DocumentIntelligenceJob"> | string
+    mimeType?: StringWithAggregatesFilter<"DocumentIntelligenceJob"> | string
+    sizeBytes?: BigIntWithAggregatesFilter<"DocumentIntelligenceJob"> | bigint | number
+    requestedMode?: StringWithAggregatesFilter<"DocumentIntelligenceJob"> | string
+    effectiveMode?: StringNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | string | null
+    status?: EnumDocumentIntelligenceJobStatusWithAggregatesFilter<"DocumentIntelligenceJob"> | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: StringNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | string | null
+    llmProvider?: StringNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | string | null
+    modelName?: StringNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | string | null
+    extractedJson?: JsonNullableWithAggregatesFilter<"DocumentIntelligenceJob">
+    rawExtractedText?: StringNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | string | null
+    confidenceScore?: DecimalNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | Decimal | DecimalJsLike | number | string | null
+    errorCode?: StringNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | string | null
+    errorMessage?: StringNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | string | null
+    startedAt?: DateTimeNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | Date | string | null
+    finishedAt?: DateTimeNullableWithAggregatesFilter<"DocumentIntelligenceJob"> | Date | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"DocumentIntelligenceJob"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"DocumentIntelligenceJob"> | Date | string
+  }
+
   export type AuditLogWhereInput = {
     AND?: AuditLogWhereInput | AuditLogWhereInput[]
     OR?: AuditLogWhereInput[]
@@ -22171,6 +23680,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -22192,6 +23702,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -22213,6 +23724,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -22234,6 +23746,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -23257,6 +24770,180 @@ export namespace Prisma {
     respondedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
+  export type DocumentIntelligenceJobCreateInput = {
+    id?: string
+    originalFileName: string
+    bucket: string
+    objectKey: string
+    mimeType: string
+    sizeBytes: bigint | number
+    requestedMode: string
+    effectiveMode?: string | null
+    status: $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: string | null
+    llmProvider?: string | null
+    modelName?: string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: string | null
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    errorCode?: string | null
+    errorMessage?: string | null
+    startedAt?: Date | string | null
+    finishedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    user: UserCreateNestedOneWithoutDocumentIntelligenceJobsInput
+  }
+
+  export type DocumentIntelligenceJobUncheckedCreateInput = {
+    id?: string
+    userId: string
+    originalFileName: string
+    bucket: string
+    objectKey: string
+    mimeType: string
+    sizeBytes: bigint | number
+    requestedMode: string
+    effectiveMode?: string | null
+    status: $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: string | null
+    llmProvider?: string | null
+    modelName?: string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: string | null
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    errorCode?: string | null
+    errorMessage?: string | null
+    startedAt?: Date | string | null
+    finishedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type DocumentIntelligenceJobUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    originalFileName?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    objectKey?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
+    requestedMode?: StringFieldUpdateOperationsInput | string
+    effectiveMode?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumDocumentIntelligenceJobStatusFieldUpdateOperationsInput | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    llmProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    modelName?: NullableStringFieldUpdateOperationsInput | string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: NullableStringFieldUpdateOperationsInput | string | null
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    user?: UserUpdateOneRequiredWithoutDocumentIntelligenceJobsNestedInput
+  }
+
+  export type DocumentIntelligenceJobUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    originalFileName?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    objectKey?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
+    requestedMode?: StringFieldUpdateOperationsInput | string
+    effectiveMode?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumDocumentIntelligenceJobStatusFieldUpdateOperationsInput | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    llmProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    modelName?: NullableStringFieldUpdateOperationsInput | string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: NullableStringFieldUpdateOperationsInput | string | null
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentIntelligenceJobCreateManyInput = {
+    id?: string
+    userId: string
+    originalFileName: string
+    bucket: string
+    objectKey: string
+    mimeType: string
+    sizeBytes: bigint | number
+    requestedMode: string
+    effectiveMode?: string | null
+    status: $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: string | null
+    llmProvider?: string | null
+    modelName?: string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: string | null
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    errorCode?: string | null
+    errorMessage?: string | null
+    startedAt?: Date | string | null
+    finishedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type DocumentIntelligenceJobUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    originalFileName?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    objectKey?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
+    requestedMode?: StringFieldUpdateOperationsInput | string
+    effectiveMode?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumDocumentIntelligenceJobStatusFieldUpdateOperationsInput | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    llmProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    modelName?: NullableStringFieldUpdateOperationsInput | string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: NullableStringFieldUpdateOperationsInput | string | null
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentIntelligenceJobUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    originalFileName?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    objectKey?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
+    requestedMode?: StringFieldUpdateOperationsInput | string
+    effectiveMode?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumDocumentIntelligenceJobStatusFieldUpdateOperationsInput | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    llmProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    modelName?: NullableStringFieldUpdateOperationsInput | string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: NullableStringFieldUpdateOperationsInput | string | null
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type AuditLogCreateInput = {
     id?: string
     action: string
@@ -23714,6 +25401,12 @@ export namespace Prisma {
     none?: DocumentVersionWhereInput
   }
 
+  export type DocumentIntelligenceJobListRelationFilter = {
+    every?: DocumentIntelligenceJobWhereInput
+    some?: DocumentIntelligenceJobWhereInput
+    none?: DocumentIntelligenceJobWhereInput
+  }
+
   export type AuditLogListRelationFilter = {
     every?: AuditLogWhereInput
     some?: AuditLogWhereInput
@@ -23721,6 +25414,10 @@ export namespace Prisma {
   }
 
   export type DocumentVersionOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type DocumentIntelligenceJobOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -24664,6 +26361,13 @@ export namespace Prisma {
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
+
+  export type EnumDocumentIntelligenceJobStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.DocumentIntelligenceJobStatus | EnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.DocumentIntelligenceJobStatus[] | ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DocumentIntelligenceJobStatus[] | ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumDocumentIntelligenceJobStatusFilter<$PrismaModel> | $Enums.DocumentIntelligenceJobStatus
+  }
   export type JsonNullableFilter<$PrismaModel = never> = 
     | PatchUndefined<
         Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
@@ -24685,6 +26389,151 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type DecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type DocumentIntelligenceJobCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    originalFileName?: SortOrder
+    bucket?: SortOrder
+    objectKey?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    requestedMode?: SortOrder
+    effectiveMode?: SortOrder
+    status?: SortOrder
+    ocrProvider?: SortOrder
+    llmProvider?: SortOrder
+    modelName?: SortOrder
+    extractedJson?: SortOrder
+    rawExtractedText?: SortOrder
+    confidenceScore?: SortOrder
+    errorCode?: SortOrder
+    errorMessage?: SortOrder
+    startedAt?: SortOrder
+    finishedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type DocumentIntelligenceJobAvgOrderByAggregateInput = {
+    sizeBytes?: SortOrder
+    confidenceScore?: SortOrder
+  }
+
+  export type DocumentIntelligenceJobMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    originalFileName?: SortOrder
+    bucket?: SortOrder
+    objectKey?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    requestedMode?: SortOrder
+    effectiveMode?: SortOrder
+    status?: SortOrder
+    ocrProvider?: SortOrder
+    llmProvider?: SortOrder
+    modelName?: SortOrder
+    rawExtractedText?: SortOrder
+    confidenceScore?: SortOrder
+    errorCode?: SortOrder
+    errorMessage?: SortOrder
+    startedAt?: SortOrder
+    finishedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type DocumentIntelligenceJobMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    originalFileName?: SortOrder
+    bucket?: SortOrder
+    objectKey?: SortOrder
+    mimeType?: SortOrder
+    sizeBytes?: SortOrder
+    requestedMode?: SortOrder
+    effectiveMode?: SortOrder
+    status?: SortOrder
+    ocrProvider?: SortOrder
+    llmProvider?: SortOrder
+    modelName?: SortOrder
+    rawExtractedText?: SortOrder
+    confidenceScore?: SortOrder
+    errorCode?: SortOrder
+    errorMessage?: SortOrder
+    startedAt?: SortOrder
+    finishedAt?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type DocumentIntelligenceJobSumOrderByAggregateInput = {
+    sizeBytes?: SortOrder
+    confidenceScore?: SortOrder
+  }
+
+  export type EnumDocumentIntelligenceJobStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DocumentIntelligenceJobStatus | EnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.DocumentIntelligenceJobStatus[] | ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DocumentIntelligenceJobStatus[] | ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumDocumentIntelligenceJobStatusWithAggregatesFilter<$PrismaModel> | $Enums.DocumentIntelligenceJobStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDocumentIntelligenceJobStatusFilter<$PrismaModel>
+    _max?: NestedEnumDocumentIntelligenceJobStatusFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> = 
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
+  export type DecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
   export type AuditLogCountOrderByAggregateInput = {
@@ -24719,31 +26568,6 @@ export namespace Prisma {
     ipAddress?: SortOrder
     userAgent?: SortOrder
     createdAt?: SortOrder
-  }
-  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> = 
-    | PatchUndefined<
-        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string[]
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedJsonNullableFilter<$PrismaModel>
-    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type DepartmentCreateNestedOneWithoutChildrenInput = {
@@ -25690,6 +27514,13 @@ export namespace Prisma {
     connect?: DocumentTransmissionWhereUniqueInput | DocumentTransmissionWhereUniqueInput[]
   }
 
+  export type DocumentIntelligenceJobCreateNestedManyWithoutUserInput = {
+    create?: XOR<DocumentIntelligenceJobCreateWithoutUserInput, DocumentIntelligenceJobUncheckedCreateWithoutUserInput> | DocumentIntelligenceJobCreateWithoutUserInput[] | DocumentIntelligenceJobUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DocumentIntelligenceJobCreateOrConnectWithoutUserInput | DocumentIntelligenceJobCreateOrConnectWithoutUserInput[]
+    createMany?: DocumentIntelligenceJobCreateManyUserInputEnvelope
+    connect?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+  }
+
   export type AuditLogCreateNestedManyWithoutUserInput = {
     create?: XOR<AuditLogCreateWithoutUserInput, AuditLogUncheckedCreateWithoutUserInput> | AuditLogCreateWithoutUserInput[] | AuditLogUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AuditLogCreateOrConnectWithoutUserInput | AuditLogCreateOrConnectWithoutUserInput[]
@@ -25737,6 +27568,13 @@ export namespace Prisma {
     connectOrCreate?: DocumentTransmissionCreateOrConnectWithoutSentByUserInput | DocumentTransmissionCreateOrConnectWithoutSentByUserInput[]
     createMany?: DocumentTransmissionCreateManySentByUserInputEnvelope
     connect?: DocumentTransmissionWhereUniqueInput | DocumentTransmissionWhereUniqueInput[]
+  }
+
+  export type DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<DocumentIntelligenceJobCreateWithoutUserInput, DocumentIntelligenceJobUncheckedCreateWithoutUserInput> | DocumentIntelligenceJobCreateWithoutUserInput[] | DocumentIntelligenceJobUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DocumentIntelligenceJobCreateOrConnectWithoutUserInput | DocumentIntelligenceJobCreateOrConnectWithoutUserInput[]
+    createMany?: DocumentIntelligenceJobCreateManyUserInputEnvelope
+    connect?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
   }
 
   export type AuditLogUncheckedCreateNestedManyWithoutUserInput = {
@@ -25852,6 +27690,20 @@ export namespace Prisma {
     deleteMany?: DocumentTransmissionScalarWhereInput | DocumentTransmissionScalarWhereInput[]
   }
 
+  export type DocumentIntelligenceJobUpdateManyWithoutUserNestedInput = {
+    create?: XOR<DocumentIntelligenceJobCreateWithoutUserInput, DocumentIntelligenceJobUncheckedCreateWithoutUserInput> | DocumentIntelligenceJobCreateWithoutUserInput[] | DocumentIntelligenceJobUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DocumentIntelligenceJobCreateOrConnectWithoutUserInput | DocumentIntelligenceJobCreateOrConnectWithoutUserInput[]
+    upsert?: DocumentIntelligenceJobUpsertWithWhereUniqueWithoutUserInput | DocumentIntelligenceJobUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: DocumentIntelligenceJobCreateManyUserInputEnvelope
+    set?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+    disconnect?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+    delete?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+    connect?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+    update?: DocumentIntelligenceJobUpdateWithWhereUniqueWithoutUserInput | DocumentIntelligenceJobUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: DocumentIntelligenceJobUpdateManyWithWhereWithoutUserInput | DocumentIntelligenceJobUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: DocumentIntelligenceJobScalarWhereInput | DocumentIntelligenceJobScalarWhereInput[]
+  }
+
   export type AuditLogUpdateManyWithoutUserNestedInput = {
     create?: XOR<AuditLogCreateWithoutUserInput, AuditLogUncheckedCreateWithoutUserInput> | AuditLogCreateWithoutUserInput[] | AuditLogUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AuditLogCreateOrConnectWithoutUserInput | AuditLogCreateOrConnectWithoutUserInput[]
@@ -25948,6 +27800,20 @@ export namespace Prisma {
     update?: DocumentTransmissionUpdateWithWhereUniqueWithoutSentByUserInput | DocumentTransmissionUpdateWithWhereUniqueWithoutSentByUserInput[]
     updateMany?: DocumentTransmissionUpdateManyWithWhereWithoutSentByUserInput | DocumentTransmissionUpdateManyWithWhereWithoutSentByUserInput[]
     deleteMany?: DocumentTransmissionScalarWhereInput | DocumentTransmissionScalarWhereInput[]
+  }
+
+  export type DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<DocumentIntelligenceJobCreateWithoutUserInput, DocumentIntelligenceJobUncheckedCreateWithoutUserInput> | DocumentIntelligenceJobCreateWithoutUserInput[] | DocumentIntelligenceJobUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: DocumentIntelligenceJobCreateOrConnectWithoutUserInput | DocumentIntelligenceJobCreateOrConnectWithoutUserInput[]
+    upsert?: DocumentIntelligenceJobUpsertWithWhereUniqueWithoutUserInput | DocumentIntelligenceJobUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: DocumentIntelligenceJobCreateManyUserInputEnvelope
+    set?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+    disconnect?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+    delete?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+    connect?: DocumentIntelligenceJobWhereUniqueInput | DocumentIntelligenceJobWhereUniqueInput[]
+    update?: DocumentIntelligenceJobUpdateWithWhereUniqueWithoutUserInput | DocumentIntelligenceJobUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: DocumentIntelligenceJobUpdateManyWithWhereWithoutUserInput | DocumentIntelligenceJobUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: DocumentIntelligenceJobScalarWhereInput | DocumentIntelligenceJobScalarWhereInput[]
   }
 
   export type AuditLogUncheckedUpdateManyWithoutUserNestedInput = {
@@ -27032,6 +28898,32 @@ export namespace Prisma {
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutCreatedTransmissionsInput, UserUpdateWithoutCreatedTransmissionsInput>, UserUncheckedUpdateWithoutCreatedTransmissionsInput>
   }
 
+  export type UserCreateNestedOneWithoutDocumentIntelligenceJobsInput = {
+    create?: XOR<UserCreateWithoutDocumentIntelligenceJobsInput, UserUncheckedCreateWithoutDocumentIntelligenceJobsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDocumentIntelligenceJobsInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type EnumDocumentIntelligenceJobStatusFieldUpdateOperationsInput = {
+    set?: $Enums.DocumentIntelligenceJobStatus
+  }
+
+  export type NullableDecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string | null
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type UserUpdateOneRequiredWithoutDocumentIntelligenceJobsNestedInput = {
+    create?: XOR<UserCreateWithoutDocumentIntelligenceJobsInput, UserUncheckedCreateWithoutDocumentIntelligenceJobsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutDocumentIntelligenceJobsInput
+    upsert?: UserUpsertWithoutDocumentIntelligenceJobsInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutDocumentIntelligenceJobsInput, UserUpdateWithoutDocumentIntelligenceJobsInput>, UserUncheckedUpdateWithoutDocumentIntelligenceJobsInput>
+  }
+
   export type UserCreateNestedOneWithoutAuditLogsInput = {
     create?: XOR<UserCreateWithoutAuditLogsInput, UserUncheckedCreateWithoutAuditLogsInput>
     connectOrCreate?: UserCreateOrConnectWithoutAuditLogsInput
@@ -27510,6 +29402,34 @@ export namespace Prisma {
     _min?: NestedDateTimeNullableFilter<$PrismaModel>
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
+
+  export type NestedEnumDocumentIntelligenceJobStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.DocumentIntelligenceJobStatus | EnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.DocumentIntelligenceJobStatus[] | ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DocumentIntelligenceJobStatus[] | ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumDocumentIntelligenceJobStatusFilter<$PrismaModel> | $Enums.DocumentIntelligenceJobStatus
+  }
+
+  export type NestedDecimalNullableFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+  }
+
+  export type NestedEnumDocumentIntelligenceJobStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.DocumentIntelligenceJobStatus | EnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.DocumentIntelligenceJobStatus[] | ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    notIn?: $Enums.DocumentIntelligenceJobStatus[] | ListEnumDocumentIntelligenceJobStatusFieldRefInput<$PrismaModel>
+    not?: NestedEnumDocumentIntelligenceJobStatusWithAggregatesFilter<$PrismaModel> | $Enums.DocumentIntelligenceJobStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumDocumentIntelligenceJobStatusFilter<$PrismaModel>
+    _max?: NestedEnumDocumentIntelligenceJobStatusFilter<$PrismaModel>
+  }
   export type NestedJsonNullableFilter<$PrismaModel = never> = 
     | PatchUndefined<
         Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
@@ -27531,6 +29451,22 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedDecimalNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel> | null
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel> | null
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalNullableWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedDecimalNullableFilter<$PrismaModel>
+    _sum?: NestedDecimalNullableFilter<$PrismaModel>
+    _min?: NestedDecimalNullableFilter<$PrismaModel>
+    _max?: NestedDecimalNullableFilter<$PrismaModel>
   }
 
   export type DepartmentCreateWithoutChildrenInput = {
@@ -27919,6 +29855,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -27939,6 +29876,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -29070,6 +31008,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -29090,6 +31029,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -29609,6 +31549,64 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type DocumentIntelligenceJobCreateWithoutUserInput = {
+    id?: string
+    originalFileName: string
+    bucket: string
+    objectKey: string
+    mimeType: string
+    sizeBytes: bigint | number
+    requestedMode: string
+    effectiveMode?: string | null
+    status: $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: string | null
+    llmProvider?: string | null
+    modelName?: string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: string | null
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    errorCode?: string | null
+    errorMessage?: string | null
+    startedAt?: Date | string | null
+    finishedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type DocumentIntelligenceJobUncheckedCreateWithoutUserInput = {
+    id?: string
+    originalFileName: string
+    bucket: string
+    objectKey: string
+    mimeType: string
+    sizeBytes: bigint | number
+    requestedMode: string
+    effectiveMode?: string | null
+    status: $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: string | null
+    llmProvider?: string | null
+    modelName?: string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: string | null
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    errorCode?: string | null
+    errorMessage?: string | null
+    startedAt?: Date | string | null
+    finishedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type DocumentIntelligenceJobCreateOrConnectWithoutUserInput = {
+    where: DocumentIntelligenceJobWhereUniqueInput
+    create: XOR<DocumentIntelligenceJobCreateWithoutUserInput, DocumentIntelligenceJobUncheckedCreateWithoutUserInput>
+  }
+
+  export type DocumentIntelligenceJobCreateManyUserInputEnvelope = {
+    data: DocumentIntelligenceJobCreateManyUserInput | DocumentIntelligenceJobCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type AuditLogCreateWithoutUserInput = {
     id?: string
     action: string
@@ -29845,6 +31843,50 @@ export namespace Prisma {
     data: XOR<DocumentTransmissionUpdateManyMutationInput, DocumentTransmissionUncheckedUpdateManyWithoutSentByUserInput>
   }
 
+  export type DocumentIntelligenceJobUpsertWithWhereUniqueWithoutUserInput = {
+    where: DocumentIntelligenceJobWhereUniqueInput
+    update: XOR<DocumentIntelligenceJobUpdateWithoutUserInput, DocumentIntelligenceJobUncheckedUpdateWithoutUserInput>
+    create: XOR<DocumentIntelligenceJobCreateWithoutUserInput, DocumentIntelligenceJobUncheckedCreateWithoutUserInput>
+  }
+
+  export type DocumentIntelligenceJobUpdateWithWhereUniqueWithoutUserInput = {
+    where: DocumentIntelligenceJobWhereUniqueInput
+    data: XOR<DocumentIntelligenceJobUpdateWithoutUserInput, DocumentIntelligenceJobUncheckedUpdateWithoutUserInput>
+  }
+
+  export type DocumentIntelligenceJobUpdateManyWithWhereWithoutUserInput = {
+    where: DocumentIntelligenceJobScalarWhereInput
+    data: XOR<DocumentIntelligenceJobUpdateManyMutationInput, DocumentIntelligenceJobUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type DocumentIntelligenceJobScalarWhereInput = {
+    AND?: DocumentIntelligenceJobScalarWhereInput | DocumentIntelligenceJobScalarWhereInput[]
+    OR?: DocumentIntelligenceJobScalarWhereInput[]
+    NOT?: DocumentIntelligenceJobScalarWhereInput | DocumentIntelligenceJobScalarWhereInput[]
+    id?: UuidFilter<"DocumentIntelligenceJob"> | string
+    userId?: UuidFilter<"DocumentIntelligenceJob"> | string
+    originalFileName?: StringFilter<"DocumentIntelligenceJob"> | string
+    bucket?: StringFilter<"DocumentIntelligenceJob"> | string
+    objectKey?: StringFilter<"DocumentIntelligenceJob"> | string
+    mimeType?: StringFilter<"DocumentIntelligenceJob"> | string
+    sizeBytes?: BigIntFilter<"DocumentIntelligenceJob"> | bigint | number
+    requestedMode?: StringFilter<"DocumentIntelligenceJob"> | string
+    effectiveMode?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    status?: EnumDocumentIntelligenceJobStatusFilter<"DocumentIntelligenceJob"> | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    llmProvider?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    modelName?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    extractedJson?: JsonNullableFilter<"DocumentIntelligenceJob">
+    rawExtractedText?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    confidenceScore?: DecimalNullableFilter<"DocumentIntelligenceJob"> | Decimal | DecimalJsLike | number | string | null
+    errorCode?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    errorMessage?: StringNullableFilter<"DocumentIntelligenceJob"> | string | null
+    startedAt?: DateTimeNullableFilter<"DocumentIntelligenceJob"> | Date | string | null
+    finishedAt?: DateTimeNullableFilter<"DocumentIntelligenceJob"> | Date | string | null
+    createdAt?: DateTimeFilter<"DocumentIntelligenceJob"> | Date | string
+    updatedAt?: DateTimeFilter<"DocumentIntelligenceJob"> | Date | string
+  }
+
   export type AuditLogUpsertWithWhereUniqueWithoutUserInput = {
     where: AuditLogWhereUniqueInput
     update: XOR<AuditLogUpdateWithoutUserInput, AuditLogUncheckedUpdateWithoutUserInput>
@@ -29952,6 +31994,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -29972,6 +32015,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -30359,6 +32403,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -30379,6 +32424,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -30597,6 +32643,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -30617,6 +32664,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -30771,6 +32819,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -30791,6 +32840,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -31793,6 +33843,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -31813,6 +33864,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -32026,6 +34078,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -32046,6 +34099,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -32715,6 +34769,7 @@ export namespace Prisma {
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -32735,6 +34790,7 @@ export namespace Prisma {
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -32908,6 +34964,7 @@ export namespace Prisma {
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -32928,6 +34985,7 @@ export namespace Prisma {
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -33180,6 +35238,7 @@ export namespace Prisma {
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -33200,6 +35259,7 @@ export namespace Prisma {
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -33460,6 +35520,7 @@ export namespace Prisma {
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -33480,6 +35541,7 @@ export namespace Prisma {
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -33641,6 +35703,7 @@ export namespace Prisma {
     archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogCreateNestedManyWithoutUserInput
   }
 
@@ -33661,6 +35724,7 @@ export namespace Prisma {
     archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
     auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -33856,6 +35920,7 @@ export namespace Prisma {
     archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -33876,6 +35941,107 @@ export namespace Prisma {
     archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
+    auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserCreateWithoutDocumentIntelligenceJobsInput = {
+    id?: string
+    keycloakId: string
+    matricule: string
+    email: string
+    nom: string
+    prenom: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    role: RoleCreateNestedOneWithoutUsersInput
+    department?: DepartmentCreateNestedOneWithoutUsersInput
+    documents?: DocumentCreateNestedManyWithoutAuthorInput
+    documentSigners?: DocumentSignerCreateNestedManyWithoutUserInput
+    archives?: DocumentArchiveCreateNestedManyWithoutArchivedByInput
+    createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
+    createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
+    createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    auditLogs?: AuditLogCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutDocumentIntelligenceJobsInput = {
+    id?: string
+    keycloakId: string
+    matricule: string
+    email: string
+    nom: string
+    prenom: string
+    roleId: string
+    departmentId?: string | null
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    documents?: DocumentUncheckedCreateNestedManyWithoutAuthorInput
+    documentSigners?: DocumentSignerUncheckedCreateNestedManyWithoutUserInput
+    archives?: DocumentArchiveUncheckedCreateNestedManyWithoutArchivedByInput
+    createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
+    createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
+    createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    auditLogs?: AuditLogUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutDocumentIntelligenceJobsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutDocumentIntelligenceJobsInput, UserUncheckedCreateWithoutDocumentIntelligenceJobsInput>
+  }
+
+  export type UserUpsertWithoutDocumentIntelligenceJobsInput = {
+    update: XOR<UserUpdateWithoutDocumentIntelligenceJobsInput, UserUncheckedUpdateWithoutDocumentIntelligenceJobsInput>
+    create: XOR<UserCreateWithoutDocumentIntelligenceJobsInput, UserUncheckedCreateWithoutDocumentIntelligenceJobsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutDocumentIntelligenceJobsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutDocumentIntelligenceJobsInput, UserUncheckedUpdateWithoutDocumentIntelligenceJobsInput>
+  }
+
+  export type UserUpdateWithoutDocumentIntelligenceJobsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    keycloakId?: StringFieldUpdateOperationsInput | string
+    matricule?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    role?: RoleUpdateOneRequiredWithoutUsersNestedInput
+    department?: DepartmentUpdateOneWithoutUsersNestedInput
+    documents?: DocumentUpdateManyWithoutAuthorNestedInput
+    documentSigners?: DocumentSignerUpdateManyWithoutUserNestedInput
+    archives?: DocumentArchiveUpdateManyWithoutArchivedByNestedInput
+    createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
+    createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
+    createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutDocumentIntelligenceJobsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    keycloakId?: StringFieldUpdateOperationsInput | string
+    matricule?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    nom?: StringFieldUpdateOperationsInput | string
+    prenom?: StringFieldUpdateOperationsInput | string
+    roleId?: StringFieldUpdateOperationsInput | string
+    departmentId?: NullableStringFieldUpdateOperationsInput | string | null
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    documents?: DocumentUncheckedUpdateManyWithoutAuthorNestedInput
+    documentSigners?: DocumentSignerUncheckedUpdateManyWithoutUserNestedInput
+    archives?: DocumentArchiveUncheckedUpdateManyWithoutArchivedByNestedInput
+    createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
+    createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
+    createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -33897,6 +36063,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -33917,6 +36084,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdVersions?: DocumentVersionUncheckedCreateNestedManyWithoutCreatedByUserInput
     createdTransmissions?: DocumentTransmissionUncheckedCreateNestedManyWithoutSentByUserInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -33953,6 +36121,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -33973,6 +36142,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type DepartmentCreateManyParentInput = {
@@ -34399,6 +36569,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -34419,6 +36590,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -34997,6 +37169,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUpdateManyWithoutUserNestedInput
   }
 
@@ -35017,6 +37190,7 @@ export namespace Prisma {
     createdAnnotations?: DocumentAnnotationUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdVersions?: DocumentVersionUncheckedUpdateManyWithoutCreatedByUserNestedInput
     createdTransmissions?: DocumentTransmissionUncheckedUpdateManyWithoutSentByUserNestedInput
+    documentIntelligenceJobs?: DocumentIntelligenceJobUncheckedUpdateManyWithoutUserNestedInput
     auditLogs?: AuditLogUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -35134,6 +37308,30 @@ export namespace Prisma {
     kind: $Enums.RecipientKind
     sentAt?: Date | string
     respondedAt?: Date | string | null
+  }
+
+  export type DocumentIntelligenceJobCreateManyUserInput = {
+    id?: string
+    originalFileName: string
+    bucket: string
+    objectKey: string
+    mimeType: string
+    sizeBytes: bigint | number
+    requestedMode: string
+    effectiveMode?: string | null
+    status: $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: string | null
+    llmProvider?: string | null
+    modelName?: string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: string | null
+    confidenceScore?: Decimal | DecimalJsLike | number | string | null
+    errorCode?: string | null
+    errorMessage?: string | null
+    startedAt?: Date | string | null
+    finishedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
   }
 
   export type AuditLogCreateManyUserInput = {
@@ -35392,6 +37590,78 @@ export namespace Prisma {
     kind?: EnumRecipientKindFieldUpdateOperationsInput | $Enums.RecipientKind
     sentAt?: DateTimeFieldUpdateOperationsInput | Date | string
     respondedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type DocumentIntelligenceJobUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    originalFileName?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    objectKey?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
+    requestedMode?: StringFieldUpdateOperationsInput | string
+    effectiveMode?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumDocumentIntelligenceJobStatusFieldUpdateOperationsInput | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    llmProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    modelName?: NullableStringFieldUpdateOperationsInput | string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: NullableStringFieldUpdateOperationsInput | string | null
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentIntelligenceJobUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    originalFileName?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    objectKey?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
+    requestedMode?: StringFieldUpdateOperationsInput | string
+    effectiveMode?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumDocumentIntelligenceJobStatusFieldUpdateOperationsInput | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    llmProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    modelName?: NullableStringFieldUpdateOperationsInput | string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: NullableStringFieldUpdateOperationsInput | string | null
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DocumentIntelligenceJobUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    originalFileName?: StringFieldUpdateOperationsInput | string
+    bucket?: StringFieldUpdateOperationsInput | string
+    objectKey?: StringFieldUpdateOperationsInput | string
+    mimeType?: StringFieldUpdateOperationsInput | string
+    sizeBytes?: BigIntFieldUpdateOperationsInput | bigint | number
+    requestedMode?: StringFieldUpdateOperationsInput | string
+    effectiveMode?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumDocumentIntelligenceJobStatusFieldUpdateOperationsInput | $Enums.DocumentIntelligenceJobStatus
+    ocrProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    llmProvider?: NullableStringFieldUpdateOperationsInput | string | null
+    modelName?: NullableStringFieldUpdateOperationsInput | string | null
+    extractedJson?: NullableJsonNullValueInput | InputJsonValue
+    rawExtractedText?: NullableStringFieldUpdateOperationsInput | string | null
+    confidenceScore?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    errorCode?: NullableStringFieldUpdateOperationsInput | string | null
+    errorMessage?: NullableStringFieldUpdateOperationsInput | string | null
+    startedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    finishedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type AuditLogUpdateWithoutUserInput = {
@@ -36252,6 +38522,10 @@ export namespace Prisma {
      * @deprecated Use DocumentTransmissionDefaultArgs instead
      */
     export type DocumentTransmissionArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = DocumentTransmissionDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use DocumentIntelligenceJobDefaultArgs instead
+     */
+    export type DocumentIntelligenceJobArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = DocumentIntelligenceJobDefaultArgs<ExtArgs>
     /**
      * @deprecated Use AuditLogDefaultArgs instead
      */

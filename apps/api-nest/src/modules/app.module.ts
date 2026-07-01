@@ -14,6 +14,8 @@ import { SearchModule } from "./search/search.module.js";
 import { AuditModule } from "./audit/audit.module.js";
 import { PhysicalArchivesModule } from "./physical-archives/physical-archives.module.js";
 import { DashboardModule } from "./dashboard/dashboard.module.js";
+import { DocumentIntelligenceModule } from "./document-intelligence/document-intelligence.module.js";
+import { DocumentTypesModule } from "./document-types/document-types.module.js";
 
 @Module({
   imports: [
@@ -29,7 +31,9 @@ import { DashboardModule } from "./dashboard/dashboard.module.js";
     SearchModule,
     AuditModule,
     PhysicalArchivesModule,
-    DashboardModule
+    DashboardModule,
+    DocumentIntelligenceModule,
+    DocumentTypesModule
   ],
   providers: [
     {

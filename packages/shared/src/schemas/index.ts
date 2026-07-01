@@ -9,10 +9,11 @@ import {
   documentStatuses,
   documentFileKinds,
   documentTypes,
+  folderTypes,
   movementTypes,
   ocrStatuses,
   roles
-} from "../constants";
+} from "../constants/index.js";
 
 export const userPersonneSchema = z.object({
   nom: z.string().min(1),
@@ -29,6 +30,8 @@ export const departementReferenceSchema = z.object({
 });
 
 export const createUserSchema = z.object({
+  mode: z.enum(["CREATE", "COMPLETE"]).default("CREATE"),
+  pendingUserId: z.string().trim().min(1).optional(),
   personne: z.object({
     nom: z.string().trim().min(1),
     prenom: z.string().trim().min(1)
@@ -39,6 +42,7 @@ export const createUserSchema = z.object({
   }),
   email: z.string().trim().email(),
   matricule: z.string().trim().min(1),
+  functionTitle: z.string().trim().min(1).optional(),
   bureau: z.object({
     code: z.string().trim().min(1),
     designation: z.string().trim().min(1)
@@ -48,15 +52,18 @@ export const createUserSchema = z.object({
 export const userSchema = z.object({
   id: z.string(),
   email: z.string().email().optional(),
+  functionTitle: z.string().optional(),
   role: z.enum(roles).optional(),
   isActive: z.boolean().optional(),
+  directoryStatus: z.enum(["ACTIVE", "PENDING_COMPLETION", "INACTIVE"]).optional(),
+  directorySource: z.enum(["MANUAL", "DOCUMENT_INTELLIGENCE", "KEYCLOAK_PROVISIONED"]).optional(),
   updatedAt: z.union([z.string(), z.number()]).optional(),
   personne: userPersonneSchema,
   profile: z.object({
     code: z.string().min(1),
     designation: z.string().min(1)
   }),
-  matricule: z.string().min(1),
+  matricule: z.string().min(1).optional(),
   bureau: departementReferenceSchema.nullable().optional(),
   dateCreation: z.number(),
   dateDerniereModification: z.number(),
@@ -69,7 +76,8 @@ export const userSchema = z.object({
 export const createUserResultSchema = z.object({
   user: userSchema,
   defaultPassword: z.string().min(8),
-  mustChangePassword: z.literal(true)
+  mustChangePassword: z.literal(true),
+  operation: z.enum(["CREATED", "COMPLETED_PENDING"])
 });
 
 export const parentDepartementSchema = z.object({
@@ -241,6 +249,16 @@ export const documentDirectionReferenceSchema = z.object({
   designation: z.string().min(1)
 });
 
+export const documentTypeOptionSchema = z.object({
+  id: z.string(),
+  code: z.string().min(1),
+  label: z.string().min(1),
+  description: z.string().nullable().optional(),
+  isActive: z.boolean(),
+  createdAt: z.union([z.string(), z.number()]),
+  updatedAt: z.union([z.string(), z.number()])
+});
+
 export const documentAttachmentSchema = z.object({
   id: z.string(),
   name: z.string().min(1),
@@ -258,6 +276,20 @@ export const documentSignerSchema = z.object({
   signingOrder: z.number().int().positive().optional()
 });
 
+export const documentRecipientTargetSchema = z.object({
+  kind: z.enum(["DIRECTION_GENERALE", "DIRECTION", "SERVICE", "BUREAU", "USER"]),
+  directionId: z.string().min(1),
+  directionCode: z.string().optional(),
+  directionName: z.string().optional(),
+  departmentId: z.string().optional(),
+  departmentCode: z.string().optional(),
+  departmentName: z.string().optional(),
+  userId: z.string().optional(),
+  userName: z.string().optional(),
+  userEmail: z.string().optional(),
+  label: z.string().min(1)
+});
+
 export const aiExtractedDataSchema = z.object({
   reference: z.string().optional(),
   year: z.number().int().min(2000).max(3000).optional(),
@@ -268,6 +300,7 @@ export const aiExtractedDataSchema = z.object({
   emitterDirectionId: z.string().optional(),
   receiverDirectionIds: z.array(z.string()).optional(),
   copyDirectionIds: z.array(z.string()).optional(),
+  copyTargets: z.array(documentRecipientTargetSchema).optional(),
   documentType: z.union([z.enum(documentTypes), z.string().min(1)]).optional(),
   signerName: z.string().optional(),
   signers: z.array(documentSignerSchema).optional(),
@@ -287,6 +320,9 @@ export const documentSchema = z.object({
   dateCreation: z.union([z.string(), z.number()]),
   user: documentUserReferenceSchema,
   type: z.string().min(1),
+  documentTypeId: z.string().optional(),
+  documentTypeCode: z.string().optional(),
+  documentTypeLabel: z.string().optional(),
   direction: documentDirectionReferenceSchema,
   dateDerniereModication: z.union([z.string(), z.number()]),
   reference: z.string().optional(),
@@ -307,6 +343,7 @@ export const documentSchema = z.object({
   emitterDirectionId: z.string().optional(),
   receiverDirectionIds: z.array(z.string()),
   copyDirectionIds: z.array(z.string()),
+  copyTargets: z.array(documentRecipientTargetSchema).optional(),
   movementType: z.enum(movementTypes).optional(),
   confidentialityLevel: z.enum(confidentialityLevels).optional(),
   status: z.enum(documentStatuses).optional(),
@@ -343,11 +380,14 @@ export const createDocumentSchema = z
     description: z.string().optional(),
     summary: z.string().optional(),
     type: z.string().min(1).optional(),
+    documentTypeId: z.string().min(1).optional(),
+    folderId: z.string().min(1).optional(),
     documentType: z.enum(documentTypes).optional(),
     directionId: z.string().min(1).optional(),
     emitterDirectionId: z.string().min(1).optional(),
     receiverDirectionIds: z.array(z.string().min(1)).optional(),
     copyDirectionIds: z.array(z.string().min(1)).optional(),
+    copyTargets: z.array(documentRecipientTargetSchema).optional(),
     serviceId: z.string().min(1).optional(),
     bureauId: z.string().min(1).optional(),
     authorId: z.string().optional(),
@@ -366,6 +406,8 @@ export const createDocumentSchema = z
     aiExtractedData: aiExtractedDataSchema.optional()
   })
   .superRefine((value, context) => {
+    const direction = value.direction as { id?: string } | undefined;
+
     if (!value.numeroReference && !value.reference) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -383,7 +425,7 @@ export const createDocumentSchema = z
     if (
       !value.directionId &&
       !value.emitterDirectionId &&
-      !value.direction?.id &&
+      !direction?.id &&
       !(value.receiverDirectionIds && value.receiverDirectionIds.length > 0)
     ) {
       context.addIssue({
@@ -411,20 +453,192 @@ export const documentArchiveSchema = z.object({
 export const archiveFolderSchema = z.object({
   id: z.string(),
   year: z.number().int().min(2000).max(3000),
+  folderType: z.enum(folderTypes),
+  label: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
   bureauId: z.string().min(1),
   accessibleBureauIds: z.array(z.string().min(1)).optional(),
   ownerDirectionId: z.string().min(1),
   directionId: z.string().min(1).optional(),
-  partnerDirectionId: z.string().min(1),
+  partnerDirectionId: z.string().min(1).nullable().optional(),
+  documentTypeIds: z.array(z.string().min(1)).optional(),
+  documentTypes: z.array(documentTypeOptionSchema).optional(),
   createdAt: z.string(),
   updatedAt: z.string().optional(),
   status: z.enum(["ACTIVE", "ARCHIVED"])
 });
 
+export const documentIntelligenceRequestedModeSchema = z.enum(["vision", "ocr", "auto"]);
+export const documentIntelligenceEffectiveModeSchema = z.enum(["vision", "ocr", "hybrid"]);
+export const documentIntelligenceJobStatusSchema = z.enum([
+  "PENDING",
+  "UPLOADED",
+  "VISION_RUNNING",
+  "OCR_RUNNING",
+  "LLM_RUNNING",
+  "COMPLETED",
+  "LOW_CONFIDENCE",
+  "FAILED"
+]);
+
+export const documentIntelligenceResultSchema = z.object({
+  reference: z.string().default(""),
+  title: z.string().default(""),
+  subject: z.string().default(""),
+  documentDate: z.string().default(""),
+  emitterDirection: z.string().default(""),
+  receiverDirections: z.array(z.string()).default([]),
+  copyDirections: z.array(z.string()).default([]),
+  signers: z.array(z.string()).default([]),
+  documentType: z.string().default(""),
+  confidentialityLevel: z.string().default(""),
+  summary: z.string().default(""),
+  keywords: z.array(z.string()).default([]),
+  confidenceScore: z.number().min(0).max(1).default(0),
+  fieldConfidence: z.record(z.number().min(0).max(1)).default({}),
+  extractionMode: documentIntelligenceEffectiveModeSchema.default("vision"),
+  rawExtractedText: z.string().default(""),
+  rawVisionNotes: z.string().optional()
+});
+
+export const documentIntelligenceMatchingItemSchema = z.object({
+  status: z.enum(["matched", "ambiguous", "unmatched"]),
+  label: z.string().min(1),
+  matchedDepartmentId: z.string().optional(),
+  matchedDepartmentIds: z.array(z.string()).optional()
+});
+
+export const documentIntelligenceSignerMatchingItemSchema = z.object({
+  status: z.enum(["matched", "ambiguous", "unmatched"]),
+  label: z.string().min(1),
+  matchedUserId: z.string().optional(),
+  matchedUserIds: z.array(z.string()).optional(),
+  directoryStatus: z.enum(["ACTIVE", "PENDING_COMPLETION", "INACTIVE"]).optional()
+});
+
+export const documentIntelligenceJobSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  originalFileName: z.string().min(1),
+  bucket: z.string().min(1),
+  objectKey: z.string().min(1),
+  mimeType: z.string().min(1),
+  sizeBytes: z.number().nonnegative(),
+  requestedMode: documentIntelligenceRequestedModeSchema,
+  effectiveMode: documentIntelligenceEffectiveModeSchema.nullable().optional(),
+  status: documentIntelligenceJobStatusSchema,
+  ocrProvider: z.string().nullable().optional(),
+  llmProvider: z.string().nullable().optional(),
+  modelName: z.string().nullable().optional(),
+  extractedJson: documentIntelligenceResultSchema.nullable().optional(),
+  rawExtractedText: z.string().nullable().optional(),
+  confidenceScore: z.number().min(0).max(1).nullable().optional(),
+  errorCode: z.string().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
+  startedAt: z.string().nullable().optional(),
+  finishedAt: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string()
+});
+
+export const documentIntelligenceJobStatusViewSchema = z.object({
+  id: z.string(),
+  status: documentIntelligenceJobStatusSchema,
+  requestedMode: documentIntelligenceRequestedModeSchema,
+  effectiveMode: documentIntelligenceEffectiveModeSchema.nullable().optional(),
+  confidenceScore: z.number().min(0).max(1).nullable().optional(),
+  errorCode: z.string().nullable().optional(),
+  errorMessage: z.string().nullable().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string()
+});
+
+export const documentIntelligenceAnalyzeResponseSchema = z.object({
+  jobId: z.string(),
+  status: documentIntelligenceJobStatusSchema
+});
+
+export const documentIntelligenceModeReadinessSchema = z.object({
+  available: z.boolean(),
+  reason: z.string().nullable().optional()
+});
+
+export const documentIntelligenceProviderReadinessSchema = z.object({
+  available: z.boolean(),
+  provider: z.string().min(1),
+  model: z.string().nullable().optional(),
+  baseUrl: z.string().nullable().optional(),
+  language: z.string().nullable().optional(),
+  reason: z.string().nullable().optional()
+});
+
+export const documentIntelligenceReadinessSchema = z.object({
+  available: z.boolean(),
+  defaultMode: documentIntelligenceRequestedModeSchema,
+  modes: z.object({
+    vision: documentIntelligenceModeReadinessSchema,
+    ocr: documentIntelligenceModeReadinessSchema,
+    auto: documentIntelligenceModeReadinessSchema
+  }),
+  providers: z.object({
+    vision: documentIntelligenceProviderReadinessSchema,
+    text: documentIntelligenceProviderReadinessSchema,
+    ocr: documentIntelligenceProviderReadinessSchema
+  }),
+  message: z.string().min(1)
+});
+
+export const documentIntelligenceResultViewSchema = z.object({
+  job: documentIntelligenceJobStatusViewSchema,
+  result: documentIntelligenceResultSchema,
+  matching: z.object({
+    emitterDirection: documentIntelligenceMatchingItemSchema.optional(),
+    receiverDirections: z.array(documentIntelligenceMatchingItemSchema),
+    copyDirections: z.array(documentIntelligenceMatchingItemSchema),
+    signers: z.array(documentIntelligenceSignerMatchingItemSchema)
+  })
+});
+
 export const createArchiveFolderSchema = z.object({
   year: z.number().int().min(2000).max(3000),
-  partnerDirectionId: z.string().min(1),
+  folderType: z.enum(folderTypes).default("CORRESPONDANCE"),
+  label: z.string().trim().min(1).optional(),
+  description: z.string().trim().min(1).optional(),
+  partnerDirectionId: z.string().min(1).optional(),
+  documentTypeIds: z.array(z.string().min(1)).default([]),
   accessibleBureauIds: z.array(z.string().min(1)).default([])
+}).superRefine((value, context) => {
+  if (value.folderType === "CORRESPONDANCE" && !value.partnerDirectionId) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["partnerDirectionId"],
+      message: "partnerDirectionId is required for correspondence folders."
+    });
+  }
+
+  if (value.folderType === "DOCUMENTAIRE" && !value.label) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["label"],
+      message: "label is required for documentary folders."
+    });
+  }
+
+  if (value.folderType === "DOCUMENTAIRE" && value.documentTypeIds.length === 0) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["documentTypeIds"],
+      message: "documentTypeIds is required for documentary folders."
+    });
+  }
+
+  if (value.folderType === "AUTRE" && !value.label) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["label"],
+      message: "label is required for custom folders."
+    });
+  }
 });
 
 export const updateArchiveFolderStatusSchema = z.object({

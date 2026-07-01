@@ -8,6 +8,7 @@ import type {
   documentTypes,
   departmentTypes,
   folderStatuses,
+  folderTypes,
   movementTypes,
   onPremiseRoles,
   ocrStatuses,
@@ -28,7 +29,10 @@ export type OcrStatus = (typeof ocrStatuses)[number];
 export type MovementType = (typeof movementTypes)[number];
 export type ArchiveFolderStatus = "ACTIVE" | "ARCHIVED";
 export type FolderStatus = (typeof folderStatuses)[number];
+export type FolderType = (typeof folderTypes)[number];
 export type AnnotationStatus = "PENDING" | "APPLIED" | "DISMISSED";
+export type UserDirectoryStatus = "ACTIVE" | "PENDING_COMPLETION" | "INACTIVE";
+export type UserDirectorySource = "MANUAL" | "DOCUMENT_INTELLIGENCE" | "KEYCLOAK_PROVISIONED";
 
 export interface Department {
   id: string;
@@ -45,10 +49,24 @@ export interface Department {
 export interface Folder {
   id: string;
   year: number;
+  folderType: FolderType;
+  label?: string | null;
+  description?: string | null;
   bureauId: string;
   ownerDirectionId: string;
-  partnerDirectionId: string;
+  partnerDirectionId?: string | null;
+  documentTypeIds?: string[];
   status: FolderStatus;
+  createdAt: string | number;
+  updatedAt: string | number;
+}
+
+export interface DocumentTypeOption {
+  id: string;
+  code: string;
+  label: string;
+  description?: string | null;
+  isActive: boolean;
   createdAt: string | number;
   updatedAt: string | number;
 }
@@ -122,12 +140,15 @@ export interface UserProfile {
 export interface User {
   id: string;
   email?: string;
+  functionTitle?: string;
   role?: Role;
   isActive?: boolean;
+  directoryStatus?: UserDirectoryStatus;
+  directorySource?: UserDirectorySource;
   updatedAt?: string | number;
   personne: UserPersonne;
   profile: UserProfile;
-  matricule: string;
+  matricule?: string;
   bureau?: DepartementReference | null;
   dateCreation: number;
   dateDerniereModification: number;
@@ -215,6 +236,27 @@ export interface DocumentSigner {
   signingOrder?: number;
 }
 
+export type DocumentRecipientTargetKind =
+  | "DIRECTION_GENERALE"
+  | "DIRECTION"
+  | "SERVICE"
+  | "BUREAU"
+  | "USER";
+
+export interface DocumentRecipientTarget {
+  kind: DocumentRecipientTargetKind;
+  directionId: string;
+  directionCode?: string;
+  directionName?: string;
+  departmentId?: string;
+  departmentCode?: string;
+  departmentName?: string;
+  userId?: string;
+  userName?: string;
+  userEmail?: string;
+  label: string;
+}
+
 export interface DocumentVersionRecord {
   id: string;
   documentId: string;
@@ -298,6 +340,7 @@ export interface AIExtractedData {
   emitterDirectionId?: string;
   receiverDirectionIds?: string[];
   copyDirectionIds?: string[];
+  copyTargets?: DocumentRecipientTarget[];
   documentType?: DocumentType | string;
   signerName?: string;
   signers?: DocumentSigner[];
@@ -317,6 +360,9 @@ export interface DocumentEntity {
   dateCreation: string | number;
   user: DocumentUserReference;
   type: DocumentType | string;
+  documentTypeId?: string;
+  documentTypeCode?: string;
+  documentTypeLabel?: string;
   direction: DocumentDirectionReference;
   dateDerniereModication: string | number;
   reference?: string;
@@ -339,6 +385,7 @@ export interface DocumentEntity {
   copyDirectionIds: string[];
   receiverDirectionNames?: string[];
   copyDirectionNames?: string[];
+  copyTargets?: DocumentRecipientTarget[];
   movementType?: MovementType;
   confidentialityLevel?: ConfidentialityLevel;
   status?: DocumentStatus;
@@ -434,11 +481,16 @@ export interface DocumentArchiveDetails extends DocumentArchiveListItem {
 export interface ArchiveFolder {
   id: string;
   year: number;
+  folderType: FolderType;
+  label?: string | null;
+  description?: string | null;
   bureauId: string;
   accessibleBureauIds?: string[];
   ownerDirectionId: string;
   directionId?: string;
-  partnerDirectionId: string;
+  partnerDirectionId?: string | null;
+  documentTypeIds?: string[];
+  documentTypes?: DocumentTypeOption[];
   createdAt: string;
   updatedAt: string;
   status: ArchiveFolderStatus;
@@ -458,6 +510,36 @@ export interface ArchiveFolderListItem extends ArchiveFolder {
   outputArchiveCount: number;
   sectionsUsed: "AUCUNE" | "ENTREE" | "SORTIE" | "ENTREE_SORTIE";
   latestArchivedAt?: string;
+}
+
+export interface ClassificationFolderOption {
+  id: string;
+  folderType: FolderType;
+  label?: string | null;
+  description?: string | null;
+  bureauId: string;
+  bureauCode?: string;
+  bureauName?: string;
+  ownerDirectionId: string;
+  ownerDirectionCode?: string;
+  ownerDirectionName?: string;
+  partnerDirectionId?: string | null;
+  partnerDirectionCode?: string;
+  partnerDirectionName?: string;
+  documentTypeIds?: string[];
+  documentTypeLabels?: string[];
+  displayLabel: string;
+}
+
+export interface DocumentClassificationProposal {
+  documentId: string;
+  bureauId: string;
+  movementType: MovementType;
+  section: MovementType;
+  recommendedFolder?: ClassificationFolderOption | null;
+  recommendedReason?: string | null;
+  availableFolders: ClassificationFolderOption[];
+  canOverride: boolean;
 }
 
 export interface ArchiveFolderDocumentListItem {
@@ -481,6 +563,136 @@ export interface ArchiveFolderDocumentListItem {
     functionTitle?: string;
     signingOrder?: number;
   }>;
+}
+
+export type DocumentIntelligenceRequestedMode = "vision" | "ocr" | "auto";
+export type DocumentIntelligenceEffectiveMode = "vision" | "ocr" | "hybrid";
+export type DocumentIntelligenceJobStatus =
+  | "PENDING"
+  | "UPLOADED"
+  | "VISION_RUNNING"
+  | "OCR_RUNNING"
+  | "LLM_RUNNING"
+  | "COMPLETED"
+  | "LOW_CONFIDENCE"
+  | "FAILED";
+
+export interface DocumentIntelligenceResult {
+  reference: string;
+  title: string;
+  subject: string;
+  documentDate: string;
+  emitterDirection: string;
+  receiverDirections: string[];
+  copyDirections: string[];
+  signers: string[];
+  documentType: string;
+  confidentialityLevel: string;
+  summary: string;
+  keywords: string[];
+  confidenceScore: number;
+  fieldConfidence: Record<string, number>;
+  extractionMode: DocumentIntelligenceEffectiveMode;
+  rawExtractedText: string;
+  rawVisionNotes?: string;
+}
+
+export interface DocumentIntelligenceMatchingItem {
+  status: "matched" | "ambiguous" | "unmatched";
+  label: string;
+  matchedDepartmentId?: string;
+  matchedDepartmentIds?: string[];
+}
+
+export interface DocumentIntelligenceSignerMatchingItem {
+  status: "matched" | "ambiguous" | "unmatched";
+  label: string;
+  matchedUserId?: string;
+  matchedUserIds?: string[];
+  directoryStatus?: UserDirectoryStatus;
+}
+
+export interface DocumentIntelligenceJob {
+  id: string;
+  userId: string;
+  originalFileName: string;
+  bucket: string;
+  objectKey: string;
+  mimeType: string;
+  sizeBytes: number;
+  requestedMode: DocumentIntelligenceRequestedMode;
+  effectiveMode?: DocumentIntelligenceEffectiveMode | null;
+  status: DocumentIntelligenceJobStatus;
+  ocrProvider?: string | null;
+  llmProvider?: string | null;
+  modelName?: string | null;
+  extractedJson?: DocumentIntelligenceResult | null;
+  rawExtractedText?: string | null;
+  confidenceScore?: number | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentIntelligenceJobStatusView {
+  id: string;
+  status: DocumentIntelligenceJobStatus;
+  requestedMode: DocumentIntelligenceRequestedMode;
+  effectiveMode?: DocumentIntelligenceEffectiveMode | null;
+  confidenceScore?: number | null;
+  errorCode?: string | null;
+  errorMessage?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentIntelligenceAnalyzeResponse {
+  jobId: string;
+  status: DocumentIntelligenceJobStatus;
+}
+
+export interface DocumentIntelligenceModeReadiness {
+  available: boolean;
+  reason?: string | null;
+}
+
+export interface DocumentIntelligenceProviderReadiness {
+  available: boolean;
+  provider: string;
+  model?: string | null;
+  baseUrl?: string | null;
+  language?: string | null;
+  reason?: string | null;
+}
+
+export interface DocumentIntelligenceReadiness {
+  available: boolean;
+  defaultMode: DocumentIntelligenceRequestedMode;
+  modes: {
+    vision: DocumentIntelligenceModeReadiness;
+    ocr: DocumentIntelligenceModeReadiness;
+    auto: DocumentIntelligenceModeReadiness;
+  };
+  providers: {
+    vision: DocumentIntelligenceProviderReadiness;
+    text: DocumentIntelligenceProviderReadiness;
+    ocr: DocumentIntelligenceProviderReadiness;
+  };
+  message: string;
+}
+
+export interface DocumentIntelligenceResultView {
+  job: DocumentIntelligenceJobStatusView;
+  result: DocumentIntelligenceResult;
+  matching: {
+    emitterDirection?: DocumentIntelligenceMatchingItem;
+    receiverDirections: DocumentIntelligenceMatchingItem[];
+    copyDirections: DocumentIntelligenceMatchingItem[];
+    signers: DocumentIntelligenceSignerMatchingItem[];
+  };
 }
 
 export interface AuditLog {

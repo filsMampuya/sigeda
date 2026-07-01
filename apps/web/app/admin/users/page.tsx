@@ -1,6 +1,6 @@
 import { SectionIntro } from "@/components/organization/section-intro";
 import { UsersPanel } from "@/components/organization/users-panel";
-import { getBureaux, getCurrentUser, getUsers } from "@/lib/api";
+import { getBureaux, getCurrentUser, getPendingUsers, getUsers } from "@/lib/api";
 
 type AdminUsersPageProps = {
   searchParams?: {
@@ -12,8 +12,9 @@ type AdminUsersPageProps = {
 export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
   const page = Math.max(1, Number.parseInt(searchParams?.page ?? "1", 10) || 1);
   const pageSize = Math.max(1, Number.parseInt(searchParams?.pageSize ?? "10", 10) || 10);
-  const [users, bureaux, currentUser] = await Promise.all([
+  const [users, pendingUsers, bureaux, currentUser] = await Promise.all([
     getUsers(new URLSearchParams({ page: String(page), pageSize: String(pageSize) })),
+    getPendingUsers(),
     getBureaux(),
     getCurrentUser()
   ]);
@@ -27,6 +28,7 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
       />
       <UsersPanel
         users={users?.items ?? []}
+        pendingUsers={pendingUsers?.items ?? []}
         bureaux={(bureaux ?? []).filter((item) => item.type === "Bureau")}
         page={users?.page ?? page}
         pageSize={users?.pageSize ?? pageSize}

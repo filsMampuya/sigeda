@@ -7,4 +7,9 @@ export class ClassifyDocumentDto {
   @IsOptional()
   @IsUUID()
   bureauId?: string;
+
+  @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
+  @IsOptional()
+  @IsUUID()
+  folderId?: string;
 }

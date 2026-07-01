@@ -30,12 +30,16 @@ export default async function ArchiveFolderDetailsPage({ params }: ArchiveFolder
   const generatedAt = new Date().toISOString();
   const entryCount = items.filter((item) => item.movementType === "ENTREE").length;
   const outputCount = items.filter((item) => item.movementType === "SORTIE").length;
+  const folderTitle =
+    folder.folderType === "CORRESPONDANCE"
+      ? formatStructureLabel(folder.partnerDirectionCode, folder.partnerDirectionName)
+      : folder.label ?? folder.description ?? "Classeur annuel";
 
   return (
     <div className="space-y-4 print:space-y-0">
       <PageHeader
         eyebrow="Contenu du classeur"
-        title={formatStructureLabel(folder.partnerDirectionCode, folder.partnerDirectionName)}
+        title={folderTitle}
         description={`Bureau ${formatStructureLabel(folder.bureauCode, folder.bureauName)} | Annee ${folder.year} | Direction courante ${formatStructureLabel(folder.ownerDirectionCode, folder.ownerDirectionName)}`}
         actions={
           <>
@@ -65,8 +69,10 @@ export default async function ArchiveFolderDetailsPage({ params }: ArchiveFolder
             {formatStructureLabel(folder.ownerDirectionCode, folder.ownerDirectionName)}
           </p>
           <p>
-            <span className="font-medium text-slate-900">Direction partenaire :</span>{" "}
-            {formatStructureLabel(folder.partnerDirectionCode, folder.partnerDirectionName)}
+            <span className="font-medium text-slate-900">
+              {folder.folderType === "CORRESPONDANCE" ? "Direction partenaire :" : "Libelle :"}
+            </span>{" "}
+            {folderTitle}
           </p>
           <p>
             <span className="font-medium text-slate-900">Statut :</span> {folder.status}

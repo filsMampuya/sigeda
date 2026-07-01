@@ -3,7 +3,7 @@ import { ArchiveFilters } from "@/components/archives/archive-filters";
 import { ArchiveFolderTable } from "@/components/archives/archive-folder-table";
 import { BackButton } from "@/components/ui/back-button";
 import { PageHeader } from "@/components/ui/page-header";
-import { getArchiveFolders, getCurrentUser, getDirections } from "@/lib/api";
+import { getArchiveFolders, getCurrentUser, getDirections, getDocumentTypes } from "@/lib/api";
 
 type ArchiveFoldersPageProps = {
   searchParams?: {
@@ -63,10 +63,11 @@ export default async function ArchiveFoldersPage({ searchParams }: ArchiveFolder
   params.set("page", searchParams?.page ?? "1");
   params.set("pageSize", searchParams?.pageSize ?? "10");
 
-  const [folders, currentUser, directions] = await Promise.all([
+  const [folders, currentUser, directions, documentTypes] = await Promise.all([
     getArchiveFolders(params),
     getCurrentUser(),
-    getDirections()
+    getDirections(),
+    getDocumentTypes()
   ]);
   const canManage = ["ADMIN", "DIRECTEUR_GENERAL", "DIRECTEUR", "MANAGER"].includes(
     currentUser?.user?.role ?? ""
@@ -106,6 +107,7 @@ export default async function ArchiveFoldersPage({ searchParams }: ArchiveFolder
             <ArchiveFolderCreateForm
               currentUser={currentUser?.user ?? null}
               partnerDirections={partnerDirections}
+              documentTypes={documentTypes ?? []}
             />
           </div>
         ) : null}

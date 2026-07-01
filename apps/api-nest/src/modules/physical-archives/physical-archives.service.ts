@@ -91,34 +91,44 @@ export class PhysicalArchivesService {
 
       const partnerDirectionId =
         archive.movementType === "SORTIE" ? folder.partnerDirectionId : input.emitterDirectionId;
-      const persisted = await this.prisma.physicalArchive.upsert({
+      const existing = await this.prisma.physicalArchive.findFirst({
         where: {
-          documentArchiveId_partnerDirectionId_year: {
-            documentArchiveId: archive.id,
-            partnerDirectionId: partnerDirectionId ?? null,
-            year: input.year
-          }
-        },
-        update: {},
-        create: {
           documentArchiveId: archive.id,
-          documentId: archive.documentId,
-          directionId: folder.ownerDirectionId,
           partnerDirectionId: partnerDirectionId ?? null,
-          year: input.year,
-          folderId: folder.id,
-          movementType: archive.movementType,
-          site: AUTO_ARCHIVE_PLACEHOLDER,
-          batiment: AUTO_ARCHIVE_PLACEHOLDER,
-          salle: AUTO_ARCHIVE_PLACEHOLDER,
-          rayon: AUTO_ARCHIVE_PLACEHOLDER,
-          etagere: AUTO_ARCHIVE_PLACEHOLDER,
-          classeur: folder.id,
-          dossier: AUTO_ARCHIVE_PLACEHOLDER,
-          boiteArchive: AUTO_ARCHIVE_PLACEHOLDER,
-          classementKey: buildClassementKey(archive.movementType, input.year, folder.partnerDirectionId, archive.documentId)
+          year: input.year
         }
       });
+
+      const persisted = existing
+        ? await this.prisma.physicalArchive.update({
+            where: { id: existing.id },
+            data: {}
+          })
+        : await this.prisma.physicalArchive.create({
+            data: {
+              documentArchiveId: archive.id,
+              documentId: archive.documentId,
+              directionId: folder.ownerDirectionId,
+              partnerDirectionId: partnerDirectionId ?? null,
+              year: input.year,
+              folderId: folder.id,
+              movementType: archive.movementType,
+              site: AUTO_ARCHIVE_PLACEHOLDER,
+              batiment: AUTO_ARCHIVE_PLACEHOLDER,
+              salle: AUTO_ARCHIVE_PLACEHOLDER,
+              rayon: AUTO_ARCHIVE_PLACEHOLDER,
+              etagere: AUTO_ARCHIVE_PLACEHOLDER,
+              classeur: folder.id,
+              dossier: AUTO_ARCHIVE_PLACEHOLDER,
+              boiteArchive: AUTO_ARCHIVE_PLACEHOLDER,
+              classementKey: buildClassementKey(
+                archive.movementType,
+                input.year,
+                folder.partnerDirectionId,
+                archive.documentId
+              )
+            }
+          });
 
       created.push(serializePhysicalArchive(persisted));
     }
@@ -330,11 +340,11 @@ const AUTO_ARCHIVE_PLACEHOLDER = "A_RENSEIGNER";
 function buildClassementKey(
   movementType: "ENTREE" | "SORTIE",
   year: number,
-  partnerDirectionId: string,
+  partnerDirectionId: string | null | undefined,
   documentId: string
 ) {
   return movementType === "SORTIE"
-    ? `${year}-${partnerDirectionId}`
+    ? `${year}-${partnerDirectionId ?? "SANS_PARTENAIRE"}`
     : `${year}-${documentId}`;
 }
 

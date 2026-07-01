@@ -6,11 +6,13 @@ import type {
   AuditLog,
   Department,
   Departement,
+  DocumentTypeOption,
   DocumentAnnotationRecord,
   DocumentAnnotationReport,
   DocumentArchiveDetails,
   DocumentArchiveListItem,
   DocumentAttachment,
+  DocumentClassificationProposal,
   DocumentEntity,
   DocumentSigner,
   DocumentTimelineEvent,
@@ -157,6 +159,15 @@ export function getUsers(searchParams?: URLSearchParams) {
   return getMappedUsers(searchParams);
 }
 
+export function getPendingUsers(searchParams?: URLSearchParams) {
+  const params = new URLSearchParams(searchParams?.toString() ?? "");
+  params.set("includePending", "true");
+  params.set("directoryStatus", "PENDING_COMPLETION");
+  params.set("page", params.get("page") ?? "1");
+  params.set("pageSize", params.get("pageSize") ?? "200");
+  return getMappedUsers(params);
+}
+
 export function getDocuments(searchParams?: URLSearchParams) {
   return getMappedDocuments().then((documents) => filterDocuments(documents, searchParams));
 }
@@ -221,9 +232,24 @@ export function updateArchiveFolderStatus(id: string, status: "ACTIVE" | "ARCHIV
 
 export function createArchiveFolder(input: {
   year: number;
-  partnerDirectionId: string;
+  folderType?: "CORRESPONDANCE" | "DOCUMENTAIRE" | "AUTRE";
+  label?: string;
+  description?: string;
+  partnerDirectionId?: string;
+  documentTypeIds?: string[];
 }) {
   return postOnPremiseApi<typeof input, ArchiveFolder>("/folders", input);
+}
+
+export function getDocumentClassificationProposal(documentId: string, input?: { bureauId?: string }) {
+  return postOnPremiseApi<typeof input, DocumentClassificationProposal>(
+    `/documents/${documentId}/classification-proposal`,
+    input ?? {}
+  );
+}
+
+export function getDocumentTypes() {
+  return fetchOnPremiseApi<DocumentTypeOption[]>("/document-types");
 }
 
 export function getDirections() {
@@ -377,6 +403,11 @@ export function createDocumentVersion(
     type?: string;
     receiverDirectionIds?: string[];
     copyDirectionIds?: string[];
+    copyTargets?: Array<{
+      targetKind: "DIRECTION_GENERALE" | "DIRECTION" | "SERVICE" | "BUREAU" | "USER";
+      targetDepartmentId?: string;
+      targetUserId?: string;
+    }>;
     sourceAnnotationIds?: string[];
   }
 ) {
@@ -388,6 +419,8 @@ export function finalizeDocument(documentId: string) {
 }
 
 export function createUser(input: {
+  mode?: "CREATE" | "COMPLETE";
+  pendingUserId?: string;
   personne: {
     nom: string;
     prenom: string;
@@ -398,6 +431,7 @@ export function createUser(input: {
   };
   email: string;
   matricule: string;
+  functionTitle?: string;
   bureau: {
     code: string;
     designation: string;
@@ -405,31 +439,41 @@ export function createUser(input: {
 }) {
   return postOnPremiseApi<
     {
+      mode?: "CREATE" | "COMPLETE";
+      pendingUserId?: string;
       nom: string;
       prenom: string;
       email: string;
       matricule: string;
+      functionTitle?: string;
       roleCode: string;
       bureauCode: string;
     },
     {
       user: {
         id: string;
-        email: string;
-        matricule: string;
+        email?: string | null;
+        matricule?: string | null;
         nom: string;
         prenom: string;
+        functionTitle?: string | null;
+        directoryStatus?: "ACTIVE" | "PENDING_COMPLETION" | "INACTIVE";
+        directorySource?: "MANUAL" | "DOCUMENT_INTELLIGENCE" | "KEYCLOAK_PROVISIONED";
         role: { code: string; name: string };
         department: Department | null;
       };
       defaultPassword: string;
       mustChangePassword: true;
+      operation: "CREATED" | "COMPLETED_PENDING";
     }
   >("/users", {
+    mode: input.mode,
+    pendingUserId: input.pendingUserId,
     nom: input.personne.nom,
     prenom: input.personne.prenom,
     email: input.email,
     matricule: input.matricule,
+    functionTitle: input.functionTitle,
     roleCode: input.profile.code,
     bureauCode: input.bureau.code
   }).then(async (result) => {
@@ -442,7 +486,8 @@ export function createUser(input: {
     return {
       user: mapOnPremiseUserToLegacy(result.user, departments ?? []),
       defaultPassword: result.defaultPassword,
-      mustChangePassword: result.mustChangePassword
+      mustChangePassword: result.mustChangePassword,
+      operation: result.operation
     };
   });
 }
@@ -466,11 +511,14 @@ async function getMappedUsers(searchParams?: URLSearchParams) {
     fetchOnPremiseApi<
       PaginatedResult<{
         id: string;
-        email: string;
-        matricule: string;
+        email?: string | null;
+        matricule?: string | null;
         nom: string;
         prenom: string;
+        functionTitle?: string | null;
         isActive?: boolean;
+        directoryStatus?: "ACTIVE" | "PENDING_COMPLETION" | "INACTIVE";
+        directorySource?: "MANUAL" | "DOCUMENT_INTELLIGENCE" | "KEYCLOAK_PROVISIONED";
         createdAt?: string | number;
         updatedAt?: string | number;
         role: { code: string; name: string };
@@ -586,6 +634,12 @@ type OnPremiseDocument = {
   subject?: string | null;
   summary?: string | null;
   type: string;
+  documentTypeId?: string | null;
+  documentType?: {
+    id: string;
+    code: string;
+    label: string;
+  } | null;
   status?: string | null;
   emitterDirectionId: string;
   emitterDirection?: {
@@ -603,10 +657,24 @@ type OnPremiseDocument = {
   recipients?: Array<{
     directionId: string;
     kind: "RECEIVER" | "COPY";
+    targetKind?: "DIRECTION_GENERALE" | "DIRECTION" | "SERVICE" | "BUREAU" | "USER";
+    targetDepartmentId?: string | null;
+    targetUserId?: string | null;
     direction?: {
       id: string;
       code: string;
       designation: string;
+    } | null;
+    targetDepartment?: {
+      id: string;
+      code: string;
+      designation: string;
+    } | null;
+    targetUser?: {
+      id: string;
+      email?: string | null;
+      nom?: string | null;
+      prenom?: string | null;
     } | null;
   }>;
   signers?: Array<{
@@ -633,7 +701,7 @@ type OnPremiseDocument = {
         code?: string;
         designation?: string;
       };
-      partnerDirectionId?: string;
+      partnerDirectionId?: string | null;
     };
     movementType: "ENTREE" | "SORTIE";
     archivedAt: string;
@@ -667,7 +735,47 @@ function mapOnPremiseDocumentToLegacy(document: OnPremiseDocument | null): Docum
     .map((recipient) => recipient.direction?.designation ?? recipient.direction?.code ?? recipient.directionId);
   const copyDirectionNames = recipients
     .filter((recipient) => recipient.kind === "COPY")
-    .map((recipient) => recipient.direction?.designation ?? recipient.direction?.code ?? recipient.directionId);
+    .map((recipient) =>
+      recipient.targetKind === "USER"
+        ? [recipient.targetUser?.nom, recipient.targetUser?.prenom].filter(Boolean).join(" ").trim() ||
+          recipient.targetUser?.email ||
+          recipient.targetUserId ||
+          recipient.direction?.designation ||
+          recipient.direction?.code ||
+          recipient.directionId
+        : recipient.targetDepartment?.designation ??
+          recipient.targetDepartment?.code ??
+          recipient.direction?.designation ??
+          recipient.direction?.code ??
+          recipient.directionId
+    );
+  const copyTargets = recipients
+    .filter((recipient) => recipient.kind === "COPY")
+    .map((recipient) => ({
+      kind: recipient.targetKind ?? "DIRECTION",
+      directionId: recipient.directionId,
+      directionCode: recipient.direction?.code ?? undefined,
+      directionName: recipient.direction?.designation ?? undefined,
+      departmentId: recipient.targetDepartmentId ?? undefined,
+      departmentCode: recipient.targetDepartment?.code ?? undefined,
+      departmentName: recipient.targetDepartment?.designation ?? undefined,
+      userId: recipient.targetUserId ?? undefined,
+      userName: [recipient.targetUser?.nom, recipient.targetUser?.prenom].filter(Boolean).join(" ").trim() || undefined,
+      userEmail: recipient.targetUser?.email ?? undefined,
+      label:
+        recipient.targetKind === "USER"
+          ? [recipient.targetUser?.nom, recipient.targetUser?.prenom].filter(Boolean).join(" ").trim() ||
+            recipient.targetUser?.email ||
+            recipient.targetUserId ||
+            recipient.direction?.designation ||
+            recipient.direction?.code ||
+            recipient.directionId
+          : recipient.targetDepartment?.designation ??
+            recipient.targetDepartment?.code ??
+            recipient.direction?.designation ??
+            recipient.direction?.code ??
+            recipient.directionId
+    }));
   const attachments: DocumentAttachment[] = (document.attachments ?? []).map((attachment) => ({
     id: attachment.id,
     name: attachment.fileName,
@@ -692,7 +800,7 @@ function mapOnPremiseDocumentToLegacy(document: OnPremiseDocument | null): Docum
       ownerDirectionId: archive.folder?.ownerDirectionId,
       ownerDirectionCode: archive.folder?.ownerDirection?.code,
       ownerDirectionName: archive.folder?.ownerDirection?.designation,
-      partnerDirectionId: archive.folder?.partnerDirectionId,
+      partnerDirectionId: archive.folder?.partnerDirectionId ?? undefined,
       movementType: archive.movementType,
       archivedAt: archive.archivedAt
     })) ?? [];
@@ -713,6 +821,9 @@ function mapOnPremiseDocumentToLegacy(document: OnPremiseDocument | null): Docum
       email: document.author?.email
     },
     type: document.type,
+    documentTypeId: document.documentTypeId ?? undefined,
+    documentTypeCode: document.documentType?.code ?? undefined,
+    documentTypeLabel: document.documentType?.label ?? undefined,
     direction: {
       id: document.emitterDirection.id,
       code: document.emitterDirection.code,
@@ -733,6 +844,7 @@ function mapOnPremiseDocumentToLegacy(document: OnPremiseDocument | null): Docum
     copyDirectionIds,
     receiverDirectionNames,
     copyDirectionNames,
+    copyTargets,
     status: (document.status as DocumentEntity["status"]) ?? "BROUILLON",
     keywords: [],
     version: document.version ?? document.versionsHistory?.[document.versionsHistory.length - 1]?.version ?? 1,
@@ -817,11 +929,14 @@ function paginateDocuments(documents: DocumentEntity[] | null, searchParams?: UR
 function mapOnPremiseUserToLegacy(
   user: {
     id: string;
-    email: string;
-    matricule: string;
+    email?: string | null;
+    matricule?: string | null;
     nom: string;
     prenom: string;
+    functionTitle?: string | null;
     isActive?: boolean;
+    directoryStatus?: "ACTIVE" | "PENDING_COMPLETION" | "INACTIVE";
+    directorySource?: "MANUAL" | "DOCUMENT_INTELLIGENCE" | "KEYCLOAK_PROVISIONED";
     createdAt?: string | number;
     updatedAt?: string | number;
     role: { code: string; name: string };
@@ -834,9 +949,12 @@ function mapOnPremiseUserToLegacy(
 
   return {
     id: user.id,
-    email: user.email,
+    email: user.email ?? undefined,
+    functionTitle: user.functionTitle ?? undefined,
     role: user.role.code as User["role"],
     isActive: user.isActive ?? true,
+    directoryStatus: user.directoryStatus,
+    directorySource: user.directorySource,
     updatedAt: normalizeDateValue(user.updatedAt ?? Date.now()),
     personne: {
       nom: user.nom,
@@ -846,7 +964,7 @@ function mapOnPremiseUserToLegacy(
       code: user.role.code,
       designation: user.role.name
     },
-    matricule: user.matricule,
+    matricule: user.matricule ?? undefined,
     bureau: departmentScope.bureau,
     dateCreation: normalizeDateValue(user.createdAt ?? Date.now()),
     dateDerniereModification: normalizeDateValue(user.updatedAt ?? user.createdAt ?? Date.now()),

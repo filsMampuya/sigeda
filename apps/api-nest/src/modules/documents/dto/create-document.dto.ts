@@ -54,6 +54,21 @@ export class CreateDocumentSignerDto {
   signingOrder?: number;
 }
 
+export class CreateDocumentRecipientTargetDto {
+  @IsEnum(["DIRECTION_GENERALE", "DIRECTION", "SERVICE", "BUREAU", "USER"] as const)
+  targetKind!: "DIRECTION_GENERALE" | "DIRECTION" | "SERVICE" | "BUREAU" | "USER";
+
+  @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
+  @IsOptional()
+  @IsUUID()
+  targetDepartmentId?: string;
+
+  @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
+  @IsOptional()
+  @IsUUID()
+  targetUserId?: string;
+}
+
 export class CreateDocumentDto {
   @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
   @IsOptional()
@@ -107,6 +122,16 @@ export class CreateDocumentDto {
 
   @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
   @IsOptional()
+  @IsUUID()
+  documentTypeId?: string;
+
+  @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
+  @IsOptional()
+  @IsUUID()
+  folderId?: string;
+
+  @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
+  @IsOptional()
   @IsString()
   @MaxLength(40)
   confidentialityLevel?: string;
@@ -129,6 +154,11 @@ export class CreateDocumentDto {
   @ArrayUnique()
   @IsUUID("4", { each: true })
   copyDirectionIds?: string[];
+
+  @Transform(({ value }: TransformFnParams) => parseJsonArray<CreateDocumentRecipientTargetDto>(value))
+  @IsOptional()
+  @IsArray()
+  copyTargets?: CreateDocumentRecipientTargetDto[];
 
   @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
   @IsOptional()

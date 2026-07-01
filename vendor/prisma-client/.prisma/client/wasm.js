@@ -306,6 +306,31 @@ exports.Prisma.DocumentTransmissionScalarFieldEnum = {
   respondedAt: 'respondedAt'
 };
 
+exports.Prisma.DocumentIntelligenceJobScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  originalFileName: 'originalFileName',
+  bucket: 'bucket',
+  objectKey: 'objectKey',
+  mimeType: 'mimeType',
+  sizeBytes: 'sizeBytes',
+  requestedMode: 'requestedMode',
+  effectiveMode: 'effectiveMode',
+  status: 'status',
+  ocrProvider: 'ocrProvider',
+  llmProvider: 'llmProvider',
+  modelName: 'modelName',
+  extractedJson: 'extractedJson',
+  rawExtractedText: 'rawExtractedText',
+  confidenceScore: 'confidenceScore',
+  errorCode: 'errorCode',
+  errorMessage: 'errorMessage',
+  startedAt: 'startedAt',
+  finishedAt: 'finishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.AuditLogScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -387,6 +412,17 @@ exports.AnnotationStatus = exports.$Enums.AnnotationStatus = {
   DISMISSED: 'DISMISSED'
 };
 
+exports.DocumentIntelligenceJobStatus = exports.$Enums.DocumentIntelligenceJobStatus = {
+  PENDING: 'PENDING',
+  UPLOADED: 'UPLOADED',
+  VISION_RUNNING: 'VISION_RUNNING',
+  OCR_RUNNING: 'OCR_RUNNING',
+  LLM_RUNNING: 'LLM_RUNNING',
+  COMPLETED: 'COMPLETED',
+  LOW_CONFIDENCE: 'LOW_CONFIDENCE',
+  FAILED: 'FAILED'
+};
+
 exports.Prisma.ModelName = {
   Department: 'Department',
   Role: 'Role',
@@ -403,6 +439,7 @@ exports.Prisma.ModelName = {
   DocumentVersion: 'DocumentVersion',
   DocumentAnnotation: 'DocumentAnnotation',
   DocumentTransmission: 'DocumentTransmission',
+  DocumentIntelligenceJob: 'DocumentIntelligenceJob',
   AuditLog: 'AuditLog'
 };
 

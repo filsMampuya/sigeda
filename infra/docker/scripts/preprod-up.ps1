@@ -1,8 +1,8 @@
-. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "preprod-common.ps1")
-
 param(
   [switch]$WithPgAdmin
 )
+
+. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "preprod-common.ps1")
 
 Set-Location $script:RepoRoot
 

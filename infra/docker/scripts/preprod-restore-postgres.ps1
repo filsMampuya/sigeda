@@ -1,9 +1,9 @@
-. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "preprod-common.ps1")
-
 param(
   [Parameter(Mandatory = $true)]
   [string]$BackupSqlPath
 )
+
+. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "preprod-common.ps1")
 
 if (-not (Test-Path $BackupSqlPath)) {
   throw "Dump SQL introuvable : $BackupSqlPath"

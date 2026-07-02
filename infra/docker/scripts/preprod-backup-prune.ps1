@@ -1,8 +1,8 @@
-. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "preprod-common.ps1")
-
 param(
   [int]$RetentionDays = 7
 )
+
+. (Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "preprod-common.ps1")
 
 $backupRoot = Get-BackupRoot
 

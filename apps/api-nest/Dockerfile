@@ -1,8 +1,14 @@
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 RUN set -eux; \
-  sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
-  apt-get -o Acquire::Retries=5 update; \
+  if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+    sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
+  fi; \
+  if [ -f /etc/apt/sources.list ]; then \
+    sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list; \
+  fi; \
+  printf 'Acquire::Retries "10";\nAcquire::http::Timeout "60";\nAcquire::https::Timeout "60";\nAcquire::ForceIPv4 "true";\n' > /etc/apt/apt.conf.d/99sigeda-network; \
+  apt-get update; \
   apt-get install -y --no-install-recommends openssl ca-certificates; \
   rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
@@ -14,8 +20,14 @@ RUN npm install
 FROM node:22-bookworm-slim AS build
 WORKDIR /app
 RUN set -eux; \
-  sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
-  apt-get -o Acquire::Retries=5 update; \
+  if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+    sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
+  fi; \
+  if [ -f /etc/apt/sources.list ]; then \
+    sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list; \
+  fi; \
+  printf 'Acquire::Retries "10";\nAcquire::http::Timeout "60";\nAcquire::https::Timeout "60";\nAcquire::ForceIPv4 "true";\n' > /etc/apt/apt.conf.d/99sigeda-network; \
+  apt-get update; \
   apt-get install -y --no-install-recommends openssl ca-certificates; \
   rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
@@ -31,8 +43,14 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 RUN set -eux; \
-  sed -i 's|http://deb.debian.org|https://deb.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
-  apt-get -o Acquire::Retries=5 update; \
+  if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
+    sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list.d/debian.sources; \
+  fi; \
+  if [ -f /etc/apt/sources.list ]; then \
+    sed -i 's|http://deb.debian.org|https://deb.debian.org|g; s|http://security.debian.org|https://security.debian.org|g' /etc/apt/sources.list; \
+  fi; \
+  printf 'Acquire::Retries "10";\nAcquire::http::Timeout "60";\nAcquire::https::Timeout "60";\nAcquire::ForceIPv4 "true";\n' > /etc/apt/apt.conf.d/99sigeda-network; \
+  apt-get update; \
   apt-get install -y --no-install-recommends \
     openssl \
     ca-certificates \

@@ -140,6 +140,8 @@ services:
     build:
       context: ../..
       dockerfile: apps/api-nest/Dockerfile
+      args:
+        INSTALL_DOCUMENT_AI_SYSTEM_DEPS: ${SIGEDA_API_INSTALL_SYSTEM_OCR:-false}
     restart: unless-stopped
     environment:
       NODE_ENV: production

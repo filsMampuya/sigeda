@@ -147,6 +147,11 @@ services:
       NODE_ENV: production
       PORT: 4100
       DATABASE_URL: postgresql://${SIGEDA_POSTGRES_USER}:${SIGEDA_POSTGRES_PASSWORD}@postgres:5432/${SIGEDA_POSTGRES_DB}
+      PRISMA_CLIENT_ENGINE_TYPE: library
+      PRISMA_CLI_QUERY_ENGINE_TYPE: library
+      PRISMA_CLI_BINARY_TARGETS: debian-openssl-3.0.x
+      PRISMA_QUERY_ENGINE_LIBRARY: /app/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node
+      PRISMA_SCHEMA_ENGINE_BINARY: /app/node_modules/@prisma/engines/schema-engine-debian-openssl-3.0.x
       KEYCLOAK_ISSUER: ${SIGEDA_KEYCLOAK_ISSUER}
       KEYCLOAK_JWKS_URI: http://keycloak:8080/auth/realms/${SIGEDA_KEYCLOAK_REALM}/protocol/openid-connect/certs
       KEYCLOAK_AUDIENCE: ${SIGEDA_KEYCLOAK_CLIENT_ID}

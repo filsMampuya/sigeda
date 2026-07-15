@@ -21,6 +21,11 @@ FROM node:22-bookworm-slim
 WORKDIR /app
 ARG INSTALL_DOCUMENT_AI_SYSTEM_DEPS=true
 ENV NODE_ENV=production
+ENV PRISMA_CLIENT_ENGINE_TYPE=library
+ENV PRISMA_CLI_QUERY_ENGINE_TYPE=library
+ENV PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
+ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node
+ENV PRISMA_SCHEMA_ENGINE_BINARY=/app/node_modules/@prisma/engines/schema-engine-debian-openssl-3.0.x
 RUN set -eux; \
   if [ "$INSTALL_DOCUMENT_AI_SYSTEM_DEPS" = "true" ]; then \
     for aptFile in /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list; do \
@@ -65,5 +70,6 @@ COPY package.json package-lock.json ./
 COPY apps/api-nest/package.json apps/api-nest/package.json
 COPY packages/database/package.json packages/database/package.json
 COPY packages/shared/package.json packages/shared/package.json
+RUN if [ -f "$PRISMA_SCHEMA_ENGINE_BINARY" ]; then chmod +x "$PRISMA_SCHEMA_ENGINE_BINARY"; fi
 EXPOSE 4100
 CMD ["sh", "-lc", "npx prisma migrate deploy --schema packages/database/prisma/schema.prisma && node apps/api-nest/dist/main.js"]

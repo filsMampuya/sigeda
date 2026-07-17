@@ -61,6 +61,7 @@ RUN set -eux; \
   fi; \
   rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/node_modules/@prisma/engines ./node_modules/@prisma/engines
 COPY --from=build /app/apps/api-nest/node_modules ./apps/api-nest/node_modules
 COPY --from=build /app/apps/api-nest/dist ./apps/api-nest/dist
 COPY --from=build /app/packages/database/dist ./packages/database/dist
@@ -70,6 +71,9 @@ COPY package.json package-lock.json ./
 COPY apps/api-nest/package.json apps/api-nest/package.json
 COPY packages/database/package.json packages/database/package.json
 COPY packages/shared/package.json packages/shared/package.json
-RUN if [ -f "$PRISMA_SCHEMA_ENGINE_BINARY" ]; then chmod +x "$PRISMA_SCHEMA_ENGINE_BINARY"; fi
+RUN set -eux; \
+  test -f "$PRISMA_QUERY_ENGINE_LIBRARY"; \
+  test -f "$PRISMA_SCHEMA_ENGINE_BINARY"; \
+  chmod +x "$PRISMA_SCHEMA_ENGINE_BINARY"
 EXPOSE 4100
 CMD ["sh", "-lc", "npx prisma migrate deploy --schema packages/database/prisma/schema.prisma && node apps/api-nest/dist/main.js"]

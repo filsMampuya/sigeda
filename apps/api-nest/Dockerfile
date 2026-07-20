@@ -19,60 +19,11 @@ RUN npm run build --workspace @sigeda/api-nest
 
 FROM node:22-bookworm-slim
 WORKDIR /app
-ARG INSTALL_DOCUMENT_AI_SYSTEM_DEPS=true
 ENV NODE_ENV=production
 ENV PRISMA_CLIENT_ENGINE_TYPE=library
 ENV PRISMA_CLI_QUERY_ENGINE_TYPE=library
 ENV PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
 ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node
-RUN set -eux; \
-  for aptFile in /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list; do \
-    if [ -f "$aptFile" ]; then \
-      sed -i 's|http://|https://|g' "$aptFile"; \
-    fi; \
-  done; \
-  printf 'Acquire::Retries "10";\nAcquire::http::Timeout "60";\nAcquire::https::Timeout "60";\nAcquire::https::Pipeline-Depth "0";\nAcquire::ForceIPv4 "true";\n' > /etc/apt/apt.conf.d/99sigeda-network; \
-  export DEBIAN_FRONTEND=noninteractive; \
-  coreAptSuccess=0; \
-  for attempt in 1 2 3 4; do \
-    if apt-get update && apt-get install -y --no-install-recommends --fix-missing \
-      openssl \
-      ca-certificates; then \
-      coreAptSuccess=1; \
-      break; \
-    fi; \
-    echo "core apt attempt ${attempt} failed, retrying in 15s"; \
-    rm -rf /var/lib/apt/lists/*; \
-    sleep 15; \
-  done; \
-  if [ "$coreAptSuccess" -ne 1 ]; then \
-    echo "core apt installation failed after 4 attempts"; \
-    exit 1; \
-  fi; \
-  if [ "$INSTALL_DOCUMENT_AI_SYSTEM_DEPS" = "true" ]; then \
-    ocrAptSuccess=0; \
-    for attempt in 1 2 3 4; do \
-      if apt-get update && apt-get install -y --no-install-recommends --fix-missing \
-        imagemagick \
-        poppler-utils \
-        tesseract-ocr \
-        tesseract-ocr-fra \
-        tesseract-ocr-eng; then \
-        ocrAptSuccess=1; \
-        break; \
-      fi; \
-      echo "ocr apt attempt ${attempt} failed, retrying in 15s"; \
-      rm -rf /var/lib/apt/lists/*; \
-      sleep 15; \
-    done; \
-    if [ "$ocrAptSuccess" -ne 1 ]; then \
-      echo "ocr apt installation failed after 4 attempts"; \
-      exit 1; \
-    fi; \
-  else \
-    echo "Skipping optional Document Intelligence OCR system dependencies"; \
-  fi; \
-  rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/api-nest/node_modules ./apps/api-nest/node_modules
 COPY --from=build /app/apps/api-nest/dist ./apps/api-nest/dist

@@ -17,7 +17,7 @@ RUN npm run build --workspace @sigeda/shared
 RUN npm run build --workspace @sigeda/database
 RUN npm run build --workspace @sigeda/api-nest
 
-FROM node:22-bookworm-slim
+FROM node:22-bookworm
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PRISMA_CLIENT_ENGINE_TYPE=library
@@ -36,6 +36,8 @@ COPY package.json package-lock.json ./
 COPY apps/api-nest/package.json apps/api-nest/package.json
 COPY packages/database/package.json packages/database/package.json
 COPY packages/shared/package.json packages/shared/package.json
-RUN set -eux; test -f "$PRISMA_QUERY_ENGINE_LIBRARY"
+RUN set -eux; \
+  test -f "$PRISMA_QUERY_ENGINE_LIBRARY"; \
+  test -f /usr/lib/x86_64-linux-gnu/libssl.so.3 || test -f /lib/x86_64-linux-gnu/libssl.so.3
 EXPOSE 4100
 CMD ["sh", "-lc", "if [ \"${SKIP_PRISMA_MIGRATIONS:-false}\" != \"true\" ]; then npx prisma migrate deploy --schema packages/database/prisma/schema.prisma; else echo 'Skipping prisma migrate deploy'; fi && node apps/api-nest/dist/main.js"]

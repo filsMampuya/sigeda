@@ -4,7 +4,8 @@ import {
   NotFoundException,
   ServiceUnavailableException
 } from "@nestjs/common";
-import { UserDirectorySource, UserDirectoryStatus, type Prisma } from "@sigeda/database";
+import type { Prisma } from "@prisma/client";
+import { UserDirectorySource, UserDirectoryStatus } from "@sigeda/database";
 import { documentIntelligenceResultSchema } from "@sigeda/shared/schemas";
 import type {
   DepartmentType,

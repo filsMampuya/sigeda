@@ -2,8 +2,8 @@ import { Injectable } from "@nestjs/common";
 import type {
   DocumentIntelligenceJob,
   DocumentIntelligenceJobStatus,
-  Prisma
 } from "@sigeda/database";
+import type { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service.js";
 
 @Injectable()

@@ -148,6 +148,8 @@ services:
       PORT: 4100
       DATABASE_URL: postgresql://${SIGEDA_POSTGRES_USER}:${SIGEDA_POSTGRES_PASSWORD}@postgres:5432/${SIGEDA_POSTGRES_DB}
       SKIP_PRISMA_MIGRATIONS: ${SIGEDA_SKIP_PRISMA_MIGRATIONS:-true}
+      PRISMA_CONNECT_RETRIES: ${SIGEDA_PRISMA_CONNECT_RETRIES:-18}
+      PRISMA_CONNECT_DELAY_MS: ${SIGEDA_PRISMA_CONNECT_DELAY_MS:-5000}
       PRISMA_CLIENT_ENGINE_TYPE: library
       PRISMA_CLI_QUERY_ENGINE_TYPE: library
       PRISMA_CLI_BINARY_TARGETS: debian-openssl-3.0.x
@@ -207,6 +209,7 @@ services:
       interval: 20s
       timeout: 10s
       retries: 10
+      start_period: 120s
     expose:
       - "4100"
     networks:

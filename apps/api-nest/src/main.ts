@@ -40,4 +40,7 @@ async function bootstrap() {
   await app.listen(port);
 }
 
-void bootstrap();
+void bootstrap().catch((error) => {
+  console.error("[SIGEDA][api-nest] Echec de demarrage", error);
+  process.exit(1);
+});

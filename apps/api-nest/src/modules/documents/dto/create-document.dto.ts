@@ -1,4 +1,3 @@
-import { DepartmentType } from "@sigeda/database";
 import { Transform, type TransformFnParams } from "class-transformer";
 import {
   ArrayUnique,
@@ -18,6 +17,15 @@ import {
   parseJsonArray,
   parseStringArray
 } from "../../../shared/transformers.js";
+
+const DEPARTMENT_TYPE = {
+  DIRECTION_GENERALE: "DIRECTION_GENERALE",
+  DIRECTION: "DIRECTION",
+  SERVICE: "SERVICE",
+  BUREAU: "BUREAU"
+} as const;
+
+type DepartmentType = (typeof DEPARTMENT_TYPE)[keyof typeof DEPARTMENT_TYPE];
 
 export class CreateDocumentSignerDto {
   @Transform(({ value }: TransformFnParams) => optionalTrimmedString(value))
@@ -43,7 +51,7 @@ export class CreateDocumentSignerDto {
   departmentId?: string;
 
   @IsOptional()
-  @IsEnum(DepartmentType)
+  @IsEnum(DEPARTMENT_TYPE)
   departmentType?: DepartmentType;
 
   @Transform(({ value }: TransformFnParams) => (value === undefined ? undefined : parseInteger(value)))

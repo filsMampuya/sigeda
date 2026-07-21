@@ -1,7 +1,20 @@
-import { FolderStatus, FolderType } from "@sigeda/database";
 import { Transform, type TransformFnParams } from "class-transformer";
 import { ArrayUnique, IsArray, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from "class-validator";
 import { parseInteger, parseStringArray, trimString } from "../../../shared/transformers.js";
+
+const FOLDER_TYPE = {
+  CORRESPONDANCE: "CORRESPONDANCE",
+  DOCUMENTAIRE: "DOCUMENTAIRE",
+  AUTRE: "AUTRE"
+} as const;
+
+const FOLDER_STATUS = {
+  ACTIVE: "ACTIVE",
+  ARCHIVED: "ARCHIVED"
+} as const;
+
+type FolderType = (typeof FOLDER_TYPE)[keyof typeof FOLDER_TYPE];
+type FolderStatus = (typeof FOLDER_STATUS)[keyof typeof FOLDER_STATUS];
 
 export class CreateFolderDto {
   @Transform(({ value }: TransformFnParams) => parseInteger(value))
@@ -11,7 +24,7 @@ export class CreateFolderDto {
   year!: number;
 
   @IsOptional()
-  @IsEnum(FolderType)
+  @IsEnum(FOLDER_TYPE)
   folderType?: FolderType;
 
   @Transform(({ value }: TransformFnParams) => trimString(value))
@@ -39,6 +52,6 @@ export class CreateFolderDto {
 }
 
 export class UpdateFolderStatusDto {
-  @IsEnum(FolderStatus)
+  @IsEnum(FOLDER_STATUS)
   status!: FolderStatus;
 }

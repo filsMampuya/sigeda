@@ -14,6 +14,8 @@ if ($LASTEXITCODE -ne 0) {
   throw "La validation compose TLS a echoue."
 }
 
+Assert-TlsCertificatesIfNeeded
+
 Write-Host "[SIGEDA] Build et lancement TLS..."
 & docker compose --env-file $script:EnvFile -f $script:ComposeFile -f $tlsComposeFile up -d --build
 if ($LASTEXITCODE -ne 0) {

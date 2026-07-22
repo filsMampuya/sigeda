@@ -3,6 +3,13 @@ import { randomBytes } from "node:crypto";
 import { getKeycloakServerConfig } from "@/lib/env";
 import { getRequestUrl } from "@/lib/request-url";
 
+function appendPath(baseUrl: string, relativePath: string) {
+  const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  const normalizedPath = relativePath.startsWith("/") ? relativePath.slice(1) : relativePath;
+
+  return new URL(normalizedPath, normalizedBase);
+}
+
 export function getKeycloakConfigOrThrow() {
   const config = getKeycloakServerConfig();
 
@@ -21,7 +28,7 @@ export function getKeycloakConfigOrThrow() {
 export function buildKeycloakAuthorizeUrl(request: Request, state: string) {
   const config = getKeycloakConfigOrThrow();
   const redirectUri = getRequestUrl(request, "/api/auth/callback").toString();
-  const url = new URL(`/realms/${config.realm}/protocol/openid-connect/auth`, config.url);
+  const url = appendPath(config.url, `realms/${config.realm}/protocol/openid-connect/auth`);
 
   url.searchParams.set("client_id", config.clientId);
   url.searchParams.set("redirect_uri", redirectUri);
@@ -35,7 +42,7 @@ export function buildKeycloakAuthorizeUrl(request: Request, state: string) {
 export function buildKeycloakLogoutUrl(request: Request) {
   const config = getKeycloakConfigOrThrow();
   const redirectUri = getRequestUrl(request, "/login").toString();
-  const url = new URL(`/realms/${config.realm}/protocol/openid-connect/logout`, config.url);
+  const url = appendPath(config.url, `realms/${config.realm}/protocol/openid-connect/logout`);
 
   url.searchParams.set("client_id", config.clientId);
   url.searchParams.set("post_logout_redirect_uri", redirectUri);
@@ -46,7 +53,7 @@ export function buildKeycloakLogoutUrl(request: Request) {
 export async function exchangeCodeForToken(request: Request, code: string) {
   const config = getKeycloakConfigOrThrow();
   const redirectUri = getRequestUrl(request, "/api/auth/callback").toString();
-  const tokenUrl = new URL(`/realms/${config.realm}/protocol/openid-connect/token`, config.internalUrl);
+  const tokenUrl = appendPath(config.internalUrl, `realms/${config.realm}/protocol/openid-connect/token`);
   const body = new URLSearchParams({
     client_id: config.clientId,
     grant_type: "authorization_code",
@@ -71,7 +78,7 @@ export async function exchangeCodeForToken(request: Request, code: string) {
 
 export async function refreshKeycloakToken(refreshToken: string) {
   const config = getKeycloakConfigOrThrow();
-  const tokenUrl = new URL(`/realms/${config.realm}/protocol/openid-connect/token`, config.internalUrl);
+  const tokenUrl = appendPath(config.internalUrl, `realms/${config.realm}/protocol/openid-connect/token`);
   const body = new URLSearchParams({
     client_id: config.clientId,
     grant_type: "refresh_token",

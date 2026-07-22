@@ -68,4 +68,36 @@ function Get-TimestampNow {
   return Get-Date -Format "yyyyMMdd-HHmmss"
 }
 
+function Get-NginxConfigFileName {
+  $configFile = [Environment]::GetEnvironmentVariable("SIGEDA_NGINX_CONFIG_FILE", "Process")
+  if ([string]::IsNullOrWhiteSpace($configFile)) {
+    return "preprod.conf"
+  }
+
+  return $configFile
+}
+
+function Test-TlsNginxConfigActive {
+  $configFile = Get-NginxConfigFileName
+  return $configFile -match "tls"
+}
+
+function Assert-TlsCertificatesIfNeeded {
+  if (-not (Test-TlsNginxConfigActive)) {
+    return
+  }
+
+  $certsDir = Require-EnvVar "SIGEDA_CERTS_DIR"
+  $fullchainPath = Join-Path $certsDir "fullchain.pem"
+  $privkeyPath = Join-Path $certsDir "privkey.pem"
+
+  if (-not (Test-Path $fullchainPath)) {
+    throw "Configuration TLS active mais certificat introuvable : $fullchainPath"
+  }
+
+  if (-not (Test-Path $privkeyPath)) {
+    throw "Configuration TLS active mais cle privee introuvable : $privkeyPath"
+  }
+}
+
 Set-Variable -Scope Script -Name RepoRoot -Value $RepoRoot

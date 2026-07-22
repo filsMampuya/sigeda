@@ -97,6 +97,19 @@ foreach ($pathCheck in @(
   Add-Result -Results $results -Check $pathCheck.Name -Status ($(if ($exists) { "OK" } else { "KO" })) -Details $pathCheck.Path
 }
 
+$tlsConfigActive = $nginxConfigFile -match "tls"
+if ($tlsConfigActive) {
+  foreach ($tlsFile in @(
+      @{ Name = "Certificat TLS"; Path = (Join-Path $certsDir "fullchain.pem") },
+      @{ Name = "Cle privee TLS"; Path = (Join-Path $certsDir "privkey.pem") }
+    )) {
+    $exists = Test-Path $tlsFile.Path
+    Add-Result -Results $results -Check $tlsFile.Name -Status ($(if ($exists) { "OK" } else { "KO" })) -Details $tlsFile.Path
+  }
+} else {
+  Add-Result -Results $results -Check "Mode TLS nginx" -Status "OK" -Details "Configuration HTTP seule detectee ($nginxConfigFile)"
+}
+
 if (-not [string]::IsNullOrWhiteSpace($dataRoot)) {
   $driveName = ([System.IO.Path]::GetPathRoot($dataRoot)).TrimEnd('\').TrimEnd(':')
   $drive = Get-PSDrive -Name $driveName -ErrorAction SilentlyContinue

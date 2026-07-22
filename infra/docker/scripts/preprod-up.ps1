@@ -8,6 +8,7 @@ Set-Location $script:RepoRoot
 
 Write-Host "[SIGEDA] Verification du fichier compose..."
 Invoke-Compose config | Out-Null
+Assert-TlsCertificatesIfNeeded
 
 Write-Host "[SIGEDA] Build et lancement de la pile preproduction..."
 Invoke-Compose up -d --build

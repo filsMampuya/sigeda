@@ -14,7 +14,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${SIGEDA_POSTGRES_USER} -d ${SIGEDA_POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 30
+      start_period: 300s
     networks:
       - backend
 
@@ -31,7 +32,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${SIGEDA_KEYCLOAK_DB_USER} -d ${SIGEDA_KEYCLOAK_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 10
+      retries: 30
+      start_period: 300s
     networks:
       - backend
 
@@ -57,7 +59,7 @@ services:
       - start
       - --http-enabled=true
       - --http-port=8080
-      - --hostname=${SIGEDA_PREPROD_HOSTNAME}
+      - --hostname=${SIGEDA_KEYCLOAK_URL}
       - --proxy-headers=xforwarded
       - --http-relative-path=/auth
       - --import-realm

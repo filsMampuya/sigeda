@@ -43,7 +43,6 @@ if (-not (Test-IsAdministrator)) {
 
 $bypassList = @(
   $HostName,
-  "*." + ($HostName.Split(".", 2)[1]),
   $ServerIp,
   "127.0.0.1",
   "localhost",

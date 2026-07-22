@@ -38,7 +38,7 @@ powershell -ExecutionPolicy Bypass -File .\infra\windows\Set-SigedaPreprodBrowse
 
 Ce script :
 
-- injecte `sigeda-preprod.hdm`, `*.hdm`, `172.16.10.88` et `<local>` dans `ProxyOverride` ;
+- injecte `sigeda-preprod.hdm`, `172.16.10.88` et `<local>` dans `ProxyOverride` ;
 - met a jour le fichier `hosts` ;
 - renseigne aussi `NO_PROXY` pour l'utilisateur courant ;
 - force le rafraichissement WinINET ;
@@ -61,7 +61,7 @@ Ce script desactive :
 et force :
 
 - `ProxyMode=system`
-- `ProxyBypassList` avec `sigeda-preprod.hdm`, `*.hdm`, `172.16.10.88`, `localhost`, `127.0.0.1`, `<local>`
+- `ProxyBypassList` avec `sigeda-preprod.hdm`, `172.16.10.88`, `localhost`, `127.0.0.1`, `<local>`
 
 Apres execution :
 
@@ -129,7 +129,6 @@ $current = (Get-ItemProperty $path).ProxyOverride
 $entries = @()
 if ($current) { $entries += $current -split ';' }
 $entries += 'sigeda-preprod.hdm'
-$entries += '*.hdm'
 $entries += '172.16.10.88'
 $entries += '<local>'
 $entries = $entries | Where-Object { $_ -and $_.Trim() } | ForEach-Object { $_.Trim() } | Select-Object -Unique

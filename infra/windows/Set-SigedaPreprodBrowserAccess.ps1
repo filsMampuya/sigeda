@@ -100,10 +100,8 @@ $proxyRegistryPath = Get-ProxyRegistryPath
 $currentSettings = Get-ItemProperty -Path $proxyRegistryPath
 $existingEntries = Get-ProxyOverrideEntries -RawValue $currentSettings.ProxyOverride
 
-$domainSuffix = if ($HostName.Contains(".")) { "*." + ($HostName.Split(".", 2)[1]) } else { "" }
 $desiredEntries = @(
   $HostName,
-  $domainSuffix,
   $ServerIp,
   "127.0.0.1",
   "localhost",

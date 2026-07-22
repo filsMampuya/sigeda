@@ -41,7 +41,11 @@ function Set-HostsMapping {
   )
 
   $hostsPath = "$env:SystemRoot\System32\drivers\etc\hosts"
-  $lines = if (Test-Path $hostsPath) { Get-Content -Path $hostsPath } else { @() }
+  $lines = if (Test-Path $hostsPath) {
+    [System.IO.File]::ReadAllLines($hostsPath)
+  } else {
+    @()
+  }
 
   $filtered = foreach ($line in $lines) {
     if ($line -match "^\s*#") {
@@ -57,8 +61,17 @@ function Set-HostsMapping {
   }
 
   $newLine = "$TargetIp $TargetHost"
-  $updated = @($filtered) + $newLine
-  Set-Content -Path $hostsPath -Value $updated -Encoding ascii
+  $updated = [string[]](@($filtered) + $newLine)
+
+  if (Test-Path $hostsPath) {
+    $item = Get-Item -LiteralPath $hostsPath -Force
+    if ($item.Attributes -band [System.IO.FileAttributes]::ReadOnly) {
+      $item.Attributes = $item.Attributes -bxor [System.IO.FileAttributes]::ReadOnly
+    }
+  }
+
+  $encoding = [System.Text.ASCIIEncoding]::new()
+  [System.IO.File]::WriteAllLines($hostsPath, $updated, $encoding)
 }
 
 function Update-InternetSettings {

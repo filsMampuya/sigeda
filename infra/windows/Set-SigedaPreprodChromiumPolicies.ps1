@@ -13,23 +13,8 @@ function Test-IsAdministrator {
 
 function Ensure-RegistryKey {
   param([string]$Path)
-
-  if (Test-Path $Path) {
-    return
-  }
-
-  $segments = $Path -split "\\"
-  if ($segments.Count -lt 2) {
-    throw "Chemin registre invalide : $Path"
-  }
-
-  $currentPath = $segments[0]
-  for ($index = 1; $index -lt $segments.Count; $index++) {
-    $currentPath = "$currentPath\$($segments[$index])"
-    if (-not (Test-Path $currentPath)) {
-      New-Item -Path $currentPath -Force | Out-Null
-    }
-  }
+  $nativePath = $Path -replace '^HKLM:\\', 'HKLM\' -replace '^HKCU:\\', 'HKCU\'
+  & reg.exe add $nativePath /f | Out-Null
 }
 
 function Set-StringPolicy {
@@ -38,7 +23,8 @@ function Set-StringPolicy {
     [string]$Name,
     [string]$Value
   )
-  New-ItemProperty -Path $Path -Name $Name -PropertyType String -Value $Value -Force | Out-Null
+  $nativePath = $Path -replace '^HKLM:\\', 'HKLM\' -replace '^HKCU:\\', 'HKCU\'
+  & reg.exe add $nativePath /v $Name /t REG_SZ /d $Value /f | Out-Null
 }
 
 function Set-DwordPolicy {
@@ -47,7 +33,8 @@ function Set-DwordPolicy {
     [string]$Name,
     [int]$Value
   )
-  New-ItemProperty -Path $Path -Name $Name -PropertyType DWord -Value $Value -Force | Out-Null
+  $nativePath = $Path -replace '^HKLM:\\', 'HKLM\' -replace '^HKCU:\\', 'HKCU\'
+  & reg.exe add $nativePath /v $Name /t REG_DWORD /d $Value /f | Out-Null
 }
 
 if (-not (Test-IsAdministrator)) {

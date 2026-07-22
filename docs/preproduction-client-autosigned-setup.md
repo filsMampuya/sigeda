@@ -44,6 +44,34 @@ Ce script :
 - force le rafraichissement WinINET ;
 - ferme les navigateurs si demande pour repartir sur un etat propre.
 
+## 0 bis. Verrouiller Chrome et Edge sur la pile reseau Windows
+
+Si `curl.exe` fonctionne mais que Chrome ou Edge affichent encore `Ce site est inaccessible`, appliquer aussi les politiques Chromium :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\infra\windows\Set-SigedaPreprodChromiumPolicies.ps1 -HostName sigeda-preprod.hdm -ServerIp 172.16.10.88
+```
+
+Ce script desactive :
+
+- DNS-over-HTTPS ;
+- le client DNS integre Chromium ;
+- QUIC ;
+
+et force :
+
+- `ProxyMode=system`
+- `ProxyBypassList` avec `sigeda-preprod.hdm`, `*.hdm`, `172.16.10.88`, `localhost`, `127.0.0.1`, `<local>`
+
+Apres execution :
+
+```powershell
+taskkill /IM chrome.exe /F
+taskkill /IM msedge.exe /F
+```
+
+puis relancer les navigateurs normalement.
+
 ## Hypotheses
 
 - serveur preproduction SIGEDA : `172.16.10.88`

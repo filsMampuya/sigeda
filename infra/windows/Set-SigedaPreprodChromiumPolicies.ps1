@@ -13,8 +13,22 @@ function Test-IsAdministrator {
 
 function Ensure-RegistryKey {
   param([string]$Path)
-  if (-not (Test-Path $Path)) {
-    New-Item -Path $Path -Force | Out-Null
+
+  if (Test-Path $Path) {
+    return
+  }
+
+  $segments = $Path -split "\\"
+  if ($segments.Count -lt 2) {
+    throw "Chemin registre invalide : $Path"
+  }
+
+  $currentPath = $segments[0]
+  for ($index = 1; $index -lt $segments.Count; $index++) {
+    $currentPath = "$currentPath\$($segments[$index])"
+    if (-not (Test-Path $currentPath)) {
+      New-Item -Path $currentPath -Force | Out-Null
+    }
   }
 }
 
@@ -49,10 +63,17 @@ $bypassList = @(
   "<local>"
 ) | Select-Object -Unique
 
-$chromePolicyPath = "HKLM:\Software\Policies\Google\Chrome"
-$edgePolicyPath = "HKLM:\Software\Policies\Microsoft\Edge"
+$chromePolicyPaths = @(
+  "HKLM:\Software\Policies\Google\Chrome",
+  "HKCU:\Software\Policies\Google\Chrome"
+)
 
-foreach ($policyPath in @($chromePolicyPath, $edgePolicyPath)) {
+$edgePolicyPaths = @(
+  "HKLM:\Software\Policies\Microsoft\Edge",
+  "HKCU:\Software\Policies\Microsoft\Edge"
+)
+
+foreach ($policyPath in @($chromePolicyPaths + $edgePolicyPaths)) {
   Ensure-RegistryKey -Path $policyPath
 
   Set-StringPolicy -Path $policyPath -Name "DnsOverHttpsMode" -Value "off"
@@ -64,8 +85,8 @@ foreach ($policyPath in @($chromePolicyPath, $edgePolicyPath)) {
 
 Write-Host ""
 Write-Host "Politiques Chromium SIGEDA preproduction appliquees." -ForegroundColor Green
-Write-Host "Chrome policy path : $chromePolicyPath"
-Write-Host "Edge policy path   : $edgePolicyPath"
+Write-Host "Chrome policy paths : $($chromePolicyPaths -join ', ')"
+Write-Host "Edge policy paths   : $($edgePolicyPaths -join ', ')"
 Write-Host "Bypass list        : $($bypassList -join ';')"
 Write-Host ""
 Write-Host "Fermez completement Chrome et Edge puis relancez-les."

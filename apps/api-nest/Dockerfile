@@ -18,12 +18,26 @@ RUN npm run build --workspace @sigeda/database
 RUN npm run build --workspace @sigeda/api-nest
 
 FROM node:22-bookworm
+ARG INSTALL_DOCUMENT_AI_SYSTEM_DEPS=false
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PRISMA_CLIENT_ENGINE_TYPE=library
 ENV PRISMA_CLI_QUERY_ENGINE_TYPE=library
 ENV PRISMA_CLI_BINARY_TARGETS=debian-openssl-3.0.x
 ENV PRISMA_QUERY_ENGINE_LIBRARY=/app/node_modules/.prisma/client/libquery_engine-debian-openssl-3.0.x.so.node
+RUN set -eux; \
+  if [ "$INSTALL_DOCUMENT_AI_SYSTEM_DEPS" = "true" ]; then \
+    export DEBIAN_FRONTEND=noninteractive; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      imagemagick \
+      poppler-utils \
+      tesseract-ocr \
+      tesseract-ocr-fra \
+      tesseract-ocr-eng; \
+    rm -rf /var/lib/apt/lists/*; \
+  fi
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/api-nest/node_modules ./apps/api-nest/node_modules
 COPY --from=build /app/apps/api-nest/dist ./apps/api-nest/dist

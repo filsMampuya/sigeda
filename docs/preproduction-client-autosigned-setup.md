@@ -33,12 +33,12 @@ ne suffit pas pour conclure que le navigateur contournera correctement le proxy.
 Depuis le depot SIGEDA, lancer PowerShell en administrateur puis executer :
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows\Set-SigedaPreprodBrowserAccess.ps1 -HostName sigeda-preprod.hdm -ServerIp 172.16.10.88 -CloseBrowsers -FlushDns
+powershell -ExecutionPolicy Bypass -File .\infra\windows\Set-SigedaPreprodBrowserAccess.ps1 -HostName sigeda-preprod.hdm -CloseBrowsers -FlushDns
 ```
 
 Ce script :
 
-- injecte `sigeda-preprod.hdm`, `172.16.10.88` et `<local>` dans `ProxyOverride` ;
+- injecte `sigeda-preprod.hdm`, l'IPv4 locale du serveur et `<local>` dans `ProxyOverride` ;
 - met a jour le fichier `hosts` ;
 - renseigne aussi `NO_PROXY` pour l'utilisateur courant ;
 - force le rafraichissement WinINET ;
@@ -49,7 +49,7 @@ Ce script :
 Si `curl.exe` fonctionne mais que Chrome ou Edge affichent encore `Ce site est inaccessible`, appliquer aussi les politiques Chromium :
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\infra\windows\Set-SigedaPreprodChromiumPolicies.ps1 -HostName sigeda-preprod.hdm -ServerIp 172.16.10.88
+powershell -ExecutionPolicy Bypass -File .\infra\windows\Set-SigedaPreprodChromiumPolicies.ps1 -HostName sigeda-preprod.hdm
 ```
 
 Ce script desactive :
@@ -61,7 +61,7 @@ Ce script desactive :
 et force :
 
 - `ProxyMode=system`
-- `ProxyBypassList` avec `sigeda-preprod.hdm`, `172.16.10.88`, `localhost`, `127.0.0.1`, `<local>`
+- `ProxyBypassList` avec `sigeda-preprod.hdm`, l'IPv4 locale du serveur, `localhost`, `127.0.0.1`, `<local>`
 
 Apres execution :
 
@@ -74,7 +74,7 @@ puis relancer les navigateurs normalement.
 
 ## Hypotheses
 
-- serveur preproduction SIGEDA : `172.16.10.88`
+- serveur preproduction SIGEDA : IPv4 locale du serveur Windows cible
 - URL cible : `https://sigeda-preprod.hdm:3443`
 - certificat autosigne courant present sur le serveur
 - fichier certificat a diffuser aux postes : `sigeda-preprod.cer` ou equivalent derive du certificat actif
@@ -83,7 +83,7 @@ puis relancer les navigateurs normalement.
 
 Le poste doit :
 
-- resoudre `sigeda-preprod.hdm` vers `172.16.10.88`
+- resoudre `sigeda-preprod.hdm` vers l'IPv4 locale du serveur
 - ne pas envoyer ce domaine au proxy entreprise
 - faire confiance au certificat autosigne de SIGEDA
 - ouvrir l'URL `https://sigeda-preprod.hdm:3443/login` dans Chrome, Edge, Firefox ou Opera
@@ -99,7 +99,7 @@ C:\Windows\System32\drivers\etc\hosts
 Ajouter :
 
 ```txt
-172.16.10.88 sigeda-preprod.hdm
+<ipv4-du-serveur> sigeda-preprod.hdm
 ```
 
 Ne pas ajouter plusieurs IP pour le meme nom sur un meme poste.
@@ -129,7 +129,7 @@ $current = (Get-ItemProperty $path).ProxyOverride
 $entries = @()
 if ($current) { $entries += $current -split ';' }
 $entries += 'sigeda-preprod.hdm'
-$entries += '172.16.10.88'
+$entries += '<ipv4-du-serveur>'
 $entries += '<local>'
 $entries = $entries | Where-Object { $_ -and $_.Trim() } | ForEach-Object { $_.Trim() } | Select-Object -Unique
 Set-ItemProperty $path -Name ProxyOverride -Value ($entries -join ';')
@@ -192,7 +192,7 @@ curl.exe -I https://sigeda-preprod.hdm:3443/login
 
 ## 8. Checklist de validation poste client
 
-- `hosts` contient `172.16.10.88 sigeda-preprod.hdm`
+- `hosts` contient `<ipv4-du-serveur> sigeda-preprod.hdm`
 - le certificat autosigne est importe dans les magasins adequats
 - `ProxyOverride` contient `sigeda-preprod.hdm`
 - l'URL `https://sigeda-preprod.hdm:3443/login` s'ouvre

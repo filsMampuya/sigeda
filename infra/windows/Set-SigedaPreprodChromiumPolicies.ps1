@@ -1,6 +1,6 @@
 param(
   [string]$HostName = "sigeda-preprod.hdm",
-  [string]$ServerIp = "172.16.10.88"
+  [string]$ServerIp = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -37,10 +37,35 @@ function Set-DwordPolicy {
   & reg.exe add $nativePath /v $Name /t REG_DWORD /d $Value /f | Out-Null
 }
 
+function Resolve-ServerIp {
+  param([string]$Candidate)
+
+  if (-not [string]::IsNullOrWhiteSpace($Candidate)) {
+    return $Candidate.Trim()
+  }
+
+  $detectedIp = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object {
+      $_.IPAddress -and
+      $_.IPAddress -notlike "127.*" -and
+      $_.IPAddress -notlike "169.254.*" -and
+      $_.InterfaceAlias -notmatch "Loopback|vEthernet|WSL|Docker|VirtualBox|VMware"
+    } |
+    Sort-Object -Property InterfaceMetric, SkipAsSource, PrefixOrigin |
+    Select-Object -First 1 -ExpandProperty IPAddress
+
+  if (-not $detectedIp) {
+    throw "Impossible de determiner automatiquement l'adresse IPv4 du serveur. Relancez le script avec -ServerIp <adresse-ip>."
+  }
+
+  return $detectedIp
+}
+
 if (-not (Test-IsAdministrator)) {
   throw "Ce script doit etre lance en administrateur."
 }
 
+$ServerIp = Resolve-ServerIp -Candidate $ServerIp
 $bypassList = @(
   $HostName,
   $ServerIp,

@@ -103,6 +103,9 @@ services:
     restart: unless-stopped
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
+      HTTP_PROXY: ${SIGEDA_HTTP_PROXY:-}
+      HTTPS_PROXY: ${SIGEDA_HTTPS_PROXY:-}
+      NO_PROXY: ${SIGEDA_NO_PROXY:-}
     volumes:
       - ${SIGEDA_DATA_ROOT}/ollama:/root/.ollama
     expose:
@@ -117,7 +120,8 @@ services:
 
   ollama-pull:
     image: ollama/ollama:latest
-    restart: on-failure
+    profiles:
+      - ai-bootstrap
     entrypoint:
       - /bin/sh
       - -lc
@@ -125,6 +129,9 @@ services:
       OLLAMA_HOST: http://ollama:11434
       VISION_MODEL: ${SIGEDA_DOCUMENT_AI_VISION_MODEL}
       TEXT_MODEL: ${SIGEDA_DOCUMENT_AI_TEXT_MODEL}
+      HTTP_PROXY: ${SIGEDA_HTTP_PROXY:-}
+      HTTPS_PROXY: ${SIGEDA_HTTPS_PROXY:-}
+      NO_PROXY: ${SIGEDA_NO_PROXY:-}
     depends_on:
       ollama:
         condition: service_healthy

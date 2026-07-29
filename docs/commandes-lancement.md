@@ -51,7 +51,7 @@ Attention :
 - le telechargement depend de la taille des modeles ;
 - `api-nest` ne bloque plus sur le pull initial des modeles ;
 - la disponibilite du moteur se verifie via `GET /api/v1/document-intelligence/readiness` ;
-- `ollama-pull` relance automatiquement les telechargements en cas d'echec reseau ponctuel.
+- `ollama-pull` est desormais un bootstrap manuel, non bloquant pour eviter qu'un registre externe indisponible casse la pile.
 
 ## 1) Installation des dependances
 
@@ -65,7 +65,7 @@ Initialisation recommandee de l'environnement Docker on-premise avec IA locale :
 
 ```bash
 docker compose -f infra/docker/docker-compose.yml up -d postgres minio keycloak opensearch ollama
-docker compose -f infra/docker/docker-compose.yml up -d ollama-pull
+docker compose -f infra/docker/docker-compose.yml --profile ai-bootstrap up ollama-pull
 docker compose -f infra/docker/docker-compose.yml up -d api-nest web nginx
 ```
 
@@ -73,6 +73,20 @@ Verification rapide du runtime IA local :
 
 ```bash
 docker compose -f infra/docker/docker-compose.yml logs -f ollama-pull
+
+En preproduction Windows :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File infra/docker/scripts/preprod-ollama-pull.ps1
+```
+
+Si le reseau de l'entreprise impose un proxy sortant, renseigner avant cela :
+
+```text
+SIGEDA_HTTP_PROXY=http://proxy.hdm.local:8080
+SIGEDA_HTTPS_PROXY=http://proxy.hdm.local:8080
+SIGEDA_NO_PROXY=localhost,127.0.0.1,ollama,keycloak,api-nest,web,minio,opensearch,postgres,postgres-keycloak
+```
 docker compose -f infra/docker/docker-compose.yml ps
 ```
 

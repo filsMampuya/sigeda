@@ -3,6 +3,7 @@ name: sigeda-preprod
 services:
   postgres:
     image: postgres:16-alpine
+    init: true
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${SIGEDA_POSTGRES_DB}
@@ -21,6 +22,7 @@ services:
 
   postgres-keycloak:
     image: postgres:16-alpine
+    init: true
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${SIGEDA_KEYCLOAK_DB}
@@ -39,6 +41,7 @@ services:
 
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    init: true
     command: server /data --console-address ":9001"
     restart: unless-stopped
     environment:
@@ -54,6 +57,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
+    init: true
     restart: unless-stopped
     command:
       - start
@@ -84,6 +88,7 @@ services:
 
   opensearch:
     image: opensearchproject/opensearch:2.15.0
+    init: true
     restart: unless-stopped
     environment:
       discovery.type: single-node
@@ -100,6 +105,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
+    init: true
     restart: unless-stopped
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
@@ -120,6 +126,7 @@ services:
 
   ollama-pull:
     image: ollama/ollama:latest
+    init: true
     profiles:
       - ai-bootstrap
     entrypoint:
@@ -154,6 +161,7 @@ services:
         HTTP_PROXY: ${SIGEDA_HTTP_PROXY:-}
         HTTPS_PROXY: ${SIGEDA_HTTPS_PROXY:-}
         NO_PROXY: ${SIGEDA_NO_PROXY:-}
+    init: true
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -231,6 +239,7 @@ services:
     build:
       context: ../..
       dockerfile: apps/web/Dockerfile
+    init: true
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -267,6 +276,7 @@ services:
 
   nginx:
     image: nginx:1.27-alpine
+    init: true
     restart: unless-stopped
     ports:
       - "${SIGEDA_NGINX_HTTP_PORT}:80"
@@ -287,6 +297,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
+    init: true
     profiles:
       - admin
     container_name: sigeda-pgadmin-preprod

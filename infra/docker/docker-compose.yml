@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    init: true
     environment:
       POSTGRES_DB: ${SIGEDA_POSTGRES_DB:-sigeda}
       POSTGRES_USER: ${SIGEDA_POSTGRES_USER:-sigeda}
@@ -16,6 +17,7 @@ services:
       retries: 10
   pgadmin:
     image: dpage/pgadmin4
+    init: true
     container_name: sigeda-pgadmin
     restart: unless-stopped
     environment:
@@ -37,6 +39,7 @@ services:
 
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    init: true
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${SIGEDA_MINIO_ROOT_USER:-sigeda}
@@ -49,6 +52,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:25.0
+    init: true
     command: start-dev --hostname=http://localhost:8080 --import-realm
     environment:
       KEYCLOAK_ADMIN: ${SIGEDA_KEYCLOAK_ADMIN_USER:-admin}
@@ -60,6 +64,7 @@ services:
 
   opensearch:
     image: opensearchproject/opensearch:2.15.0
+    init: true
     environment:
       discovery.type: single-node
       plugins.security.disabled: ${SIGEDA_OPENSEARCH_SECURITY_DISABLED:-true}
@@ -73,6 +78,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
+    init: true
     environment:
       OLLAMA_HOST: 0.0.0.0:11434
       HTTP_PROXY: ${SIGEDA_HTTP_PROXY:-}
@@ -90,6 +96,7 @@ services:
 
   ollama-pull:
     image: ollama/ollama:latest
+    init: true
     profiles:
       - ai-bootstrap
     entrypoint:
@@ -122,6 +129,7 @@ services:
         HTTP_PROXY: ${SIGEDA_HTTP_PROXY:-}
         HTTPS_PROXY: ${SIGEDA_HTTPS_PROXY:-}
         NO_PROXY: ${SIGEDA_NO_PROXY:-}
+    init: true
     environment:
       PORT: 4100
       DATABASE_URL: postgresql://${SIGEDA_POSTGRES_USER:-sigeda}:${SIGEDA_POSTGRES_PASSWORD:-sigeda}@postgres:5432/${SIGEDA_POSTGRES_DB:-sigeda}
@@ -176,6 +184,7 @@ services:
     build:
       context: ../..
       dockerfile: apps/web/Dockerfile
+    init: true
     environment:
       PORT: 3000
       HOSTNAME: 0.0.0.0
@@ -195,6 +204,7 @@ services:
       - api-nest
   nginx:
     image: nginx:1.27-alpine
+    init: true
     ports:
       - "8088:80"
     volumes:

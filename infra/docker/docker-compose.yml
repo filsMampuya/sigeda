@@ -119,6 +119,9 @@ services:
       dockerfile: apps/api-nest/Dockerfile
       args:
         INSTALL_DOCUMENT_AI_SYSTEM_DEPS: ${SIGEDA_API_INSTALL_SYSTEM_OCR:-true}
+        HTTP_PROXY: ${SIGEDA_HTTP_PROXY:-}
+        HTTPS_PROXY: ${SIGEDA_HTTPS_PROXY:-}
+        NO_PROXY: ${SIGEDA_NO_PROXY:-}
     environment:
       PORT: 4100
       DATABASE_URL: postgresql://${SIGEDA_POSTGRES_USER:-sigeda}:${SIGEDA_POSTGRES_PASSWORD:-sigeda}@postgres:5432/${SIGEDA_POSTGRES_DB:-sigeda}
